@@ -3,7 +3,7 @@ import { Navigate, useRoutes } from 'react-router-dom';
 import DashboardLayout from './layouts/dashboard';
 import SimpleLayout from './layouts/simple';
 //
-import BlogPage from './pages/BlogPage';
+import BudgetPage from './pages/BudgetPage';
 import UserPage from './pages/UserPage';
 import LoginPage from './pages/LoginPage';
 import Page404 from './pages/Page404';
@@ -19,10 +19,10 @@ export default function Router() {
       element: <DashboardLayout/>,
       children: [
         { element: <Navigate to="/dashboard/budgets"/>, index: true },
-        { path: 'budgets', element: <DashboardAppPage/> },
+        { path: 'budgets', element: <BudgetPage/> },
         { path: 'transactions', element: <UserPage/> },
         { path: 'statistics', element: <ProductsPage/> },
-        { path: 'profile', element: <BlogPage/> },
+        { path: 'profile', element: <DashboardAppPage/> },
       ],
     },
     {
