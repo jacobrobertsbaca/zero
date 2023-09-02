@@ -6,7 +6,7 @@ import { SvgIcon } from '@mui/material';
 export const items = [
   {
     title: 'Budgets',
-    path: '/',
+    path: '/budgets',
     icon: (
       <SvgIcon fontSize="small">
         <ChartBarIcon />
