@@ -65,15 +65,15 @@ export const TopNav = (props) => {
                 </SvgIcon>
               </IconButton>
             )}
-            <Tooltip title="Search">
+            {/* <Tooltip title="Search">
               <IconButton>
                 <SvgIcon fontSize="small">
                   <MagnifyingGlassIcon />
                 </SvgIcon>
               </IconButton>
-            </Tooltip>
+            </Tooltip> */}
           </Stack>
-          <Stack
+          {/* <Stack
             alignItems="center"
             direction="row"
             spacing={2}
@@ -108,7 +108,7 @@ export const TopNav = (props) => {
               }}
               src="/assets/avatars/avatar-anika-visser.png"
             />
-          </Stack>
+          </Stack> */}
         </Stack>
       </Box>
       <AccountPopover
