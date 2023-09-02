@@ -1,4 +1,6 @@
+import Head from 'next/head';
 import { useCallback, useEffect, useState } from 'react';
+import { Box, Container, Stack, Typography } from '@mui/material';
 import { usePathname } from 'next/navigation';
 import { styled } from '@mui/material/styles';
 import { withAuthGuard } from 'src/hocs/with-auth-guard';
@@ -24,18 +26,15 @@ const LayoutContainer = styled('div')({
 });
 
 export const Layout = withAuthGuard((props) => {
-  const { children } = props;
+  const { children, name } = props;
   const pathname = usePathname();
   const [openNav, setOpenNav] = useState(false);
 
-  const handlePathnameChange = useCallback(
-    () => {
-      if (openNav) {
-        setOpenNav(false);
-      }
-    },
-    [openNav]
-  );
+  const handlePathnameChange = useCallback(() => {
+    if (openNav) {
+      setOpenNav(false);
+    }
+  }, [openNav]);
 
   useEffect(
     () => {
@@ -47,14 +46,27 @@ export const Layout = withAuthGuard((props) => {
 
   return (
     <>
+      <Head>
+        <title>{name} | zero</title>
+      </Head>
       <TopNav onNavOpen={() => setOpenNav(true)} />
-      <SideNav
-        onClose={() => setOpenNav(false)}
-        open={openNav}
-      />
+      <SideNav onClose={() => setOpenNav(false)} open={openNav} />
       <LayoutRoot>
         <LayoutContainer>
-          {children}
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              py: 8,
+            }}
+          >
+            <Container maxWidth="lg">
+              <Stack spacing={3}>
+                <Typography variant="h4">{name}</Typography>
+              </Stack>
+              {children}
+            </Container>
+          </Box>
         </LayoutContainer>
       </LayoutRoot>
     </>
