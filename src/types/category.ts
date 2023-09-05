@@ -17,10 +17,10 @@ export type Period = {
   truncate?: TruncateMode;
 };
 
-export class Category {
-  id!: string;
-  name!: string;
-  type!: CategoryType;
-  amount!: Money;
+export type Category = {
+  id: string;
+  name: string;
+  type: CategoryType;
+  amount: Money;
   periods?: Period[];
 };
