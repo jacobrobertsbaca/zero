@@ -7,13 +7,26 @@ export enum CategoryType {
   Spending = 'spending'
 };
 
-export enum TruncateMode { Omit, Split, Keep };
+export enum TruncateMode { 
+  Omit = 'omit', 
+  Split = 'split', 
+  Keep = 'keep' 
+};
+
+export type WeeklyRecurrence = { type: 'weekly'; day: 0|1|2|3|4|5|6 }
+export type MonthlyRecurrence = { type: 'monthly'; day: number; }
+export type Recurrence = WeeklyRecurrence | MonthlyRecurrence
+
+export type CategorySummary = {
+  nominal: Money;
+  actual: Money;
+};
 
 export type Period = {
   begin: Date;
   end: Date;
   nominal: Money;
-  actual?: Money;
+  actual: Money;
   truncate?: TruncateMode;
 };
 
@@ -21,6 +34,7 @@ export type Category = {
   id: string;
   name: string;
   type: CategoryType;
-  amount: Money;
+  summary: CategorySummary;
+  recurrence?: Recurrence;
   periods?: Period[];
 };
