@@ -1,5 +1,7 @@
 # zero
 
+![Vercel](https://vercelbadge.vercel.app/api/jacobrobertsbaca/zero)
+
 ## Getting started
 
 - Recommended `node.js 16.14` and `npm 6+`. (suggestion v16.15.0)
