@@ -1,4 +1,6 @@
-export interface Money {
-  readonly amount: number;
-  readonly currency: string;
-};
+import { Immutable } from "immer";
+
+export type Money = Immutable<{
+  amount: number;
+  currency: string;
+}>;

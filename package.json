@@ -26,6 +26,7 @@
     "apexcharts": "3.37.0",
     "date-fns": "2.29.3",
     "formik": "2.2.9",
+    "immer": "^10.0.2",
     "next": "^13.4.19",
     "nprogress": "0.2.0",
     "prop-types": "15.8.1",
