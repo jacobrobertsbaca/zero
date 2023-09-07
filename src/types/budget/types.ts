@@ -1,7 +1,7 @@
 import { Immutable } from "immer";
 import { Category, CategoryType } from "../category/types";
 import { Money } from "../money/types";
-import { DateRange } from "../utils/types";
+import { Dates } from "../utils/types";
 
 export type BudgetSummarySnapshot = Record<CategoryType, Money>;
 
@@ -13,7 +13,7 @@ export type BudgetSummary = Immutable<{
 export type Budget = Immutable<{
   id: string;
   name: string;
-  dates: DateRange;
+  dates: Dates;
   summary: BudgetSummary;
   categories?: Category[];
 }>;
