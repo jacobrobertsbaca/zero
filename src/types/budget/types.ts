@@ -1,5 +1,6 @@
-import { Category, CategoryType } from "./category";
-import { Money } from "./money";
+import { Category, CategoryType } from "../category/types";
+import { Money } from "../money/types";
+import { DateRange } from "../utils/types";
 
 export type BudgetSummarySnapshot = Record<CategoryType, Money>;
 
@@ -11,8 +12,7 @@ export type BudgetSummary = {
 export type Budget = {
   id: string;
   name: string;
-  begin: Date;
-  end: Date;
+  dates: DateRange,
   summary: BudgetSummary;
   categories?: Category[];
 };

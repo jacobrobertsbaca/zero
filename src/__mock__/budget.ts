@@ -1,6 +1,6 @@
-import { Budget } from "src/types/budget";
-import { Category } from "src/types/category";
-import { CategoryType } from "src/types/category";
+import { Budget } from "src/types/budget/types";
+import { Category } from "src/types/category/types";
+import { CategoryType } from "src/types/category/types";
 
 const CATEGORY_NAMES = {
   [CategoryType.Income]: [
@@ -12,7 +12,8 @@ const CATEGORY_NAMES = {
   [CategoryType.Investments]: [
     'Roth IRA',
     '401k',
-    'Vanguard'
+    'Vanguard',
+    'HSA'
   ],
   [CategoryType.Savings]: [
     'Savings',
