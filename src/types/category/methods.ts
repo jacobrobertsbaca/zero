@@ -67,10 +67,10 @@ export const onRecurrenceType = (budget: Budget, category: Category): Category =
     // Preserve period truncation on first and last periods
     if (draft.periods.length === 0) return;
     if (!datesContains(budget.dates, draft.periods[0].dates))
-      draft.periods[0].truncate = category.periods.length > 0 ? category.periods[0].truncate : TruncateMode.Keep;
+      draft.periods[0].truncate = category.periods[0]?.truncate ?? TruncateMode.Keep;
     if (!datesContains(budget.dates, draft.periods[draft.periods.length - 1].dates))
       draft.periods[draft.periods.length - 1].truncate =
-        category.periods.length > 0 ? category.periods[category.periods.length - 1].truncate : TruncateMode.Omit;
+        category.periods[category.periods.length - 1]?.truncate ?? TruncateMode.Omit;
   });
 
   // Preserve the total nominal amount of the period
