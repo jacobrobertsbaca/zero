@@ -1,20 +1,66 @@
-import { Immutable, produce } from "immer";
+import { produce } from "immer";
 import { Budget } from "../budget/types";
 import { moneyAllocate, moneyFactor, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
-import { datesClamp, datesContains, datesDays } from "../utils/methods";
+import { datesClamp, datesContains, datesDays, fixDate } from "../utils/methods";
 import { Dates } from "../utils/types";
-import { Category, Period, Recurrence, RecurrenceType, TruncateMode } from "./types";
+import {
+  Category,
+  MonthlyRecurrence,
+  Period,
+  Recurrence,
+  RecurrenceType,
+  TruncateMode,
+  WeeklyRecurrence,
+} from "./types";
 
 /* ================================================================================================================= *
  * Utility Methods                                                                                                   *
  * ================================================================================================================= */
 
-const PERIOD_DATES: Immutable<Record<RecurrenceType, (budgetDates: Dates) => Dates[]>> = {
-  // todo: implement these
-  [RecurrenceType.None]: (dates) => [],
-  [RecurrenceType.Weekly]: (dates) => [],
-  [RecurrenceType.Monthly]: (dates) => [],
+type RangeResolver = (date: Date) => Dates;
+
+const resolveRanges = (budget: Budget, resolver: RangeResolver): Dates[] => {
+  let current = fixDate(budget.dates.begin);
+  const end = fixDate(budget.dates.end, 1);
+  const ranges: Dates[] = [];
+  while (current < end) {
+    const range = resolver(current);
+    ranges.push(range);
+    current = fixDate(range.end, 1);
+  }
+  return ranges;
+};
+
+const getRangeResolver = (budget: Budget, category: Category): RangeResolver => {
+  const recurrence: Recurrence = category.recurrence;
+  switch (recurrence.type) {
+    case RecurrenceType.None:
+      return (date) => budget.dates;
+    case RecurrenceType.Weekly:
+      return (date) => {
+        const daysAfter = (date.getDay() - recurrence.day + 6) % 7;
+        const daysBefore = (recurrence.day - date.getDay() + 7) % 7;
+        return { begin: fixDate(date, -daysAfter), end: fixDate(date, daysBefore) };
+      };
+    case RecurrenceType.Monthly:
+      return (date) => {
+        /* Returns a date representing the recurrence deadline for a given month.
+         * E.g. month = -1 represents last month, 0 this month, 1 next month.
+         * Clamps to the last day in that month. E.g. if `recurrence.day` is 31
+         * and we are in February, clamps to February 28th */
+        const dayForMonth = (month: number) => {
+          const day = new Date(date.getFullYear(), date.getMonth() + month, recurrence.day);
+          const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1 + month, 0);
+          if (day > monthEnd) return monthEnd;
+          return day;
+        };
+
+        const thisMonth = dayForMonth(0);
+        if (date > thisMonth) return { begin: fixDate(thisMonth, 1), end: dayForMonth(1) };
+        return { begin: fixDate(dayForMonth(-1), 1), end: thisMonth };
+      };
+  }
 };
 
 /* ================================================================================================================= *
@@ -58,7 +104,8 @@ export const onCategoryNominal = (budget: Budget, category: Category, total: Mon
 export const onRecurrenceType = (budget: Budget, category: Category): Category => {
   const nominal = categoryNominal(category);
   const next = produce(category, (draft) => {
-    draft.periods = PERIOD_DATES[draft.recurrence.type](budget.dates).map((dates) => ({
+    const resolver = getRangeResolver(budget, category);
+    draft.periods = resolveRanges(budget, resolver).map((dates) => ({
       dates: dates,
       nominal: moneyZero(),
       actual: moneyZero(),
