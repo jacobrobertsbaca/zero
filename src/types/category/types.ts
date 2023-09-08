@@ -21,12 +21,18 @@ export enum RecurrenceType {
   Monthly = "monthly",
 }
 
-export type NoRecurrence = Immutable<{ type: RecurrenceType.None }>;
-export type WeeklyRecurrence = Immutable<{ type: RecurrenceType.Weekly; day: number }>;
-export type MonthlyRecurrence = Immutable<{ type: RecurrenceType.Monthly; day: number }>;
-export type Recurrence = Immutable<
-  { amount: Money } & (NoRecurrence | WeeklyRecurrence | MonthlyRecurrence)
->;
+export type NoRecurrence = Immutable<{ type: RecurrenceType.None; amount: Money }>;
+export type WeeklyRecurrence = Immutable<{
+  type: RecurrenceType.Weekly;
+  day: number;
+  amount: Money;
+}>;
+export type MonthlyRecurrence = Immutable<{
+  type: RecurrenceType.Monthly;
+  day: number;
+  amount: Money;
+}>;
+export type Recurrence = Immutable<NoRecurrence | WeeklyRecurrence | MonthlyRecurrence>;
 
 export type Period = Immutable<{
   /**
