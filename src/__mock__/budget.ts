@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { Draft, produce } from "immer";
 import { Budget } from "src/types/budget/types";
 import { Category, CategoryType, Recurrence, RecurrenceType } from "src/types/category/types";
-import { onRecurrence } from "src/types/category/methods";
+import { onCategoryNominal, onRecurrence } from "src/types/category/methods";
 import { sample, random } from "lodash";
 import { randomMoney } from "./money";
 import { fixDate } from "src/types/utils/methods";
@@ -53,15 +53,17 @@ const generateRecurrence = (): Recurrence => {
 const generateCategory = (budget: Budget): Category => {
   const type = sample(Object.keys(CATEGORY_NAMES)) as CategoryType;
   const recurrence = generateRecurrence();
-  const category: Category = {
+
+  let category: Category = {
     id: faker.string.uuid(),
     name: sample(CATEGORY_NAMES[type])!,
     type,
     recurrence,
     periods: []
   };
-
-  return onRecurrence(budget, category, recurrence, true);
+  
+  category = onRecurrence(budget, category, recurrence, true);
+  return category;
 };
 
 export const generateBudget = (): Budget => {

@@ -22,7 +22,8 @@ export const datesContains = (a: Dates, b: Dates | Date): boolean => {
 export const datesDays = (dates: Dates): number => {
   dates = fixDates(dates);
   const oneDay = 1000 * 60 * 60 * 24;
-  return Math.round((dates.end.valueOf() - dates.begin.valueOf()) / oneDay);
+  // +1 because date ranges are inclusive
+  return 1 + Math.round((dates.end.valueOf() - dates.begin.valueOf()) / oneDay);
 };
 
 /** Clamps {@link clamp} to fall within {@link dates}. */
