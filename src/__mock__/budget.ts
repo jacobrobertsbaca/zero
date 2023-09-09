@@ -62,11 +62,11 @@ const generateCategory = (budget: Budget): Category => {
     periods: []
   };
   
-  category = onRecurrence(budget, category, recurrence, true);
+  category = onRecurrence(budget, category, recurrence);
   return category;
 };
 
-export const generateBudget = (): Budget => {
+const generateBudget = (): Budget => {
   const begin = fixDate(new Date(), random(-100, 100));
   const end = fixDate(begin, random(50, 200));
   const budget: Budget = {
@@ -83,3 +83,14 @@ export const generateBudget = (): Budget => {
     }
   });
 };
+
+/**
+ * A random handful of {@link Budget} objects.
+ */
+export const budgets = (() => {
+  const numBudgets = random(3,8);
+  const budgets = [];
+  for (let i = 0; i < numBudgets; i++)
+    budgets.push(generateBudget());
+  return budgets;
+})();

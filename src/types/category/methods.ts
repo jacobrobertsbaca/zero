@@ -76,18 +76,27 @@ export const categoryNominal = (category: Category): Money => {
 /**
  * Called to set total nominal value of a category.
  */
-export const onCategoryNominal = (budget: Budget, category: Category, total: Money): Category => {
-  // Allocate total amount among all periods according to their multiplier
-  const weights = category.periods.map((p) => periodMultiplier(budget, p));
-  const amounts = moneyAllocate(total, weights);
+export const onCategoryNominal = (budget: Budget, category: Category, total: Money): Category =>
+  produce(category, (draft) => {
+    // Allocate total amount among all periods according to their multiplier
+    let weights = draft.periods.map((p) => periodMultiplier(budget, p));
 
-  return produce(category, (draft) => {
+    // Edge case: what if weights sums to zero? This can happen when one or both truncate modes
+    // are set to 'Omit'. If so, we will change one of the 'Omit's to 'Split' before continuing.
+    if (weights.reduce((t, w) => t + w, 0) === 0) {
+      const omitIndex = draft.periods.findIndex(p => p.truncate == TruncateMode.Omit);
+      draft.periods[omitIndex].truncate = TruncateMode.Split;
+      weights = draft.periods.map((p) => periodMultiplier(budget, p));
+    };
+
+    const amounts = moneyAllocate(total, weights);
     for (let i = 0; i < amounts.length; i++) draft.periods[i].nominal = amounts[i];
 
-    // Set recurring amount accordingly
-    draft.recurrence.amount = moneyFactor(amounts[0], 1 / weights[0]);
+    // Set recurring amount according to first non-zero weight
+    const index = weights.findIndex(w => w > 0);
+    draft.recurrence.amount = moneyFactor(amounts[index], 1 / weights[index]);
   });
-};
+
 
 /* ================================================================================================================= *
  * Recurrence                                                                                                        *
@@ -99,10 +108,10 @@ export const onCategoryNominal = (budget: Budget, category: Category, total: Mon
 export const onRecurrence = (
   budget: Budget, 
   category: Category, 
-  recurrence: Recurrence, 
-  refresh: boolean = false
+  recurrence: Recurrence
 ): Category => produce(category, (draft) => {
-  if (refresh || recurrence.type !== category.recurrence.type) {
+  // If there are no periods or the recurrence type has changed, reset periods
+  if (draft.periods.length === 0 || recurrence.type !== category.recurrence.type) {
     const resolver = getRangeResolver(budget, recurrence);
     draft.periods = resolveRanges(budget, resolver).map((dates) => ({
       dates: dates,
