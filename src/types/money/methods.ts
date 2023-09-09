@@ -2,7 +2,9 @@ import { produce } from "immer";
 import { resourceLimits } from "worker_threads";
 import { Money } from "./types";
 
-export const moneyZero = (currency: string = "USD"): Money => ({ amount: 0, currency: currency });
+export const defaultCurrency = "USD";
+
+export const moneyZero = (currency: string = defaultCurrency): Money => ({ amount: 0, currency: currency });
 
 export const moneySum = (...moneys: Money[]) => {
   if (moneys.length === 0) return moneyZero();
