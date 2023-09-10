@@ -2,16 +2,14 @@ import { produce } from "immer";
 import { Budget } from "../budget/types";
 import { moneyAllocate, moneyFactor, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
-import { datesClamp, datesContains, datesDays, fixDate } from "../utils/methods";
+import { datesClamp, datesContains, datesDays, asDate, asDateString } from "../utils/methods";
 import { Dates } from "../utils/types";
 import {
   Category,
-  MonthlyRecurrence,
   Period,
   Recurrence,
   RecurrenceType,
-  TruncateMode,
-  WeeklyRecurrence,
+  TruncateMode
 } from "./types";
 
 /* ================================================================================================================= *
@@ -21,13 +19,13 @@ import {
 type RangeResolver = (date: Date) => Dates;
 
 const resolveRanges = (budget: Budget, resolver: RangeResolver): Dates[] => {
-  let current = fixDate(budget.dates.begin);
-  const end = fixDate(budget.dates.end, 1);
+  let current = asDate(budget.dates.begin);
+  const end = asDate(budget.dates.end);
   const ranges: Dates[] = [];
-  while (current < end) {
+  while (current <= end) {
     const range = resolver(current);
     ranges.push(range);
-    current = fixDate(range.end, 1);
+    current = asDate(range.end, 1);
   }
   return ranges;
 };
@@ -35,12 +33,12 @@ const resolveRanges = (budget: Budget, resolver: RangeResolver): Dates[] => {
 const getRangeResolver = (budget: Budget, recurrence: Recurrence): RangeResolver => {
   switch (recurrence.type) {
     case RecurrenceType.None:
-      return (date) => budget.dates;
+      return (_) => budget.dates;
     case RecurrenceType.Weekly:
       return (date) => {
         const daysAfter = (date.getDay() - recurrence.day + 6) % 7;
         const daysBefore = (recurrence.day - date.getDay() + 7) % 7;
-        return { begin: fixDate(date, -daysAfter), end: fixDate(date, daysBefore) };
+        return { begin: asDateString(date, -daysAfter), end: asDateString(date, daysBefore) };
       };
     case RecurrenceType.Monthly:
       return (date) => {
@@ -56,8 +54,8 @@ const getRangeResolver = (budget: Budget, recurrence: Recurrence): RangeResolver
         };
 
         const thisMonth = dayForMonth(0);
-        if (date > thisMonth) return { begin: fixDate(thisMonth, 1), end: dayForMonth(1) };
-        return { begin: fixDate(dayForMonth(-1), 1), end: thisMonth };
+        if (date > thisMonth) return { begin: asDateString(thisMonth, 1), end: asDateString(dayForMonth(1)) };
+        return { begin: asDateString(dayForMonth(-1), 1), end: asDateString(thisMonth) };
       };
   }
 };

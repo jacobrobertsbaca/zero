@@ -5,7 +5,7 @@ import { Category, CategoryType, Recurrence, RecurrenceType } from "src/types/ca
 import { onCategoryNominal, onRecurrence } from "src/types/category/methods";
 import { sample, random } from "lodash";
 import { randomMoney } from "./money";
-import { fixDate } from "src/types/utils/methods";
+import { asDateString } from "src/types/utils/methods";
 
 const CATEGORY_NAMES: Record<CategoryType, string[]> = {
   [CategoryType.Income]: [
@@ -67,8 +67,8 @@ const generateCategory = (budget: Budget): Category => {
 };
 
 const generateBudget = (): Budget => {
-  const begin = fixDate(new Date(), random(-100, 100));
-  const end = fixDate(begin, random(50, 200));
+  const begin = asDateString(new Date(), random(-100, 100));
+  const end = asDateString(begin, random(50, 200));
   const budget: Budget = {
     id: faker.string.uuid(),
     name: faker.word.words(),

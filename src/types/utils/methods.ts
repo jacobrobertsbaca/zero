@@ -3,11 +3,6 @@ import { DateString, Dates } from "./types";
 import { isString } from "lodash";
 
 /* ================================================================================================================= *
- * Utilities                                                                                                         *
- * ================================================================================================================= */
-
-
-/* ================================================================================================================= *
  * DateString                                                                                                        *
  * ================================================================================================================= */
 
@@ -43,7 +38,7 @@ export const asDateString = (date: Date | DateString, dayOffset: number = 0): Da
   date = asDate(date, dayOffset);
   const years = `${date.getFullYear()}`.padStart(4, '0');
   const months = `${date.getMonth() + 1}`.padStart(2, '0');
-  const days = `${date.getDay()}`.padStart(2, '0');
+  const days = `${date.getDate()}`.padStart(2, '0');
   return `${years}${months}${days}`;
 };
 
@@ -51,38 +46,35 @@ export const asDateString = (date: Date | DateString, dayOffset: number = 0): Da
  * Date Ranges                                                                                                       *
  * ================================================================================================================= */
 
+export const asDates = (dates: Dates): [Date, Date] => [
+  asDate(dates.begin),
+  asDate(dates.end)
+];
 
-export const fixDate = (date: Date, dayOffset: number = 0): Date => {
-  const result = new Date(date);
-  result.setHours(0, 0, 0, 0);
-  result.setDate(result.getDate() + dayOffset);
-  return result;
-};
+export const datesContains = (a: Dates, b: Dates | DateString | Date): boolean => {
+  const [begin, end] = asDates(a);
+  if (isDateString(b) || b instanceof Date) {
+    const date = asDate(b);
+    return date >= begin && date <= end;
+  }
 
-export const fixDates = (dates: Dates): Dates => {
-  return { begin: fixDate(dates.begin), end: fixDate(dates.end) };
-};
-
-export const datesContains = (a: Dates, b: Dates | Date): boolean => {
-  if (b instanceof Date) return datesContains(a, { begin: b, end: b });
-  const begin = fixDate(a.begin);
-  const end = fixDate(a.end, 1);
-  return b.begin >= begin && b.begin < end && b.end >= begin && b.end < end;
+  const [dateBegin, dateEnd] = asDates(b);
+  return dateBegin >= begin && dateEnd <= dateEnd;
 };
 
 export const datesDays = (dates: Dates): number => {
-  dates = fixDates(dates);
+  const [begin, end] = asDates(dates);
   const oneDay = 1000 * 60 * 60 * 24;
   // +1 because date ranges are inclusive
-  return 1 + Math.round((dates.end.valueOf() - dates.begin.valueOf()) / oneDay);
+  return 1 + Math.round((end.valueOf() - begin.valueOf()) / oneDay);
 };
 
 /** Clamps {@link clamp} to fall within {@link dates}. */
 export const datesClamp = (clamp: Dates, dates: Dates): Dates => {
-  clamp = fixDates(clamp);
-  dates = fixDates(dates);
+  const [clampBegin, clampEnd] = asDates(clamp);
+  const [datesBegin, datesEnd] = asDates(dates);
   return produce(clamp, (draft) => {
-    if (draft.begin < dates.begin) draft.begin = dates.begin;
-    if (draft.end > dates.end) draft.end = dates.end;
+    if (clampBegin < datesBegin) draft.begin = dates.begin;
+    if (clampEnd > datesEnd) draft.end = dates.end;
   });
 };
