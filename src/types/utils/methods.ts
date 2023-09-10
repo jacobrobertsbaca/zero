@@ -11,7 +11,7 @@ export const isDateString = (date: unknown): date is DateString => isString(date
 /**
  * Converts a {@link Date} or {@link DateString} to a date.
  * @param date A {@link Date} or {@link DateString}. Will not be modified.
- * @param dayOffset Adds this many days to the result.
+ * @param dayOffset Adds this many days to the result. Defaults to 0.
  * @returns A {@link Date}. Its hours, minutes, seconds, and milliseconds are guaranteed to be zero.
  */
 export const asDate = (date: Date | DateString, dayOffset: number = 0): Date => {
@@ -31,7 +31,7 @@ export const asDate = (date: Date | DateString, dayOffset: number = 0): Date => 
 /**
  * Converts a {@link Date} or {@link DateString} to a {@link DateString}.
  * @param date A {@link Date} or {@link DateString}. Will not be modified.
- * @param dayOffset Adds this many days to the result.
+ * @param dayOffset Adds this many days to the result. Defaults to 0.
  * @returns A {@link DateString}
  */
 export const asDateString = (date: Date | DateString, dayOffset: number = 0): DateString => {
@@ -59,7 +59,7 @@ export const datesContains = (a: Dates, b: Dates | DateString | Date): boolean =
   }
 
   const [dateBegin, dateEnd] = asDates(b);
-  return dateBegin >= begin && dateEnd <= dateEnd;
+  return dateBegin >= begin && dateEnd <= end;
 };
 
 export const datesDays = (dates: Dates): number => {
