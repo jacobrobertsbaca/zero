@@ -16,8 +16,9 @@ type HTTPOptions = {
   body?: any
 };
 
-const http = async <T,>(url: string, method: string, options: HTTPOptions = {}): Promise<T> => {
+const http = async <T,>(path: string, method: string, options: HTTPOptions = {}): Promise<T> => {
   const { auth, headers = {}, body = {} } = options;
+  const url = `${process.env.NEXT_PUBLIC_API_ENDPOINT}${path}`; 
   const response = await fetch(url, {
     method: method,
     headers: produce(headers, (draft) => {
@@ -29,10 +30,10 @@ const http = async <T,>(url: string, method: string, options: HTTPOptions = {}):
   return response.json();
 };
 
-const httpGet     = <T,>(url: string, options: HTTPOptions = {}) => http<T>(url, "GET", options);
-const httpPut     = <T,>(url: string, options: HTTPOptions = {}) => http<T>(url, "PUT", options);
-const httpPost    = <T,>(url: string, options: HTTPOptions = {}) => http<T>(url, "POST", options);
-const httpDelete  = <T,>(url: string, options: HTTPOptions = {}) => http<T>(url, "DELETE", options);
+const httpGet     = <T,>(path: string, options: HTTPOptions = {}) => http<T>(path, "GET", options);
+const httpPut     = <T,>(path: string, options: HTTPOptions = {}) => http<T>(path, "PUT", options);
+const httpPost    = <T,>(path: string, options: HTTPOptions = {}) => http<T>(path, "POST", options);
+const httpDelete  = <T,>(path: string, options: HTTPOptions = {}) => http<T>(path, "DELETE", options);
 
 /* ================================================================================================================= *
  * Context Implementation                                                                                            *
