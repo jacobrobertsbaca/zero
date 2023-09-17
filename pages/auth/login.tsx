@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Head from 'next/head';
 import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -18,8 +18,10 @@ import {
 } from '@mui/material';
 import { useAuth } from 'src/hooks/use-auth';
 import { Layout as AuthLayout } from 'src/layouts/auth/layout';
+import { useSnackbar } from 'notistack';
 
 const Page = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
   const auth = useAuth();
   const formik = useFormik({
@@ -42,9 +44,9 @@ const Page = () => {
       try {
         await auth.signIn(values.email, values.password);
         router.push('/');
-      } catch (err) {
+      } catch (err: any) {
+        enqueueSnackbar(err.message, { variant: "error" });
         helpers.setStatus({ success: false });
-        helpers.setErrors({ submit: err.message });
         helpers.setSubmitting(false);
       }
     }
@@ -110,7 +112,7 @@ const Page = () => {
   );
 };
 
-Page.getLayout = (page) => (
+Page.getLayout = (page: React.ReactNode) => (
   <AuthLayout name="Login">
     {page}
   </AuthLayout>

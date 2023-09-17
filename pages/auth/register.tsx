@@ -6,38 +6,44 @@ import * as Yup from 'yup';
 import { Box, Button, Link, Stack, TextField, Typography } from '@mui/material';
 import { useAuth } from 'src/hooks/use-auth';
 import { Layout as AuthLayout } from 'src/layouts/auth/layout';
+import { useSnackbar } from 'notistack';
+import { useEffect } from 'react';
 
 const Page = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
   const auth = useAuth();
   const formik = useFormik({
     initialValues: {
       email: '',
-      name: '',
-      password: ''
+      password: '',
+      passwordConfirmed: ''
     },
     validationSchema: Yup.object({
       email: Yup
         .string()
+        .label("Email")
         .email('Must be a valid email')
         .max(255)
         .required('Email is required'),
-      name: Yup
-        .string()
-        .max(255)
-        .required('Name is required'),
       password: Yup
         .string()
+        .label("Password")
+        .min(8)
         .max(255)
-        .required('Password is required')
+        .required('Password is required'),
+      passwordConfirmed: Yup
+        .string()
+        .oneOf([ Yup.ref("password") ], "Passwords must match!")
     }),
     onSubmit: async (values, helpers) => {
       try {
-        await auth.signUp(values.email, values.name, values.password);
-        router.push('/');
-      } catch (err) {
+        await auth.signUp(values.email, values.password);
+        enqueueSnackbar("Check your inbox for a confirmation email!", { variant: "success" });
+        router.push('/auth/login');
+      } catch (err: any) {
+        enqueueSnackbar(err.message, { variant: "error" });
         helpers.setStatus({ success: false });
-        helpers.setErrors({ submit: err.message });
         helpers.setSubmitting(false);
       }
     }
@@ -50,16 +56,6 @@ const Page = () => {
         onSubmit={formik.handleSubmit}
       >
         <Stack spacing={3}>
-          <TextField
-            error={!!(formik.touched.name && formik.errors.name)}
-            fullWidth
-            helperText={formik.touched.name && formik.errors.name}
-            label="Name"
-            name="name"
-            onBlur={formik.handleBlur}
-            onChange={formik.handleChange}
-            value={formik.values.name}
-          />
           <TextField
             error={!!(formik.touched.email && formik.errors.email)}
             fullWidth
@@ -81,6 +77,17 @@ const Page = () => {
             onChange={formik.handleChange}
             type="password"
             value={formik.values.password}
+          />
+          <TextField
+            error={!!(formik.touched.passwordConfirmed && formik.errors.passwordConfirmed)}
+            fullWidth
+            helperText={formik.touched.passwordConfirmed && formik.errors.passwordConfirmed}
+            label="Confirm Password"
+            name="passwordConfirmed"
+            onBlur={formik.handleBlur}
+            onChange={formik.handleChange}
+            type="password"
+            value={formik.values.passwordConfirmed}
           />
         </Stack>
         <Button
@@ -113,7 +120,7 @@ const Page = () => {
   );
 };
 
-Page.getLayout = (page) => (
+Page.getLayout = (page: React.ReactNode) => (
   <AuthLayout name="Register">
     {page}
   </AuthLayout>

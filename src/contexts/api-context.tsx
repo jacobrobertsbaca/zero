@@ -1,10 +1,10 @@
-import { produce } from "immer";
+import { Immutable, produce } from "immer";
 import { createContext } from "react";
 import { Budget } from "src/types/budget/types";
 
-type ApiContextType = {
+type ApiContextType = Immutable<{
   getBudgets(): Promise<readonly Budget[]>;
-};
+}>;
 
 /* ================================================================================================================= *
  * HTTP Helpers                                                                                                      *

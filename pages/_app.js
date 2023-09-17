@@ -10,6 +10,7 @@ import { createTheme } from 'src/theme';
 import { createEmotionCache } from 'src/utils/create-emotion-cache';
 import { ApiProvider } from "src/contexts/api-context";
 import 'simplebar-react/dist/simplebar.min.css';
+import { SnackbarProvider } from 'notistack';
 
 const clientSideEmotionCache = createEmotionCache();
 
@@ -28,7 +29,7 @@ const App = (props) => {
     <CacheProvider value={emotionCache}>
       <Head>
         <title>
-          Devias Kit
+          zero
         </title>
         <meta
           name="viewport"
@@ -40,13 +41,15 @@ const App = (props) => {
           <ApiProvider>
             <ThemeProvider theme={theme}>
               <CssBaseline />
-              <AuthConsumer>
-                {
-                  (auth) => auth.isLoading
-                    ? <SplashScreen />
-                    : getLayout(<Component {...pageProps} />)
-                }
-              </AuthConsumer>
+              <SnackbarProvider>
+                <AuthConsumer>
+                  {
+                    (auth) => auth.isLoading
+                      ? <SplashScreen />
+                      : getLayout(<Component {...pageProps} />)
+                  }
+                </AuthConsumer>
+              </SnackbarProvider>
             </ThemeProvider>
           </ApiProvider>
         </AuthProvider>
