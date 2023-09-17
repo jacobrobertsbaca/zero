@@ -1,0 +1,28 @@
+import { Button, Card, CardContent, CardHeader } from "@mui/material";
+import { useRouter } from "next/router";
+import { useSnackbar } from "notistack";
+import { useAuth } from "src/hooks/use-auth";
+
+export const SettingsSignOut = () => {
+  const { signOut } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+  const router = useRouter();
+
+  const onClick = async (): Promise<void> => {
+    try {
+      await signOut();
+      router.push("/");
+    } catch (err: any) {
+      enqueueSnackbar(err.message, { variant: "error" });
+    }
+  };
+
+  return <Card sx={{ pb: 2 }}>
+    <CardHeader 
+      title="Sign Out"
+      action={
+        <Button variant="contained" onClick={onClick}>Sign Out</Button>
+      }
+    />
+  </Card>
+};

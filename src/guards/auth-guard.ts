@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import PropTypes from 'prop-types';
-import { useAuthContext } from 'src/contexts/auth-context';
+import { useAuth } from 'src/hooks/use-auth';
 
-export const AuthGuard = (props) => {
-  const { children } = props;
+type PropTypes = {
+  children: React.ReactNode;
+}
+
+export const AuthGuard = ({ children }: PropTypes) => {
   const router = useRouter();
-  const { isAuthenticated } = useAuthContext();
+  const { user } = useAuth();
   const ignore = useRef(false);
   const [checked, setChecked] = useState(false);
 
@@ -27,7 +30,7 @@ export const AuthGuard = (props) => {
 
       ignore.current = true;
 
-      if (!isAuthenticated) {
+      if (!user) {
         console.log('Not authenticated, redirecting');
         router
           .replace({
@@ -50,8 +53,4 @@ export const AuthGuard = (props) => {
   // authenticated / authorized.
 
   return children;
-};
-
-AuthGuard.propTypes = {
-  children: PropTypes.node
 };

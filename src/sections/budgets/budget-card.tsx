@@ -1,4 +1,4 @@
-import { Budget } from 'src/types/budget';
+import { Budget } from 'src/types/budget/types';
 import { Grid } from '@mui/material';
 
 type Props = {
