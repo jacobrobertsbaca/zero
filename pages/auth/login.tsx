@@ -43,7 +43,7 @@ const Page = () => {
     onSubmit: async (values, helpers) => {
       try {
         await auth.signIn(values.email, values.password);
-        router.push('/');
+        router.push('/budgets');
       } catch (err: any) {
         enqueueSnackbar(err.message, { variant: "error" });
         helpers.setStatus({ success: false });

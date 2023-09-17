@@ -1,3 +1,4 @@
+import { Session } from "@supabase/supabase-js";
 import { Immutable, produce } from "immer";
 import { useSnackbar } from "notistack";
 import { createContext, useState } from "react";
@@ -26,7 +27,7 @@ type AuthState = Immutable<{
 type AuthContextType = AuthState & Immutable<{
   signIn(email: string, password: string): Promise<void>;
   signUp(email: string, password: string): Promise<void>;
-  signOut(): void;
+  signOut(): Promise<void>;
 }>;
 
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -41,20 +42,52 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     loading: true
   });
 
+  const fromSession = (session: Session): void => {
+    setState(produce(state, draft => {
+      draft.loading = false;
+      draft.user = {
+        name: session.user.email!
+      };
+    }));
+  };
+
   const onInitialize = async (mounted: () => boolean): Promise<void> => {
     if (initialized || !mounted()) return;
     setInitialized(true);
+
+    /* Subscribe to auth events */
+    supabase.auth.onAuthStateChange((evt, session) => {
+      if (evt === "SIGNED_IN") fromSession(session!);
+      else if (evt === "SIGNED_OUT") setState(produce(state, draft => {
+        draft.user = undefined;
+      }));
+    });
+
+    /* Check if user is already logged in */
+    const { data: { session }} = await supabase.auth.getSession();
+    if (session) fromSession(session);
+    else setState(produce(state, draft => {
+      draft.loading = false;
+    }));
   };
 
-  const signIn = async (): Promise<void> => {
-
+  const signIn = async (email: string, password: string): Promise<void> => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
+    fromSession(data.session);
   };
 
-  const signUp = async (): Promise<void> => {
+  const signUp = async (email: string, password: string): Promise<void> => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) throw new Error(error.message);
   };
 
-  const signOut = (): void => {
-
+  const signOut = async (): Promise<void> => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw new Error(error.message);
+    setState(produce(state, draft => {
+      draft.user = undefined;
+    }));
   };
 
   useAsyncEffect(onInitialize, []);

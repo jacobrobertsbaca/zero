@@ -39,6 +39,9 @@ export const SettingsPassword = () => {
         <CardHeader
           subheader="Update password"
           title="Password"
+          action={
+            <Button variant="contained">Update</Button>
+          }
         />
         <Divider />
         <CardContent>
@@ -64,12 +67,6 @@ export const SettingsPassword = () => {
             />
           </Stack>
         </CardContent>
-        <Divider />
-        <CardActions sx={{ justifyContent: 'flex-end' }}>
-          <Button variant="contained">
-            Update
-          </Button>
-        </CardActions>
       </Card>
     </form>
   );
