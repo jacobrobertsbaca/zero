@@ -19,12 +19,13 @@ import {
 import { useAuth } from 'src/hooks/use-auth';
 import { Layout as AuthLayout } from 'src/layouts/auth/layout';
 import { useSnackbar } from 'notistack';
+import { useForm } from 'src/hooks/use-form';
 
 const Page = () => {
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
   const auth = useAuth();
-  const formik = useFormik({
+  const Form = useForm({
     initialValues: {
       email: '',
       password: ''
@@ -41,23 +42,14 @@ const Page = () => {
         .required('Password is required')
     }),
     onSubmit: async (values, helpers) => {
-      try {
-        await auth.signIn(values.email, values.password);
-        router.push('/budgets');
-      } catch (err: any) {
-        enqueueSnackbar(err.message, { variant: "error" });
-        helpers.setStatus({ success: false });
-        helpers.setSubmitting(false);
-      }
+      await auth.signIn(values.email, values.password);
+      router.push('/budgets');
     }
   });
 
-  return (
-    <>
-      <form
-        noValidate
-        onSubmit={formik.handleSubmit}
-      >
+  return <Form>
+    {formik =>
+      <>
         <Stack spacing={3}>
           <TextField
             error={!!(formik.touched.email && formik.errors.email)}
@@ -68,8 +60,7 @@ const Page = () => {
             onBlur={formik.handleBlur}
             onChange={formik.handleChange}
             type="email"
-            value={formik.values.email}
-          />
+            value={formik.values.email} />
           <TextField
             error={!!(formik.touched.password && formik.errors.password)}
             fullWidth
@@ -79,8 +70,7 @@ const Page = () => {
             onBlur={formik.handleBlur}
             onChange={formik.handleChange}
             type="password"
-            value={formik.values.password}
-          />
+            value={formik.values.password} />
         </Stack>
         <Button
           fullWidth
@@ -89,27 +79,27 @@ const Page = () => {
           type="submit"
           variant="contained"
         >
-          Continue
+            Continue
         </Button>
-      </form>
-      <Typography
-        color="text.secondary"
-        variant="body2"
-        sx={{ mt: 3 }}
-      >
-        Don&apos;t have an account?
-        &nbsp;
-        <Link
-          component={NextLink}
-          href="/auth/register"
-          underline="hover"
-          variant="subtitle2"
+        <Typography
+            color="text.secondary"
+            variant="body2"
+            sx={{ mt: 3 }}
         >
-          Register
-        </Link>
-      </Typography>
-    </>
-  );
+          Don&apos;t have an account?
+          &nbsp;
+          <Link
+            component={NextLink}
+            href="/auth/register"
+            underline="hover"
+            variant="subtitle2"
+          >
+            Register
+          </Link>
+        </Typography>
+      </>
+    }
+  </Form>
 };
 
 Page.getLayout = (page: React.ReactNode) => (

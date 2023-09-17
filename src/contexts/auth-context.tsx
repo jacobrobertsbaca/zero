@@ -5,12 +5,6 @@ import { createContext, useState } from "react";
 import { supabase } from "src/utils/supabase";
 import useAsyncEffect from "use-async-effect";
 
-enum AuthHandlers {
-  Initialize,
-  SignIn,
-  SignOut
-};
-
 type AuthUser = Immutable<{
   name: string
 }>;
@@ -28,6 +22,7 @@ type AuthContextType = AuthState & Immutable<{
   signIn(email: string, password: string): Promise<void>;
   signUp(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
+  updatePassword(newPassword: string): Promise<void>;
 }>;
 
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -90,6 +85,12 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     }));
   };
 
+  const updatePassword = async (newPassword: string): Promise<void> => {
+    if (!state.user) throw new Error("You must be logged in to do this.");
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw new Error(error.message);
+  };
+
   useAsyncEffect(onInitialize, []);
 
   return <AuthContext.Provider
@@ -97,7 +98,8 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
       ...state,
       signIn,
       signUp,
-      signOut
+      signOut,
+      updatePassword
     }}>
       {children}
   </AuthContext.Provider>

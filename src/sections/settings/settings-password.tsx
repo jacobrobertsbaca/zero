@@ -17,7 +17,7 @@ export const SettingsPassword = () => {
   });
 
   const handleChange = useCallback(
-    (event) => {
+    (event: any) => {
       setValues((prevState) => ({
         ...prevState,
         [event.target.name]: event.target.value
@@ -26,21 +26,14 @@ export const SettingsPassword = () => {
     []
   );
 
-  const handleSubmit = useCallback(
-    (event) => {
-      event.preventDefault();
-    },
-    []
-  );
-
   return (
-    <form onSubmit={handleSubmit}>
+    <form>
       <Card>
         <CardHeader
           subheader="Update password"
           title="Password"
           action={
-            <Button variant="contained">Update</Button>
+            <Button variant="contained" disabled>Update</Button>
           }
         />
         <Divider />
