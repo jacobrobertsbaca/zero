@@ -2,7 +2,7 @@ import Head from 'next/head';
 import { CacheProvider } from '@emotion/react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { CssBaseline } from '@mui/material';
+import { CircularProgress, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { AuthConsumer, AuthProvider } from 'src/contexts/auth-context';
 import { useNProgress } from 'src/hooks/use-nprogress';
@@ -11,10 +11,22 @@ import { createEmotionCache } from 'src/utils/create-emotion-cache';
 import { ApiProvider } from "src/contexts/api-context";
 import 'simplebar-react/dist/simplebar.min.css';
 import { SnackbarProvider } from 'notistack';
+import { Grid } from "@mui/material";
 
 const clientSideEmotionCache = createEmotionCache();
 
-const SplashScreen = () => null;
+const SplashScreen = () => <Grid
+  container
+  spacing={0}
+  direction="column"
+  alignItems="center"
+  justifyContent="center"
+  sx={{ minHeight: '100vh' }}
+>
+  <Grid item xs={3}>
+    <CircularProgress color="primary" size={30} />
+  </Grid>
+</Grid>;
 
 const App = (props) => {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props;
@@ -44,7 +56,7 @@ const App = (props) => {
               <SnackbarProvider>
                 <AuthConsumer>
                   {
-                    (auth) => auth.isLoading
+                    (auth) => auth.loading
                       ? <SplashScreen />
                       : getLayout(<Component {...pageProps} />)
                   }
