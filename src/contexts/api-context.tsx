@@ -10,11 +10,11 @@ type ApiContextType = Immutable<{
  * HTTP Helpers                                                                                                      *
  * ================================================================================================================= */
 
-type HTTPOptions = {
+type HTTPOptions = Immutable<{
   auth?: string;
   headers?: Record<string, string>;
   body?: any
-};
+}>;
 
 const http = async <T,>(path: string, method: string, options: HTTPOptions = {}): Promise<T> => {
   const { auth, headers = {}, body = {} } = options;
@@ -22,8 +22,8 @@ const http = async <T,>(path: string, method: string, options: HTTPOptions = {})
   const response = await fetch(url, {
     method: method,
     headers: produce(headers, (draft) => {
-      headers["Content-Type"] = "application/json";
-      if (auth) headers["Authorization"] = `token ${auth}`;
+      draft["Content-Type"] = "application/json";
+      if (auth) draft["Authorization"] = auth;
     }),
     body: JSON.stringify(body)
   });

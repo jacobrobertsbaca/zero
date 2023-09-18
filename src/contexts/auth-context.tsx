@@ -6,7 +6,8 @@ import { supabase } from "src/utils/supabase";
 import useAsyncEffect from "use-async-effect";
 
 type AuthUser = Immutable<{
-  name: string
+  name: string;
+  token: string;
 }>;
 
 type AuthState = Immutable<{
@@ -41,7 +42,8 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     setState(produce(state, draft => {
       draft.loading = false;
       draft.user = {
-        name: session.user.email!
+        name: session.user.email!,
+        token: session.access_token
       };
     }));
   };
