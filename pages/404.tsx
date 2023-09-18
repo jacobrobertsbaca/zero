@@ -32,14 +32,14 @@ const Page = () => (
             sx={{ mb: 3 }}
             variant="h3"
           >
-            404: The page you are looking for isn’t here
+            404: The page you are looking for isn&apos;t here
           </Typography>
           <Typography
             align="center"
             color="text.secondary"
             variant="body1"
           >
-            The page you're looking for doesn't exist or you came here by mistake.
+            The page you&apos;re looking for doesn&apos;t exist or you came here by mistake.
             Whichever it is, try using the navigation
           </Typography>
           <Button
