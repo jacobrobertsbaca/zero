@@ -1,5 +1,6 @@
 import { Immutable, produce } from "immer";
 import { createContext } from "react";
+import { useAuth } from "src/hooks/use-auth";
 import { Budget } from "src/types/budget/types";
 
 type ApiContextType = Immutable<{
@@ -11,21 +12,21 @@ type ApiContextType = Immutable<{
  * ================================================================================================================= */
 
 type HTTPOptions = Immutable<{
-  auth?: string;
+  token?: string;
   headers?: Record<string, string>;
   body?: any
 }>;
 
 const http = async <T,>(path: string, method: string, options: HTTPOptions = {}): Promise<T> => {
-  const { auth, headers = {}, body = {} } = options;
-  const url = `${process.env.NEXT_PUBLIC_API_ENDPOINT}${path}`; 
+  const { token, headers = {}, body = {} } = options;
+  const url = `/api${path}`;
   const response = await fetch(url, {
     method: method,
     headers: produce(headers, (draft) => {
       draft["Content-Type"] = "application/json";
-      if (auth) draft["Authorization"] = auth;
+      if (token) draft["Authorization"] = token;
     }),
-    body: JSON.stringify(body)
+    //body: JSON.stringify(body)
   });
   return response.json();
 };
@@ -46,9 +47,12 @@ type ApiProviderProps = {
 }
 
 export const ApiProvider = ({ children }: ApiProviderProps) => {
+  const { user } = useAuth();
+  const token = user?.token;
+
   const api: ApiContextType = {
     async getBudgets() {
-      return [];
+      return await httpGet("/budgets", { token });
     }
   };
 

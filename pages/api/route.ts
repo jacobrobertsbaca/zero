@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { RequestHandler } from "next-connect/dist/types/node";
-import { supabaseServer } from "src/utils/supabase";
+import { supabase } from "./supabase";
 import * as Yup from "yup";
 
 type User = {
@@ -20,13 +20,13 @@ type RouteOptions<T> = { schema: Yup.Schema<T> } & ({
   protect: false;
   handler: RequestHandler<Request<T>, NextApiResponse>;
 } | {
-  protect: true | undefined;
+  protect?: true;
   handler: RequestHandler<AuthorizedRequest<T>, NextApiResponse>;
 });
 
 const getUser = async (token?: string): Promise<User | null> => {
   if (!token) return null;
-  const { data, error } = await supabaseServer.auth.getUser(token);
+  const { data, error } = await supabase.auth.getUser(token);
   if (error) {
     console.log(error);
     return null;
@@ -43,7 +43,9 @@ const validateRequest = async <T>(
   res: NextApiResponse
 ): Promise<Request<T> | null> => {
   try {
-    const body = await options.schema.validate(req.body);
+    const body = await options.schema.validate(req.body, {
+      stripUnknown: true
+    });
     req.body = body;
     return req;
   } catch (err: any) {
