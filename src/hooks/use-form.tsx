@@ -8,12 +8,13 @@ type PropTypes<T> = {
 
 export const useForm = <T extends FormikValues>(config: FormikConfig<T>) => {
   const { enqueueSnackbar } = useSnackbar();
+  const { onSubmit } = config;
 
   /* Modify onSubmit to show snackbar errors */
   config = produce(config, draft => {
     draft.onSubmit = async (values, helpers) => {
       try {
-        await draft.onSubmit(values, helpers);
+        await onSubmit(values, helpers);
       } catch (err: any) {
         enqueueSnackbar(err.message, { variant: "error" });
         helpers.setStatus({ success: false });

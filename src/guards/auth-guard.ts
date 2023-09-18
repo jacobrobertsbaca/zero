@@ -42,7 +42,7 @@ export const AuthGuard = ({ children }: PropTypes) => {
         setChecked(true);
       }
     },
-    [router.isReady]
+    [router, user]
   );
 
   if (!checked) {

@@ -8,12 +8,14 @@ import { useAuth } from 'src/hooks/use-auth';
 import { Layout as AuthLayout } from 'src/layouts/auth/layout';
 import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
+import { useForm } from 'src/hooks/use-form';
+import { SubmitButton } from 'src/components/form/submit-button';
 
 const Page = () => {
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
   const auth = useAuth();
-  const formik = useFormik({
+  const Form = useForm({
     initialValues: {
       email: '',
       password: '',
@@ -34,72 +36,23 @@ const Page = () => {
         .required('Password is required'),
       passwordConfirmed: Yup
         .string()
-        .oneOf([ Yup.ref("password") ], "Passwords must match!")
+        .oneOf([Yup.ref("password")], "Passwords must match!")
     }),
-    onSubmit: async (values, helpers) => {
-      try {
-        await auth.signUp(values.email, values.password);
-        enqueueSnackbar("Check your inbox for a confirmation email!", { variant: "success" });
-        router.push('/auth/login');
-      } catch (err: any) {
-        enqueueSnackbar(err.message, { variant: "error" });
-        helpers.setStatus({ success: false });
-        helpers.setSubmitting(false);
-      }
+    onSubmit: async (values) => {
+      await auth.signUp(values.email, values.password);
+      enqueueSnackbar("Check your inbox for a confirmation email!", { variant: "success" });
+      router.push('/auth/login');
     }
   });
 
   return (
-    <>
-      <form
-        noValidate
-        onSubmit={formik.handleSubmit}
-      >
-        <Stack spacing={3}>
-          <TextField
-            error={!!(formik.touched.email && formik.errors.email)}
-            fullWidth
-            helperText={formik.touched.email && formik.errors.email}
-            label="Email Address"
-            name="email"
-            onBlur={formik.handleBlur}
-            onChange={formik.handleChange}
-            type="email"
-            value={formik.values.email}
-          />
-          <TextField
-            error={!!(formik.touched.password && formik.errors.password)}
-            fullWidth
-            helperText={formik.touched.password && formik.errors.password}
-            label="Password"
-            name="password"
-            onBlur={formik.handleBlur}
-            onChange={formik.handleChange}
-            type="password"
-            value={formik.values.password}
-          />
-          <TextField
-            error={!!(formik.touched.passwordConfirmed && formik.errors.passwordConfirmed)}
-            fullWidth
-            helperText={formik.touched.passwordConfirmed && formik.errors.passwordConfirmed}
-            label="Confirm Password"
-            name="passwordConfirmed"
-            onBlur={formik.handleBlur}
-            onChange={formik.handleChange}
-            type="password"
-            value={formik.values.passwordConfirmed}
-          />
-        </Stack>
-        <Button
-          fullWidth
-          size="large"
-          sx={{ mt: 3 }}
-          type="submit"
-          variant="contained"
-        >
-          Continue
-        </Button>
-      </form>
+    <Form>
+      <Stack spacing={3}>
+        <TextField label="Email Address" name="email" type="email" fullWidth />
+        <TextField label="Password" name="password" type="password" fullWidth />
+        <TextField label="Confirm Password" name="passwordConfirmed" type="password" fullWidth />
+      </Stack>
+      <SubmitButton fullWidth size="large" sx={{ mt: 3}}>Continue</SubmitButton>
       <Typography
         color="text.secondary"
         variant="body2"
@@ -116,7 +69,7 @@ const Page = () => {
           Log in
         </Link>
       </Typography>
-    </>
+    </Form>
   );
 };
 

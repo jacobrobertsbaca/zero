@@ -16,7 +16,7 @@ export const SettingsSignOut = () => {
     } catch (err: any) {
       enqueueSnackbar(err.message, { variant: "error" });
     }
-  }, []);
+  }, [enqueueSnackbar, router, signOut]);
 
   return <Card sx={{ pb: 2 }}>
     <CardHeader 
