@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { RequestHandler } from "next-connect/dist/types/node";
+import { createRouter } from "next-connect";
 import { supabase } from "./supabase";
 import * as Yup from "yup";
 
@@ -53,6 +54,8 @@ const validateRequest = async <T>(
     return null;
   }
 };
+
+export const routes = () => createRouter<NextApiRequest, NextApiResponse>();
 
 export const route = <T>(options: RouteOptions<T>): RequestHandler<NextApiRequest, NextApiResponse> => {
   return async (req, res) => {

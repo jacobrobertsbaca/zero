@@ -1,14 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { createRouter } from "next-connect";
-import { getBudgets } from "./routes/budget";
+import budgetRoutes from "./routes/budget";
+import { routes } from "./route";
 
-const router = createRouter<NextApiRequest, NextApiResponse>();
-const apiRouter = createRouter<NextApiRequest, NextApiResponse>();
+const api = routes();
 
-/* Budgets */
-apiRouter.get("/budgets", getBudgets);
+api.use("/budgets", budgetRoutes);
 
-router.use("/api", apiRouter);
+const router = routes();
+router.use("/api", api);
 export default router.handler({
   onError: (err: any, req, res) => {
     console.error(err.stack);
