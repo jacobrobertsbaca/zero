@@ -23,7 +23,7 @@ type HTTPGetOptions = Immutable<Omit<HTTPOptions, "data"> & {
 }>;
 
 const http = async <T,>(path: string, method: string, options: HTTPOptions = {}): Promise<T> => {
-  const { token, headers = {}, data = {} } = options;
+  const { token, headers = {}, data } = options;
   const url = `/api${path}`;
   const response = await fetch(url, {
     method: method,
