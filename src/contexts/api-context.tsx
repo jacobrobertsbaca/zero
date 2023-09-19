@@ -51,8 +51,8 @@ const httpGet     = <T,>(path: string, options: HTTPGetOptions = {}) => {
     path += path.includes("?") ? "&" : "?";
     path += params.toString();
   }
-  
-  const getOptions = produce(options, draft => { draft.data = undefined; });
+
+  options = produce(options, draft => { draft.data = undefined; });
   return http<T>(path, "GET", options);
 }
 
