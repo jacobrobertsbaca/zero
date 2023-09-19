@@ -15,11 +15,15 @@ type ApiContextType = Immutable<{
 type HTTPOptions = Immutable<{
   token?: string;
   headers?: Record<string, string>;
-  body?: any
+  data?: any
+}>;
+
+type HTTPGetOptions = Immutable<Omit<HTTPOptions, "data"> & {
+  data?: Record<string, boolean | number | string>
 }>;
 
 const http = async <T,>(path: string, method: string, options: HTTPOptions = {}): Promise<T> => {
-  const { token, headers = {}, body = {} } = options;
+  const { token, headers = {}, data = {} } = options;
   const url = `/api${path}`;
   const response = await fetch(url, {
     method: method,
@@ -27,17 +31,30 @@ const http = async <T,>(path: string, method: string, options: HTTPOptions = {})
       draft["Content-Type"] = "application/json";
       if (token) draft["Authorization"] = token;
     }),
-    //body: JSON.stringify(body)
+    body: data !== undefined ? JSON.stringify(data) : undefined
   });
   
   if (response.status != 200) throw new Error(await response.text());
   return await response.json();
 };
 
-const httpGet     = <T,>(path: string, options: HTTPOptions = {}) => http<T>(path, "GET", options);
 const httpPut     = <T,>(path: string, options: HTTPOptions = {}) => http<T>(path, "PUT", options);
 const httpPost    = <T,>(path: string, options: HTTPOptions = {}) => http<T>(path, "POST", options);
 const httpDelete  = <T,>(path: string, options: HTTPOptions = {}) => http<T>(path, "DELETE", options);
+const httpGet     = <T,>(path: string, options: HTTPGetOptions = {}) => {
+  /* GET requests do not allow passing a body, so we must move all data for the request
+   * into the query params instead. */
+  if (options.data) {
+    const params = new URLSearchParams();
+    for (const [key, val] of Object.entries(options.data))
+      params.append(key, val.toString());
+    path += path.includes("?") ? "&" : "?";
+    path += params.toString();
+  }
+  
+  const getOptions = produce(options, draft => { draft.data = undefined; });
+  return http<T>(path, "GET", options);
+}
 
 /* ================================================================================================================= *
  * Context Implementation                                                                                            *
