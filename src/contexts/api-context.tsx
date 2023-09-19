@@ -1,5 +1,6 @@
 import { Immutable, produce } from "immer";
-import { createContext } from "react";
+import { useSnackbar } from "notistack";
+import { Dispatch, createContext } from "react";
 import { useAuth } from "src/hooks/use-auth";
 import { Budget } from "src/types/budget/types";
 
@@ -28,7 +29,9 @@ const http = async <T,>(path: string, method: string, options: HTTPOptions = {})
     }),
     //body: JSON.stringify(body)
   });
-  return response.json();
+  
+  if (response.status != 200) throw new Error(await response.text());
+  return await response.json();
 };
 
 const httpGet     = <T,>(path: string, options: HTTPOptions = {}) => http<T>(path, "GET", options);
@@ -48,6 +51,7 @@ type ApiProviderProps = {
 
 export const ApiProvider = ({ children }: ApiProviderProps) => {
   const { user } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
   const token = user?.token;
 
   const api: ApiContextType = {
