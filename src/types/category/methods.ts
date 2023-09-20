@@ -72,6 +72,13 @@ export const categoryNominal = (category: Category): Money => {
 };
 
 /**
+ * Computes and returns the total actual amount of a category.
+ */
+export const categoryActual = (category: Category): Money => {
+  return moneySum(...category.periods.map((p) => p.actual));
+};
+
+/**
  * Called to set total nominal value of a category.
  */
 export const onCategoryNominal = (budget: Budget, category: Category, total: Money): Category =>
@@ -111,7 +118,8 @@ export const onRecurrence = (
     const resolver = getRangeResolver(budget, recurrence);
     draft.periods = resolveRanges(budget, resolver).map((dates) => ({
       dates: dates,
-      nominal: moneyZero()
+      nominal: moneyZero(),
+      actual: moneyZero()
     }));
 
     // Preserve period truncation on first and last periods

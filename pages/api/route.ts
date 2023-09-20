@@ -6,7 +6,14 @@ import { createRouter } from "next-connect";
 import { RequestHandler } from "next-connect/dist/types/node";
 
 type User = {
+  /**
+   * A unique identifier for this user
+   */
   id: string;
+
+  /**
+   * The JWT used to authenticate this user.
+   */
   token: string;
 };
 
@@ -16,11 +23,25 @@ type Request<TBody, TQuery> = Omit<NextApiRequest, "body" | "query"> & {
 };
 
 type AuthorizedRequest<TBody, TQuery> = Request<TBody, TQuery> & {
+  /**
+   * The user making this request.
+   */
   user: User
 };
 
 type RouteOptions<TBody, TQuery> = {
+  /**
+   * If defined, specifies the schema which the request body must conform to.
+   * If the body does not conform, then a 400 is returned.
+   * If undefined, the body is not validated.
+   */
   bodySchema?: Yup.Schema<TBody>;
+
+  /**
+   * If defined, specifies the schema which the query parameters must conform to.
+   * If the query parameters do not conform, then a 400 is returned.
+   * If undefined, the query parameters are not validated.
+   */
   querySchema?: Yup.Schema<TQuery>;
 } & ({
   protect: false;

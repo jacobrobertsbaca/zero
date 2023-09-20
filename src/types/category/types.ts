@@ -41,6 +41,7 @@ export type Period = Immutable<{
    * */
   dates: Dates;
   nominal: Money;
+  actual: Money;
   truncate?: TruncateMode;
 }>;
 

@@ -50,3 +50,10 @@ export const moneyAllocate = (money: Money, weights: number[]): Money[] => {
   }
   return amounts.map(amount => ({amount, currency: money.currency}));
 }
+
+export const moneyFormat = (money: Money): string => {
+  // Note: Currently this only works for USD
+  const major = Math.floor(money.amount / 100);
+  const minor = (money.amount % 100).toString().padStart(2, "0");
+  return `$${major}.${minor}`;
+};
