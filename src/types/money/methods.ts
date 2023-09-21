@@ -20,6 +20,13 @@ export const moneySum = (...moneys: Money[]) => {
   return { amount: amount, currency: currency };
 };
 
+/**
+ * Computes and returns a - b.
+ */
+export const moneySub = (a: Money, b: Money): Money => {
+  return moneySum(a, moneyFactor(b, -1));
+};
+
 /** Multiplies {@link money} by {@link factor} and returns the result.
  * Rounds to the nearest minor unit.
  */

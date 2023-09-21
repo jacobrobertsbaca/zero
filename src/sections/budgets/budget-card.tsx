@@ -1,17 +1,38 @@
-import { Card, CardContent, Unstable_Grid2 as Grid, LinearProgress, Typography } from '@mui/material';
+import { Box, Card, CardContent, Divider, Unstable_Grid2 as Grid, LinearProgress, Typography } from '@mui/material';
 
-import { Budget } from 'src/types/budget/types';
-import { budgetActual, budgetNominal } from 'src/types/budget/methods';
+import { Budget, CategorySummary } from 'src/types/budget/types';
 import { dateFormat } from 'src/types/utils/methods';
 import { moneyFormat } from 'src/types/money/methods';
+import { budgetSummary } from 'src/types/budget/methods';
 
 type Props = {
   budget: Budget
 };
 
+const SpendingBar = (props: CategorySummary) => {
+  const { actual, nominal, type } = props;
+  return (
+    <Box>
+      <LinearProgress
+      sx={{ mt: 3 }}
+      variant="determinate"
+      value={40} />
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between"
+        }}
+      >
+        <Typography variant="subtitle2">{moneyFormat(actual)}</Typography>
+        <Typography variant="subtitle2">{moneyFormat(nominal)}</Typography>
+      </Box>
+    </Box>
+  );
+};
+
 export default function BudgetCard({ budget }: Props) {
-  const actual = budgetActual(budget);
-  const nominal = budgetNominal(budget);
+  const summary = budgetSummary(budget);
+
   return (
     <Grid xs={12} sm={6} md={4}>
       <Card sx={{ position: 'relative' }}>
@@ -22,17 +43,9 @@ export default function BudgetCard({ budget }: Props) {
           <Typography variant="subtitle2" color="text.secondary">
             {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Actual: {moneyFormat(actual)}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Nominal: {moneyFormat(nominal)}
-          </Typography>
-          <LinearProgress 
-            sx={{ mt: 3 }}
-            variant="determinate" 
-            value={40} 
-          />
+          <Divider />
+          { summary.map(s => <SpendingBar key={s.type} {...s} />) }
+          
         </CardContent>
       </Card>
     </Grid>

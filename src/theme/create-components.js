@@ -296,6 +296,16 @@ export function createComponents(config) {
       defaultProps: {
         variant: 'filled'
       }
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          borderRadius: '12px'
+        },
+        bar: {
+          borderRadius: '12px'
+        }
+      }
     }
   };
 }
