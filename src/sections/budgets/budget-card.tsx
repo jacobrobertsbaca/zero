@@ -1,13 +1,13 @@
-import { 
-  Box, 
-  Card, 
-  CardContent, 
-  Divider, 
-  Unstable_Grid2 as Grid, 
-  LinearProgress, 
-  Theme, 
-  Typography, 
-  linearProgressClasses, 
+import {
+  Box,
+  Card,
+  CardContent,
+  Divider,
+  Unstable_Grid2 as Grid,
+  LinearProgress,
+  Theme,
+  Typography,
+  linearProgressClasses,
   styled
 } from '@mui/material';
 
@@ -18,16 +18,12 @@ import { budgetSummary } from 'src/types/budget/methods';
 import { CategoryType } from 'src/types/category/types';
 import { useCallback } from 'react';
 
-type Props = {
-  budget: Budget
-};
-
 const SpendingBar = (props: CategorySummary) => {
   const { actual, nominal, type } = props;
 
   const getColors = useCallback((theme: Theme) => {
-    if (type === CategoryType.Income)
-      return { fg: theme.palette.primary.main, bg: theme.palette.primary.light };
+    if (type === CategoryType.Income || type === null)
+      return { fg: theme.palette.grey.A400, bg: theme.palette.grey.A200 };
     if (type === CategoryType.Investments)
       return { fg: theme.palette.info.main, bg: theme.palette.info.light };
     if (type === CategoryType.Spending)
@@ -47,7 +43,7 @@ const SpendingBar = (props: CategorySummary) => {
     <Box>
       <StyledProgress
         variant="determinate"
-        value={40} 
+        value={40}
       />
       <Box
         sx={{
@@ -69,17 +65,19 @@ const TitledSpendingBar = (props: CategorySummary) => {
   else if (type === CategoryType.Investments) title = "Investments";
   else if (type === CategoryType.Spending) title = "Spending";
   else if (type === CategoryType.Savings) title = "Savings";
+  else if (type === null) title = "Leftover";
   return <Box sx={{ mt: 2 }}>
-    <Typography variant="subtitle2">{title}</Typography>
+    <Typography variant="subtitle2" color="text.secondary">{title}</Typography>
     <SpendingBar {...props} />
   </Box>
 };
 
-export default function BudgetCard({ budget }: Props) {
-  const summary = budgetSummary(budget);
-  const categorySummaries = summary.filter(cs => !!cs.type);
-  const leftoverSummary   = summary.find(cs => !cs.type);
+type BudgetCardProps = {
+  budget: Budget
+};
 
+export default function BudgetCard({ budget }: BudgetCardProps) {
+  const summary = budgetSummary(budget);
   return (
     <Grid xs={12} sm={6} md={4}>
       <Card sx={{ position: 'relative' }}>
@@ -91,8 +89,7 @@ export default function BudgetCard({ budget }: Props) {
             {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
           </Typography>
           <Divider sx={{ mt: 2 }} />
-          { categorySummaries.map(s => <TitledSpendingBar key={s.type} {...s} />) }
-          
+          {summary.map(s => <TitledSpendingBar key={s.type} {...s} />)}
         </CardContent>
       </Card>
     </Grid>
