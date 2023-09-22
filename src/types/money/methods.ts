@@ -60,7 +60,8 @@ export const moneyAllocate = (money: Money, weights: number[]): Money[] => {
 
 export const moneyFormat = (money: Money): string => {
   // Note: Currently this only works for USD
-  const major = Math.floor(money.amount / 100);
-  const minor = (money.amount % 100).toString().padStart(2, "0");
-  return `$${major}.${minor}`;
+  const mag   = Math.abs(money.amount);
+  const major = Math.floor(mag / 100);
+  const minor = (mag % 100).toString().padStart(2, "0");
+  return `${money.amount < 0 ? "–" : ""}$${major}.${minor}`;
 };

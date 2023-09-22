@@ -1,5 +1,5 @@
 import { produce } from "immer";
-import { categoryActual, categoryNominal } from "../category/methods";
+import { categoryActual, categoryNominal, categorySort } from "../category/methods";
 import { CategoryType } from "../category/types";
 import { moneySub, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
@@ -36,6 +36,7 @@ export const budgetSummary = (budget: Budget): BudgetSummary => {
   }
 
   const summariesList = Object.values(summaries);
+  summariesList.sort(categorySort(cs => cs.type!));
 
   /* Add leftovers to list of summaries */
   summariesList.push({

@@ -6,6 +6,7 @@ import { datesClamp, datesContains, datesDays, asDate, asDateString } from "../u
 import { Dates } from "../utils/types";
 import {
   Category,
+  CategoryType,
   Period,
   Recurrence,
   RecurrenceType,
@@ -99,6 +100,17 @@ export const onCategoryNominal = (budget: Budget, category: Category, total: Mon
     const index = weights.findIndex(w => w > 0);
     draft.recurrence.amount = moneyFactor(amounts[index], 1 / weights[index]);
   });
+
+export const categorySort = <T>(selector: (e: T) => CategoryType): ((a: T, b: T) => number) => {
+  const order: Record<CategoryType, number> = {
+    [CategoryType.Income]: 0,
+    [CategoryType.Investments]: 1,
+    [CategoryType.Spending]: 2,
+    [CategoryType.Savings]: 3
+  };
+
+  return (a, b) => order[selector(a)] - order[selector(b)];
+};
 
 
 /* ================================================================================================================= *
