@@ -10,14 +10,20 @@ export type Budget = Immutable<{
   categories: Category[];
 }>;
 
-export type CategorySummary = Immutable<{
-  /**
-   * The {@link CategoryType} this summarizes.
-   * If null, represents leftover amounts in the budget (i.e. unassigned income).
-   */
-  type: CategoryType | null;
+export type ActualNominal = Immutable<{
   actual: Money;
   nominal: Money;
 }>;
 
-export type BudgetSummary = Immutable<CategorySummary[]>;
+export type CategorySummary = ActualNominal & Immutable<{
+  /**
+   * The {@link CategoryType} this summarizes.
+   * If null, represents leftover amounts in the budget (i.e. unassigned income).
+   */
+  type: CategoryType;
+}>;
+
+export type BudgetSummary = Immutable<{
+  leftovers?: ActualNominal,
+  categories: CategorySummary[]
+}>;

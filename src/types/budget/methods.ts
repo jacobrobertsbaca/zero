@@ -36,14 +36,40 @@ export const budgetSummary = (budget: Budget): BudgetSummary => {
   }
 
   const summariesList = Object.values(summaries);
-  summariesList.sort(categorySort(cs => cs.type!));
+  summariesList.sort(categorySort(cs => cs.type));
 
   /* Add leftovers to list of summaries */
-  summariesList.push({
+  const leftovers = {
     type: null,
     nominal: computeLeftovers(summaries, c => c.nominal),
     actual: computeLeftovers(summaries, c => c.actual)
-  });
+  };
 
-  return summariesList.filter(s => s.actual.amount !== 0 || s.nominal.amount !== 0);
+  return {
+    categories: summariesList.filter(s => s.actual.amount !== 0 || s.nominal.amount !== 0),
+    leftovers: (leftovers.actual.amount !== 0 || leftovers.nominal.amount !== 0) ? leftovers : undefined
+  };
+};
+
+export const budgetSummaryMerged = (budget: Budget, mergeInto: CategoryType): BudgetSummary => {
+  const { categories, leftovers } = budgetSummary(budget);
+  return {
+    leftovers,
+    categories: produce(categories, draft => {
+      if (!leftovers) return;
+      const { actual, nominal } = leftovers;
+      const mergeIndex = draft.findIndex(cs => cs.type === mergeInto);
+      if (mergeIndex >= 0) {
+        draft[mergeIndex].actual = moneySum(draft[mergeIndex].actual, actual);
+        draft[mergeIndex].nominal = moneySum(draft[mergeIndex].nominal, nominal);
+      } else {
+        draft.push({
+          type: CategoryType.Savings,
+          actual,
+          nominal
+        });
+        draft.sort(categorySort(cs => cs.type));
+      };
+    })
+  };
 };

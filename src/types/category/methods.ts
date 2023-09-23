@@ -112,6 +112,16 @@ export const categorySort = <T>(selector: (e: T) => CategoryType): ((a: T, b: T)
   return (a, b) => order[selector(a)] - order[selector(b)];
 };
 
+export const categoryTitle = (type: CategoryType): string => {
+  const titles: Record<CategoryType, string> = {
+    [CategoryType.Income]: "Income",
+    [CategoryType.Investments]: "Investments",
+    [CategoryType.Savings]: "Savings",
+    [CategoryType.Spending]: "Spending",
+  };
+  return titles[type];
+}
+
 
 /* ================================================================================================================= *
  * Recurrence                                                                                                        *
