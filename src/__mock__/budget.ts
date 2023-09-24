@@ -63,6 +63,12 @@ const generateCategory = (budget: Budget): Category => {
   };
   
   category = onRecurrence(budget, category, recurrence);
+  category = produce(category, draft => {
+    // Fill out random actual amounts
+    for (const period of draft.periods) {
+      period.actual = randomMoney(0, period.nominal.amount);
+    }
+  });
   return category;
 };
 

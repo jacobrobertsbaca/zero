@@ -65,7 +65,7 @@ const TitledSpendingBar = (props: TitledSpendingBarProps) => (
         {props.title}
       </Typography>
       {props.tooltip && 
-        <Tooltip title={props.tooltip} placement="right">
+        <Tooltip title={props.tooltip} placement="top" arrow enterTouchDelay={0}>
           <SvgIcon fontSize="inherit" color="disabled">
             <InformationCircleIcon />
           </SvgIcon>
@@ -83,7 +83,7 @@ const LeftoverTooltip = (props: { leftovers: ActualNominal }) => {
     <Typography 
       variant="inherit" 
       display="inline" 
-      color={amount.amount >= 0 ? "success.light" : "error.main"} 
+      color={amount.amount >= 0 ? "success.light" : "warning.main"} 
       fontWeight={600}>
       &nbsp;{moneyFormat(amount)}&nbsp;
     </Typography>
