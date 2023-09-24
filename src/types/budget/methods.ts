@@ -64,7 +64,7 @@ export const budgetSummaryMerged = (budget: Budget, mergeInto: CategoryType): Bu
         draft[mergeIndex].nominal = moneySum(draft[mergeIndex].nominal, nominal);
       } else {
         draft.push({
-          type: CategoryType.Savings,
+          type: mergeInto,
           actual,
           nominal
         });

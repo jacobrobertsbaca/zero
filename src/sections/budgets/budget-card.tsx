@@ -107,7 +107,7 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
 
   return (
     <Grid xs={12} sm={6} md={4}>
-      <Card sx={{ position: 'relative' }}>
+      <Card sx={{ position: "relative", height: "100%" }}>
         <CardContent>
           <Typography gutterBottom variant="h5" component="div">
             {budget.name}
