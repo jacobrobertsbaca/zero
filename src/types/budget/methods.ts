@@ -3,7 +3,8 @@ import { categoryActual, categoryNominal, categorySort } from "../category/metho
 import { CategoryType } from "../category/types";
 import { moneySub, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
-import { Budget, BudgetSummary, CategorySummary } from "./types";
+import { Budget, BudgetStatus, BudgetSummary, CategorySummary } from "./types";
+import { asDate } from "../utils/methods";
 
 const computeLeftovers = (
   summaries: Partial<Record<CategoryType, CategorySummary>>,
@@ -72,4 +73,11 @@ export const budgetSummaryMerged = (budget: Budget, mergeInto: CategoryType): Bu
       };
     })
   };
+};
+
+export const budgetStatus = (budget: Budget): BudgetStatus => {
+  const today = asDate(new Date());
+  if (asDate(budget.dates.end) < today) return BudgetStatus.Past;
+  if (asDate(budget.dates.begin) > today) return BudgetStatus.Future;
+  return BudgetStatus.Active;
 };

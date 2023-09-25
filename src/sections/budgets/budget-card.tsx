@@ -2,6 +2,7 @@ import {
   Box,
   Card,
   CardContent,
+  Chip,
   Divider,
   Unstable_Grid2 as Grid,
   LinearProgress,
@@ -14,10 +15,10 @@ import {
   styled
 } from '@mui/material';
 
-import { ActualNominal, Budget, BudgetSummary, CategorySummary } from 'src/types/budget/types';
+import { ActualNominal, Budget, BudgetStatus, BudgetSummary, CategorySummary } from 'src/types/budget/types';
 import { dateFormat } from 'src/types/utils/methods';
 import { moneyFormat, moneySub, moneySum } from 'src/types/money/methods';
-import { budgetSummary, budgetSummaryMerged } from 'src/types/budget/methods';
+import { budgetStatus, budgetSummary, budgetSummaryMerged } from 'src/types/budget/methods';
 import { CategoryType } from 'src/types/category/types';
 import { useCallback } from 'react';
 import { produce } from 'immer';
@@ -103,14 +104,24 @@ type BudgetCardProps = {
 };
 
 export default function BudgetCard({ budget }: BudgetCardProps) {
+  const status = budgetStatus(budget);
+  const active = status === BudgetStatus.Active;
   const { categories, leftovers } = budgetSummaryMerged(budget, CategoryType.Savings);
 
   return (
-    <Grid xs={12} sm={6} md={4}>
+    <Grid xs={12} sm={active ? 12 : 6} md={active ? 12 : 4}>
       <Card sx={{ position: "relative", height: "100%" }}>
         <CardContent>
           <Typography gutterBottom variant="h5" component="div">
-            {budget.name}
+            {budget.name} 
+            &nbsp;
+            {status === BudgetStatus.Past &&
+              <Chip 
+                variant="outlined"
+                label={<Typography variant="caption">Past</Typography>}
+                size="small" 
+              />
+            }
           </Typography>
           <Typography variant="subtitle2" color="text.secondary">
             {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}

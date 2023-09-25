@@ -27,3 +27,9 @@ export type BudgetSummary = Immutable<{
   leftovers?: ActualNominal,
   categories: CategorySummary[]
 }>;
+
+export enum BudgetStatus {
+  Active = 0,
+  Future = 1,
+  Past = 2
+};

@@ -306,6 +306,13 @@ export function createComponents(config) {
           borderRadius: '12px'
         }
       }
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          // borderRadius: '5px'
+        }
+      }
     }
   };
 }
