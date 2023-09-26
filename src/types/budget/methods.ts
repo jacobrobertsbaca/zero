@@ -39,7 +39,6 @@ export const budgetSummary = (budget: Budget): BudgetSummary => {
   const summariesList = Object.values(summaries);
   summariesList.sort(categorySort(cs => cs.type));
 
-  /* Add leftovers to list of summaries */
   const leftovers = {
     type: null,
     nominal: computeLeftovers(summaries, c => c.nominal),

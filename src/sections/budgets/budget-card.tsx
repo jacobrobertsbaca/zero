@@ -31,8 +31,9 @@ const SpendingBar = (props: ActualNominal) => {
 
   const getValue = useCallback(() => {
     if (nominal.amount === 0) return actual.amount >= 0 ? 100 : 0;
-    if (nominal.amount < 0) return actual.amount >= 0 ? 0 : 100 * actual.amount / nominal.amount;
-    return actual.amount <= 0 ? 0 : 100 * actual.amount / nominal.amount;
+    if ((nominal.amount < 0 && actual.amount < 0) || (nominal.amount > 0 && actual.amount > 0))
+      return Math.min(100, 100 * actual.amount / nominal.amount);
+    return 0;
   }, [actual, nominal]);
 
   return (
@@ -99,6 +100,31 @@ const LeftoverTooltip = (props: { leftovers: ActualNominal }) => {
   );
 };
 
+const BudgetCardDetails = ({ budget }: { budget: Budget }) => {
+  const { categories, leftovers } = budgetSummaryMerged(budget, CategoryType.Savings);
+  if (categories.length === 0) return null;
+  if (budgetStatus(budget) === BudgetStatus.Active) return (
+    <>
+      <Divider sx={{ mt: 2 }} />
+
+    </>
+  );
+  return (
+    <>
+      <Divider sx={{ mt: 2 }} />
+      { categories.map(s => <TitledSpendingBar 
+        key={s.type} 
+        title={categoryTitle(s.type)} 
+        tooltip={
+          s.type === CategoryType.Savings && leftovers && 
+          <LeftoverTooltip leftovers={leftovers} />
+        }
+        {...s} />
+      )}
+    </>
+  );
+}
+
 type BudgetCardProps = {
   budget: Budget
 };
@@ -106,7 +132,6 @@ type BudgetCardProps = {
 export default function BudgetCard({ budget }: BudgetCardProps) {
   const status = budgetStatus(budget);
   const active = status === BudgetStatus.Active;
-  const { categories, leftovers } = budgetSummaryMerged(budget, CategoryType.Savings);
 
   return (
     <Grid xs={12} sm={active ? 12 : 6} md={active ? 12 : 4}>
@@ -126,16 +151,7 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
           <Typography variant="subtitle2" color="text.secondary">
             {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
           </Typography>
-          <Divider sx={{ mt: 2 }} />
-          { categories.map(s => <TitledSpendingBar 
-            key={s.type} 
-            title={categoryTitle(s.type)} 
-            tooltip={
-              s.type === CategoryType.Savings && leftovers && 
-              <LeftoverTooltip leftovers={leftovers} />
-            }
-            {...s} />
-          )}
+          <BudgetCardDetails budget={budget} /> 
         </CardContent>
       </Card>
     </Grid>
