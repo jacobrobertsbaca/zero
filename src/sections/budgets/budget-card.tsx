@@ -7,25 +7,24 @@ import {
   Unstable_Grid2 as Grid,
   LinearProgress,
   Stack,
-  SvgIcon,
-  Theme,
-  Tooltip,
   Typography,
-  linearProgressClasses,
-  styled
+  Button,
+  SvgIcon,
+  Menu,
+  MenuItem
 } from '@mui/material';
 
-import { ActualNominal, Budget, BudgetStatus, BudgetSummary, CategorySummary } from 'src/types/budget/types';
+import { ActualNominal, Budget, BudgetStatus } from 'src/types/budget/types';
 import { dateFormat } from 'src/types/utils/methods';
-import { moneyFormat, moneySub, moneySum } from 'src/types/money/methods';
-import { budgetStatus, budgetSummary, budgetSummaryMerged } from 'src/types/budget/methods';
+import { moneyFormat } from 'src/types/money/methods';
+import { budgetStatus, budgetSummaryMerged } from 'src/types/budget/methods';
 import { CategoryType } from 'src/types/category/types';
-import { useCallback, useMemo } from 'react';
-import { produce } from 'immer';
-import InformationCircleIcon from '@heroicons/react/24/outline/InformationCircleIcon';
+import { useCallback, useMemo, useState } from 'react';
 import { categoryActual, categoryNominal, categoryTitle } from 'src/types/category/methods';
 import { Money } from 'src/types/money/types';
 import { InfoTooltip } from 'src/components/info-tooltip';
+import ChevronUpIcon from '@heroicons/react/24/solid/ChevronUpIcon';
+import ChevronDownIcon from '@heroicons/react/24/solid/ChevronDownIcon';
 
 const SpendingBar = (props: ActualNominal) => {
   const { actual, nominal } = props;
@@ -143,6 +142,7 @@ const BudgetCardDetails = ({ budget }: { budget: Budget }) => {
       </Stack>
     );
   }
+
   return (
     <>
       <Divider sx={{ mt: 2, mb: 2 }} />
@@ -161,6 +161,57 @@ const BudgetCardDetails = ({ budget }: { budget: Budget }) => {
   );
 }
 
+const SORT_BY_OPTIONS = [
+  { value: 'current', label: 'Current' },
+  { value: 'summary', label: 'Summary' },
+];
+
+const BudgetSummarySelector = () => {
+  const [open, setOpen] = useState(null);
+
+  const handleOpen = (event: any) => {
+    setOpen(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setOpen(null);
+  };
+
+  return (
+    <>
+      <Button
+        color="inherit"
+        disableRipple
+        onClick={handleOpen}
+        endIcon={<SvgIcon>{open ? <ChevronUpIcon /> : <ChevronDownIcon />}</SvgIcon>}
+      >
+        <Typography component="span" variant="subtitle2" color="text.secondary">
+          Current
+        </Typography>
+      </Button>
+      <Menu
+        keepMounted
+        anchorEl={open}
+        open={Boolean(open)}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        {SORT_BY_OPTIONS.map((option) => (
+          <MenuItem
+            key={option.value}
+            selected={option.value === 'newest'}
+            onClick={handleClose}
+            sx={{ typography: 'body2' }}
+          >
+            {option.label}
+          </MenuItem>
+        ))}
+      </Menu>
+    </>
+  );
+}
+
 type BudgetCardProps = {
   budget: Budget
 };
@@ -173,17 +224,20 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
     <Grid xs={12} sm={active ? 12 : 6} md={active ? 12 : 4}>
       <Card sx={{ position: "relative", height: "100%" }}>
         <CardContent>
-          <Typography gutterBottom variant="h5" component="div">
-            {budget.name} 
-            &nbsp;
-            {status === BudgetStatus.Past &&
-              <Chip 
-                variant="outlined"
-                label={<Typography variant="caption">Past</Typography>}
-                size="small" 
-              />
-            }
-          </Typography>
+          <Stack direction="row" justifyContent="space-between">
+            <Typography gutterBottom variant="h5" component="div">
+              {budget.name} 
+              &nbsp;
+              {status === BudgetStatus.Past &&
+                <Chip 
+                  variant="outlined"
+                  label={<Typography variant="caption">Past</Typography>}
+                  size="small" 
+                />
+              }
+            </Typography>
+            <BudgetSummarySelector />
+          </Stack>
           <Typography variant="subtitle2" color="text.secondary">
             {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
           </Typography>

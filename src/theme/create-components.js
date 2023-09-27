@@ -46,7 +46,12 @@ export function createComponents(config) {
         },
         textSizeLarge: {
           padding: '12px 16px'
-        }
+        },
+        endIcon: {
+          '& > *:first-child': {
+            fontSize: 16,
+          },
+        },
       }
     },
     MuiCard: {
