@@ -1,31 +1,31 @@
-import Head from 'next/head';
-import { useCallback, useEffect, useState } from 'react';
-import { Box, Container, Stack, Typography } from '@mui/material';
-import { usePathname } from 'next/navigation';
-import { styled } from '@mui/material/styles';
-import { withAuthGuard } from 'src/components/with-auth-guard';
-import { SideNav } from './side-nav';
-import { TopNav } from './top-nav';
+import Head from "next/head";
+import { useCallback, useEffect, useState } from "react";
+import { Box, Container, Stack, Typography } from "@mui/material";
+import { usePathname } from "next/navigation";
+import { styled } from "@mui/material/styles";
+import { withAuthGuard } from "src/components/with-auth-guard";
+import { SideNav } from "./side-nav";
+import { TopNav } from "./top-nav";
 
 const SIDE_NAV_WIDTH = 280;
 
-const LayoutRoot = styled('div')(({ theme }) => ({
-  display: 'flex',
-  flex: '1 1 auto',
-  maxWidth: '100%',
-  [theme.breakpoints.up('lg')]: {
-    paddingLeft: SIDE_NAV_WIDTH
-  }
+const LayoutRoot = styled("div")(({ theme }) => ({
+  display: "flex",
+  flex: "1 1 auto",
+  maxWidth: "100%",
+  [theme.breakpoints.up("lg")]: {
+    paddingLeft: SIDE_NAV_WIDTH,
+  },
 }));
 
-const LayoutContainer = styled('div')({
-  display: 'flex',
-  flex: '1 1 auto',
-  flexDirection: 'column',
-  width: '100%'
+const LayoutContainer = styled("div")({
+  display: "flex",
+  flex: "1 1 auto",
+  flexDirection: "column",
+  width: "100%",
 });
 
-export const Layout = withAuthGuard((props) => {
+export const Layout = withAuthGuard(true, (props) => {
   const { children, name } = props;
   const pathname = usePathname();
   const [openNav, setOpenNav] = useState(false);

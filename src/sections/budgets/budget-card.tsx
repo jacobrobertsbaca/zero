@@ -130,8 +130,8 @@ const BudgetCardDetails = ({ budget }: { budget: Budget }) => {
                   <InfoTooltip title={<LeftoverTooltip leftovers={leftovers} />} />
                 }
               </Stack>
-              <Typography variant="subtitle2" fontStyle="thin">
-                <Typography variant="subtitle2" fontWeight={800} display="inline">
+              <Typography variant="subtitle1" fontStyle="thin">
+                <Typography variant="subtitle1" fontWeight={800} display="inline">
                   {moneyFormat(s.actual, true)}
                 </Typography>
                 &nbsp;of {moneyFormat(s.nominal, true)}
