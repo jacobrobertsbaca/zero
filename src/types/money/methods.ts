@@ -58,10 +58,12 @@ export const moneyAllocate = (money: Money, weights: number[]): Money[] => {
   return amounts.map(amount => ({amount, currency: money.currency}));
 }
 
-export const moneyFormat = (money: Money): string => {
+export const moneyFormat = (money: Money, round: boolean = false): string => {
   // Note: Currently this only works for USD
   const mag   = Math.abs(money.amount);
-  const major = Math.floor(mag / 100);
-  const minor = (mag % 100).toString().padStart(2, "0");
-  return `${money.amount < 0 ? "–" : ""}$${major}.${minor}`;
+  const minor = mag % 100;
+  const major = Math.floor(mag / 100) + (round && minor >= 50 ? 1 : 0);
+  const prefix = `${money.amount < 0 ? "–" : ""}$${major}`;
+  if (round) return prefix;
+  return `${prefix}.${minor.toString().padStart(2, "0")}`;
 };

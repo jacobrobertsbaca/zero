@@ -20,11 +20,12 @@ import { dateFormat } from 'src/types/utils/methods';
 import { moneyFormat, moneySub, moneySum } from 'src/types/money/methods';
 import { budgetStatus, budgetSummary, budgetSummaryMerged } from 'src/types/budget/methods';
 import { CategoryType } from 'src/types/category/types';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { produce } from 'immer';
 import InformationCircleIcon from '@heroicons/react/24/outline/InformationCircleIcon';
-import { categoryTitle } from 'src/types/category/methods';
+import { categoryActual, categoryNominal, categoryTitle } from 'src/types/category/methods';
 import { Money } from 'src/types/money/types';
+import { InfoTooltip } from 'src/components/info-tooltip';
 
 const SpendingBar = (props: ActualNominal) => {
   const { actual, nominal } = props;
@@ -55,24 +56,18 @@ const SpendingBar = (props: ActualNominal) => {
   );
 };
 
-type TitledSpendingBarProps = CategorySummary & {
+type TitledSpendingBarProps = ActualNominal & {
   title: React.ReactNode;
   tooltip?: React.ReactNode;
 };
 
 const TitledSpendingBar = (props: TitledSpendingBarProps) => (
-  <Box sx={{ mt: 2 }}>
+  <Box>
     <Stack direction="row" alignItems="center" spacing={0.25}>
       <Typography variant="subtitle2" color="text.secondary">
         {props.title}
       </Typography>
-      {props.tooltip && 
-        <Tooltip title={props.tooltip} placement="top" arrow enterTouchDelay={0}>
-          <SvgIcon fontSize="inherit" color="disabled">
-            <InformationCircleIcon />
-          </SvgIcon>
-        </Tooltip>
-      }
+      {props.tooltip && <InfoTooltip title={props.tooltip} />}
     </Stack>
     <SpendingBar {...props} />
   </Box>
@@ -101,26 +96,67 @@ const LeftoverTooltip = (props: { leftovers: ActualNominal }) => {
 };
 
 const BudgetCardDetails = ({ budget }: { budget: Budget }) => {
+  /* Helper component for showing individual categories under
+   * a given general category type */
+  const CategoriesList = useMemo(() => ({ type }: { type: CategoryType}) => {
+    const filtered = budget.categories.filter(c => c.type === type);
+    if (filtered.length === 0) return null;
+    return <>
+      <Divider sx={{mt: 1 }} />
+      <Stack spacing={1} sx={{ mt: 1 }}>
+        { filtered.map(c => 
+          <TitledSpendingBar 
+            key={c.type} 
+            title={c.name}
+            actual={categoryActual(c)}
+            nominal={categoryNominal(c)}
+          />
+        )}
+      </Stack>
+    </>;
+  }, [budget]);
+
   const { categories, leftovers } = budgetSummaryMerged(budget, CategoryType.Savings);
   if (categories.length === 0) return null;
-  if (budgetStatus(budget) === BudgetStatus.Active) return (
-    <>
-      <Divider sx={{ mt: 2 }} />
-
-    </>
-  );
+  if (budgetStatus(budget) === BudgetStatus.Active) {
+    return (
+      <Stack spacing={2} sx={{ mt: 2 }}>
+        { categories.map(s => 
+          <Box key={s.type}>
+            <Stack direction="row" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={0.25}>
+                <Typography variant="h6">{categoryTitle(s.type)}</Typography>
+                {leftovers && s.type === CategoryType.Savings &&
+                  <InfoTooltip title={<LeftoverTooltip leftovers={leftovers} />} />
+                }
+              </Stack>
+              <Typography variant="subtitle2" fontStyle="thin">
+                <Typography variant="subtitle2" fontWeight={800} display="inline">
+                  {moneyFormat(s.actual, true)}
+                </Typography>
+                &nbsp;of {moneyFormat(s.nominal, true)}
+              </Typography>
+            </Stack>
+            <CategoriesList type={s.type} />
+          </Box>
+        )}
+      </Stack>
+    );
+  }
   return (
     <>
-      <Divider sx={{ mt: 2 }} />
-      { categories.map(s => <TitledSpendingBar 
-        key={s.type} 
-        title={categoryTitle(s.type)} 
-        tooltip={
-          s.type === CategoryType.Savings && leftovers && 
-          <LeftoverTooltip leftovers={leftovers} />
-        }
-        {...s} />
-      )}
+      <Divider sx={{ mt: 2, mb: 2 }} />
+      <Stack spacing={1}>
+        { categories.map(s => <TitledSpendingBar 
+          key={s.type} 
+          title={categoryTitle(s.type)} 
+          tooltip={
+            s.type === CategoryType.Savings && leftovers && 
+            <LeftoverTooltip leftovers={leftovers} />
+          }
+          {...s} />
+        )}
+      </Stack>
     </>
   );
 }
