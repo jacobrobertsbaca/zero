@@ -25,7 +25,12 @@ const LayoutContainer = styled("div")({
   width: "100%",
 });
 
-export const Layout = withAuthGuard(true, (props) => {
+type LayoutProps = {
+  name: string;
+  children: React.ReactNode;
+};
+
+export const Layout = withAuthGuard(true, (props: LayoutProps) => {
   const { children, name } = props;
   const pathname = usePathname();
   const [openNav, setOpenNav] = useState(false);
