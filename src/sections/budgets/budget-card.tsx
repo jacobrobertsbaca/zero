@@ -48,8 +48,8 @@ const SpendingBar = (props: ActualNominal) => {
           justifyContent: "space-between"
         }}
       >
-        <Typography variant="subtitle2">{moneyFormat(actual)}</Typography>
-        <Typography variant="subtitle2">{moneyFormat(nominal)}</Typography>
+        <Typography variant="subtitle2">{moneyFormat(actual)} of {moneyFormat(nominal)}</Typography>
+        <Typography variant="subtitle2">$10.32 left</Typography>
       </Box>
     </Box>
   );
@@ -62,11 +62,18 @@ type TitledSpendingBarProps = ActualNominal & {
 
 const TitledSpendingBar = (props: TitledSpendingBarProps) => (
   <Box>
-    <Stack direction="row" alignItems="center" spacing={0.25}>
-      <Typography variant="subtitle2" color="text.secondary">
-        {props.title}
-      </Typography>
-      {props.tooltip && <InfoTooltip title={props.tooltip} />}
+    <Stack direction="row" justifyContent="space-between">
+      <Stack direction="row" alignItems="center" spacing={0.25}>
+        <Typography variant="subtitle1" color="text.secondary">
+          {props.title}
+        </Typography>
+        {props.tooltip && <InfoTooltip title={props.tooltip} />}
+      </Stack>
+      <Stack direction="row" alignItems="center" spacing={0.25}>
+        <Typography variant="subtitle2" color="text.secondary">
+          Weekly
+        </Typography>
+      </Stack>
     </Stack>
     <SpendingBar {...props} />
   </Box>
