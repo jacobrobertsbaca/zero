@@ -159,6 +159,14 @@ export const onRecurrence = (
   draft.recurrence = recurrence;
 });
 
+export const recurrenceTitle = (type: RecurrenceType): string => {
+  const titles: Record<RecurrenceType, string> = {
+    [RecurrenceType.None]: "Total",
+    [RecurrenceType.Weekly]: "Weekly",
+    [RecurrenceType.Monthly]: "Monthly",
+  };
+  return titles[type];
+}
 
 /* ================================================================================================================= *
  * Period                                                                                                            *

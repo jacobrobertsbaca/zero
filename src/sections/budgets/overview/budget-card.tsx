@@ -16,18 +16,22 @@ import {
 
 import { ActualNominal, Budget, BudgetStatus } from 'src/types/budget/types';
 import { dateFormat } from 'src/types/utils/methods';
-import { moneyFormat } from 'src/types/money/methods';
+import { moneyFactor, moneyFormat, moneySub } from 'src/types/money/methods';
 import { budgetStatus, budgetSummaryMerged } from 'src/types/budget/methods';
 import { CategoryType } from 'src/types/category/types';
 import { useCallback, useMemo, useState } from 'react';
-import { categoryActual, categoryNominal, categoryTitle } from 'src/types/category/methods';
+import { categoryActual, categoryNominal, categoryTitle, recurrenceTitle } from 'src/types/category/methods';
 import { Money } from 'src/types/money/types';
 import { InfoTooltip } from 'src/components/info-tooltip';
 import ChevronUpIcon from '@heroicons/react/24/solid/ChevronUpIcon';
 import ChevronDownIcon from '@heroicons/react/24/solid/ChevronDownIcon';
+import { BudgetSummarySelector, BudgetSummaryState } from './budget-summary-selector';
 
-const SpendingBar = (props: ActualNominal) => {
-  const { actual, nominal } = props;
+type SpendingBarProps = ActualNominal & {
+  remaining?: boolean
+};
+
+const SpendingBar = ({ actual, nominal, remaining }: SpendingBarProps) => {
 
   const getValue = useCallback(() => {
     if (nominal.amount === 0) return actual.amount >= 0 ? 100 : 0;
@@ -35,6 +39,8 @@ const SpendingBar = (props: ActualNominal) => {
       return Math.min(100, 100 * actual.amount / nominal.amount);
     return 0;
   }, [actual, nominal]);
+
+  const delta = moneySub(nominal, actual);
 
   return (
     <Box>
@@ -48,15 +54,26 @@ const SpendingBar = (props: ActualNominal) => {
           justifyContent: "space-between"
         }}
       >
-        <Typography variant="subtitle2">{moneyFormat(actual)} of {moneyFormat(nominal)}</Typography>
-        <Typography variant="subtitle2">$10.32 left</Typography>
+        <Typography variant="caption">
+          <Typography display="inline" variant="inherit" fontWeight={700}>
+            {moneyFormat(actual, true)}
+          </Typography> of {moneyFormat(nominal, true)}
+        </Typography>
+        {remaining &&
+          <Typography variant="caption">
+            <Typography display="inline" variant="inherit" fontWeight={700}>
+              {moneyFormat(delta.amount >= 0 ? delta : moneyFactor(delta, -1), true)}
+            </Typography> {delta.amount >= 0 ? "left" : "over"}
+          </Typography>
+        }
       </Box>
     </Box>
   );
 };
 
-type TitledSpendingBarProps = ActualNominal & {
+type TitledSpendingBarProps = SpendingBarProps & {
   title: React.ReactNode;
+  subtitle?: React.ReactNode;
   tooltip?: React.ReactNode;
 };
 
@@ -64,16 +81,20 @@ const TitledSpendingBar = (props: TitledSpendingBarProps) => (
   <Box>
     <Stack direction="row" justifyContent="space-between">
       <Stack direction="row" alignItems="center" spacing={0.25}>
-        <Typography variant="subtitle1" color="text.secondary">
-          {props.title}
-        </Typography>
+        { typeof props.title === "string"
+          ? <Typography variant="subtitle1" color="text.secondary">
+            {props.title}
+          </Typography>
+          : props.title
+        }
         {props.tooltip && <InfoTooltip title={props.tooltip} />}
       </Stack>
-      <Stack direction="row" alignItems="center" spacing={0.25}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Weekly
+      { typeof props.subtitle === "string"
+        ? <Typography variant="subtitle2" color="text.secondary">
+          {props.subtitle}
         </Typography>
-      </Stack>
+        : props.subtitle
+      }
     </Stack>
     <SpendingBar {...props} />
   </Box>
@@ -101,10 +122,10 @@ const LeftoverTooltip = (props: { leftovers: ActualNominal }) => {
   );
 };
 
-const BudgetCardDetails = ({ budget }: { budget: Budget }) => {
+const BudgetCardDetails = ({ budget, summary }: { budget: Budget, summary: BudgetSummaryState }) => {
   /* Helper component for showing individual categories under
    * a given general category type */
-  const CategoriesList = useMemo(() => ({ type }: { type: CategoryType}) => {
+  const CategoriesList = useMemo(() => ({ type, summary }: { type: CategoryType, summary: BudgetSummaryState }) => {
     const filtered = budget.categories.filter(c => c.type === type);
     if (filtered.length === 0) return null;
     return <>
@@ -114,8 +135,10 @@ const BudgetCardDetails = ({ budget }: { budget: Budget }) => {
           <TitledSpendingBar 
             key={c.type} 
             title={c.name}
+            subtitle={summary === BudgetSummaryState.Current && recurrenceTitle(c.recurrence.type)}
             actual={categoryActual(c)}
             nominal={categoryNominal(c)}
+            remaining
           />
         )}
       </Stack>
@@ -136,14 +159,16 @@ const BudgetCardDetails = ({ budget }: { budget: Budget }) => {
                   <InfoTooltip title={<LeftoverTooltip leftovers={leftovers} />} />
                 }
               </Stack>
-              <Typography variant="subtitle1" fontStyle="thin">
-                <Typography variant="subtitle1" fontWeight={800} display="inline">
-                  {moneyFormat(s.actual, true)}
+              {summary === BudgetSummaryState.Total &&
+                <Typography variant="subtitle1" fontStyle="thin">
+                  <Typography variant="subtitle1" fontWeight={800} display="inline">
+                    {moneyFormat(s.actual, true)}
+                  </Typography>
+                  &nbsp;of {moneyFormat(s.nominal, true)}
                 </Typography>
-                &nbsp;of {moneyFormat(s.nominal, true)}
-              </Typography>
+              }
             </Stack>
-            <CategoriesList type={s.type} />
+            <CategoriesList type={s.type} summary={summary} />
           </Box>
         )}
       </Stack>
@@ -168,57 +193,6 @@ const BudgetCardDetails = ({ budget }: { budget: Budget }) => {
   );
 }
 
-const SORT_BY_OPTIONS = [
-  { value: 'current', label: 'Current' },
-  { value: 'summary', label: 'Summary' },
-];
-
-const BudgetSummarySelector = () => {
-  const [open, setOpen] = useState(null);
-
-  const handleOpen = (event: any) => {
-    setOpen(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setOpen(null);
-  };
-
-  return (
-    <>
-      <Button
-        color="inherit"
-        disableRipple
-        onClick={handleOpen}
-        endIcon={<SvgIcon>{open ? <ChevronUpIcon /> : <ChevronDownIcon />}</SvgIcon>}
-      >
-        <Typography component="span" variant="subtitle2" color="text.secondary">
-          Current
-        </Typography>
-      </Button>
-      <Menu
-        keepMounted
-        anchorEl={open}
-        open={Boolean(open)}
-        onClose={handleClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        {SORT_BY_OPTIONS.map((option) => (
-          <MenuItem
-            key={option.value}
-            selected={option.value === 'newest'}
-            onClick={handleClose}
-            sx={{ typography: 'body2' }}
-          >
-            {option.label}
-          </MenuItem>
-        ))}
-      </Menu>
-    </>
-  );
-}
-
 type BudgetCardProps = {
   budget: Budget
 };
@@ -226,6 +200,7 @@ type BudgetCardProps = {
 export default function BudgetCard({ budget }: BudgetCardProps) {
   const status = budgetStatus(budget);
   const active = status === BudgetStatus.Active;
+  const [summary, setSummary] = useState(BudgetSummaryState.Current);
 
   return (
     <Grid xs={12} sm={active ? 12 : 6} md={active ? 12 : 4}>
@@ -243,12 +218,12 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
                 />
               }
             </Typography>
-            <BudgetSummarySelector />
+            { active && <BudgetSummarySelector value={summary} onChange={setSummary} /> }
           </Stack>
           <Typography variant="subtitle2" color="text.secondary">
             {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
           </Typography>
-          <BudgetCardDetails budget={budget} /> 
+          <BudgetCardDetails budget={budget} summary={summary} /> 
         </CardContent>
       </Card>
     </Grid>

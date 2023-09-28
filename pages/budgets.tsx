@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useApi } from 'src/hooks/use-api';
 import useAsyncEffect from 'use-async-effect';
 import { useSnackbar } from 'notistack';
-import BudgetCard from 'src/sections/budgets/budget-card';
+import BudgetCard from 'src/sections/budgets/overview/budget-card';
 
 const Page = () => {
   type ApiType = Awaited<ReturnType<typeof getBudgets>>;
