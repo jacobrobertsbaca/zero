@@ -4,7 +4,7 @@ import { Dispatch, createContext } from "react";
 import { useAuth } from "src/hooks/use-auth";
 import { Budget } from "src/types/budget/types";
 
-type ApiContextType = Immutable<{
+export type ApiContextType = Immutable<{
   getBudgets(): Promise<readonly Budget[]>;
 }>;
 
