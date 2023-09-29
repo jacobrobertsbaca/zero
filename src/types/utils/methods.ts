@@ -42,11 +42,15 @@ export const asDateString = (date: Date | DateString, dayOffset: number = 0): Da
   return `${years}${months}${days}`;
 };
 
+type DateFormatOptions = {
+  excludeYear?: boolean
+};
+
 /**
  * Formats a date to look like "MON DAY YEAR".
  * E.g. "Nov 21 2002".
  */
-export const dateFormat = (date: Date | DateString): string => {
+export const dateFormat = (date: Date | DateString, options?: DateFormatOptions): string => {
   date = asDate(date);
   const months = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -57,7 +61,7 @@ export const dateFormat = (date: Date | DateString): string => {
   const day = date.getDate();
   const year = date.getFullYear();
 
-  return `${month} ${day} ${year}`;
+  return `${month} ${day}` + (!options?.excludeYear ? ` ${year}` : '');
 };
 
 /* ================================================================================================================= *

@@ -1,4 +1,4 @@
-import { Box, LinearProgress, Stack, Typography } from "@mui/material";
+import { Box, LinearProgress, Link, Stack, Typography } from "@mui/material";
 import { useCallback } from "react";
 import { InfoTooltip } from "src/components/info-tooltip";
 import { ActualNominal } from "src/types/budget/types";
@@ -59,20 +59,14 @@ export const TitledSpendingBar = (props: TitledSpendingBarProps) => (
   <Box>
     <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
       <Stack direction="row" alignItems="center" spacing={0.25}>
-        { typeof props.title === "string"
-          ? <Typography variant="subtitle1" color="text.secondary">
-            {props.title}
-          </Typography>
-          : props.title
-        }
+        <Typography variant="subtitle1" color="text.secondary">
+          {props.title}
+        </Typography>
         {props.tooltip && <InfoTooltip title={props.tooltip} />}
       </Stack>
-      { typeof props.subtitle === "string"
-        ? <Typography variant="subtitle2" color="text.secondary">
-          {props.subtitle}
-        </Typography>
-        : props.subtitle
-      }
+      <Typography variant="subtitle2" color="text.secondary">
+        {props.subtitle}
+      </Typography>
     </Stack>
     <SpendingBar {...props} />
   </Box>

@@ -1,4 +1,4 @@
-import { Box, Divider, Stack, Typography } from "@mui/material";
+import { Box, Divider, Link, Stack, Tooltip, Typography } from "@mui/material";
 import { InfoTooltip } from "src/components/info-tooltip";
 import { budgetStatus } from "src/types/budget/methods";
 import { ActualNominal, Budget, BudgetSummary, BudgetStatus } from "src/types/budget/types";
@@ -6,6 +6,7 @@ import { categoryActive, categoryActual, categoryNominal, categoryTitle } from "
 import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
 import { moneyFormat } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
+import { dateFormat } from "src/types/utils/methods";
 import { BudgetSummaryState } from "./budget-summary-selector";
 import { TitledSpendingBar } from "./spending-bar";
 
@@ -41,17 +42,29 @@ const LeftoverTooltip = (props: { leftovers: ActualNominal }) => (
 
 const CategoriesListItem = ({ state, category }: { state: BudgetSummaryState; category: Category }) => {
   const current = state === BudgetSummaryState.Current;
-  const activePeriod = categoryActive(category);
   const title = {
     [RecurrenceType.None]: "Overall",
     [RecurrenceType.Monthly]: "This Month",
     [RecurrenceType.Weekly]: "This Week",
   }[category.recurrence.type];
+  
+  const activePeriod = categoryActive(category);
+  const beginDate = dateFormat(activePeriod!.dates.begin, { excludeYear: true });
+  const endDate = dateFormat(activePeriod!.dates.end, { excludeYear: true });
+  const activeDates = `${beginDate} — ${endDate}`;
 
   return (
     <TitledSpendingBar
       title={category.name}
-      subtitle={current && title}
+      subtitle={
+        current && (
+          <Tooltip title={activeDates} enterTouchDelay={0} placement="top" arrow>
+            <Link color="inherit" underline="hover">
+              {title}
+            </Link>
+          </Tooltip>
+        )
+      }
       actual={current ? activePeriod!.actual : categoryActual(category)}
       nominal={current ? activePeriod!.nominal : categoryNominal(category)}
       remaining
