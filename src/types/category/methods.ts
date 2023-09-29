@@ -3,15 +3,8 @@ import { Budget } from "../budget/types";
 import { moneyAllocate, moneyFactor, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
 import { datesClamp, datesContains, datesDays, asDate, asDateString } from "../utils/methods";
-import { Dates } from "../utils/types";
-import {
-  Category,
-  CategoryType,
-  Period,
-  Recurrence,
-  RecurrenceType,
-  TruncateMode
-} from "./types";
+import { Dates, DateString } from "../utils/types";
+import { Category, CategoryType, Period, Recurrence, RecurrenceType, TruncateMode } from "./types";
 
 /* ================================================================================================================= *
  * Utility Methods                                                                                                   *
@@ -86,8 +79,8 @@ export const onCategoryNominal = (budget: Budget, category: Category, total: Mon
   produce(category, (draft) => {
     // Edge case: What if every period is omitted? Then sum of weights will be zero.
     // If so, we will change one of the 'Omit's to 'Split' before continuing.
-    if (draft.periods.every(p => p.truncate === TruncateMode.Omit)) {
-      const omitIndex = draft.periods.findIndex(p => p.truncate == TruncateMode.Omit);
+    if (draft.periods.every((p) => p.truncate === TruncateMode.Omit)) {
+      const omitIndex = draft.periods.findIndex((p) => p.truncate == TruncateMode.Omit);
       draft.periods[omitIndex].truncate = TruncateMode.Split;
     }
 
@@ -97,7 +90,7 @@ export const onCategoryNominal = (budget: Budget, category: Category, total: Mon
     for (let i = 0; i < amounts.length; i++) draft.periods[i].nominal = amounts[i];
 
     // Set recurring amount according to first non-zero weight
-    const index = weights.findIndex(w => w > 0);
+    const index = weights.findIndex((w) => w > 0);
     draft.recurrence.amount = moneyFactor(amounts[index], 1 / weights[index]);
   });
 
@@ -106,7 +99,7 @@ export const categorySort = <T>(selector: (e: T) => CategoryType): ((a: T, b: T)
     [CategoryType.Income]: 0,
     [CategoryType.Investments]: 1,
     [CategoryType.Spending]: 2,
-    [CategoryType.Savings]: 3
+    [CategoryType.Savings]: 3,
   };
 
   return (a, b) => order[selector(a)] - order[selector(b)];
@@ -120,8 +113,22 @@ export const categoryTitle = (type: CategoryType): string => {
     [CategoryType.Spending]: "Spending",
   };
   return titles[type];
-}
+};
 
+/**
+ * Returns the currently active period within the given category.
+ * @param category A category
+ */
+export const categoryActive = (category: Category, today?: Date | DateString): Period | undefined => {
+  if (!today) today = new Date();
+  today = asDate(today);
+
+  for (const period of category.periods) {
+    if (datesContains(period.dates, today)) return period;
+  }
+
+  return undefined;
+};
 
 /* ================================================================================================================= *
  * Recurrence                                                                                                        *
@@ -130,43 +137,31 @@ export const categoryTitle = (type: CategoryType): string => {
 /**
  * Called to change a category's {@link Category.recurrence}.
  */
-export const onRecurrence = (
-  budget: Budget, 
-  category: Category, 
-  recurrence: Recurrence
-): Category => produce(category, (draft) => {
-  // If there are no periods or the recurrence type has changed, reset periods
-  if (draft.periods.length === 0 || recurrence.type !== category.recurrence.type) {
-    const resolver = getRangeResolver(budget, recurrence);
-    draft.periods = resolveRanges(budget, resolver).map((dates) => ({
-      dates: dates,
-      nominal: moneyZero(),
-      actual: moneyZero()
-    }));
+export const onRecurrence = (budget: Budget, category: Category, recurrence: Recurrence): Category =>
+  produce(category, (draft) => {
+    // If there are no periods or the recurrence type has changed, reset periods
+    if (draft.periods.length === 0 || recurrence.type !== category.recurrence.type) {
+      const resolver = getRangeResolver(budget, recurrence);
+      draft.periods = resolveRanges(budget, resolver).map((dates) => ({
+        dates: dates,
+        nominal: moneyZero(),
+        actual: moneyZero(),
+      }));
 
-    // Preserve period truncation on first and last periods
-    if (draft.periods.length === 0) return;
-    if (!datesContains(budget.dates, draft.periods[0].dates))
-      draft.periods[0].truncate = category.periods[0]?.truncate ?? TruncateMode.Split;
-    if (!datesContains(budget.dates, draft.periods[draft.periods.length - 1].dates))
-      draft.periods[draft.periods.length - 1].truncate =
-        category.periods[category.periods.length - 1]?.truncate ?? TruncateMode.Split;
-  }
+      // Preserve period truncation on first and last periods
+      if (draft.periods.length === 0) return;
+      if (!datesContains(budget.dates, draft.periods[0].dates))
+        draft.periods[0].truncate = category.periods[0]?.truncate ?? TruncateMode.Split;
+      if (!datesContains(budget.dates, draft.periods[draft.periods.length - 1].dates))
+        draft.periods[draft.periods.length - 1].truncate =
+          category.periods[category.periods.length - 1]?.truncate ?? TruncateMode.Split;
+    }
 
-  // Update period nominal amounts
-  for (const period of draft.periods)
-    period.nominal = period.nominal = moneyFactor(draft.recurrence.amount, periodMultiplier(budget, period));
-  draft.recurrence = recurrence;
-});
-
-export const recurrenceTitle = (type: RecurrenceType): string => {
-  const titles: Record<RecurrenceType, string> = {
-    [RecurrenceType.None]: "Total",
-    [RecurrenceType.Weekly]: "Weekly",
-    [RecurrenceType.Monthly]: "Monthly",
-  };
-  return titles[type];
-}
+    // Update period nominal amounts
+    for (const period of draft.periods)
+      period.nominal = period.nominal = moneyFactor(draft.recurrence.amount, periodMultiplier(budget, period));
+    draft.recurrence = recurrence;
+  });
 
 /* ================================================================================================================= *
  * Period                                                                                                            *

@@ -40,7 +40,6 @@ const CATEGORY_NAMES: Record<CategoryType, string[]> = {
 
 const generateRecurrence = (): Recurrence => {
   const type    = sample(RecurrenceType)!;
-  const amount  = randomMoney(1000, 200000);
   switch (type) {
     case RecurrenceType.None:
       return { type, amount: randomMoney(1000, 200000) };
@@ -67,7 +66,7 @@ const generateCategory = (budget: Budget): Category => {
   category = produce(category, draft => {
     // Fill out random actual amounts
     for (const period of draft.periods) {
-      period.actual = randomMoney(0, period.nominal.amount);
+      period.actual = randomMoney(-1000, 1.25 * period.nominal.amount);
     }
   });
   return category;

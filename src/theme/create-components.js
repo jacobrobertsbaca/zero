@@ -305,7 +305,8 @@ export function createComponents(config) {
     MuiLinearProgress: {
       styleOverrides: {
         root: {
-          borderRadius: '12px'
+          borderRadius: '12px',
+          height: '5px'
         },
         bar: {
           borderRadius: '12px'
