@@ -57,6 +57,63 @@ const httpGet     = <T,>(path: string, options: HTTPGetOptions = {}) => {
 }
 
 /* ================================================================================================================= *
+ * Cache Implementations                                                                                             *
+ * ================================================================================================================= */
+
+class Cache<T> {
+  private cache: { [id: string]: T} | undefined = undefined;
+
+  /**
+   * Invalidates the cache.
+   * @param id If specified, invalidates only the given id, not the entire cache.
+   */
+  invalidate(id?: string): void {
+    if (!this.cache) return;
+    if (id) delete this.cache[id];
+    else this.cache = undefined;
+  }
+
+  /**
+   * Adds an item to the cache.
+   * @param id The id of the item.
+   * @param value The value of the item
+   */
+  add(id: string, value: T): void {
+    if (!this.cache) this.cache = {};
+    this.cache[id] = value;
+  }
+
+  /**
+   * Checks if an item is in the cache.
+   * @param id The id of the item to check. If undefined, checks if the cache itself has any items.
+   */
+  has(id?: string): id is undefined {
+    if (!this.cache) return false;
+    if (id) return id in this.cache;
+    return true;
+  }
+
+  /**
+   * Gets an item by id from the cache, or undefined it doesn't exist.
+   * @param id The id of the item to retrieve
+   */
+  get(id: string): T | undefined {
+    if (!this.cache) return undefined;
+    return this.cache[id];
+  }
+  
+  /**
+   * Gets all items in the cache.
+   */
+  getAll() : T[] {
+    if (!this.cache) return [];
+    return Object.values(this.cache);
+  }
+};
+
+const budgetCache = new Cache<Budget>();
+
+/* ================================================================================================================= *
  * Context Implementation                                                                                            *
  * ================================================================================================================= */
 
@@ -68,12 +125,15 @@ type ApiProviderProps = {
 
 export const ApiProvider = ({ children }: ApiProviderProps) => {
   const { user } = useAuth();
-  const { enqueueSnackbar } = useSnackbar();
   const token = user?.token;
 
   const api: ApiContextType = {
     async getBudgets() {
-      return await httpGet("/budgets", { token });
+      if (budgetCache.has()) return budgetCache.getAll();
+      const budgets: Budget[] = await httpGet("/budgets", { token });
+      for (const budget of budgets)
+        budgetCache.add(budget.id, budget);
+      return budgets;
     }
   };
 
