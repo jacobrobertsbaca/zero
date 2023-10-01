@@ -32,7 +32,7 @@ const MoneyText = ({ amount }: { amount: Money }) => (
 );
 
 const LeftoverTooltip = (props: { leftovers: ActualNominal }) => (
-  <Typography variant="inherit">
+  <Typography variant="caption">
     <MoneyText amount={props.leftovers.actual} />
     leftover of
     <MoneyText amount={props.leftovers.nominal} />
