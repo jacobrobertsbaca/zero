@@ -1,6 +1,5 @@
 import { budgets } from "src/__mock__/budget";
 import { route, routes } from "../route";
-import * as Yup from "yup";
 
 const router = routes();
 

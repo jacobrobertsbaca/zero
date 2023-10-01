@@ -11,3 +11,9 @@ export class Unauthorized extends HttpError {
     super(401, message ?? "You are not authorized");
   }
 };
+
+export class NotFound extends HttpError {
+  constructor(message?: string) {
+    super(404, message ?? "Resource could not be found");
+  }
+};

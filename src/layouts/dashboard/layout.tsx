@@ -1,4 +1,3 @@
-import Head from "next/head";
 import { useCallback, useEffect, useState } from "react";
 import { Box, Container, Stack, Typography } from "@mui/material";
 import { usePathname } from "next/navigation";
@@ -26,12 +25,10 @@ const LayoutContainer = styled("div")({
 });
 
 type LayoutProps = {
-  name: string;
   children: React.ReactNode;
 };
 
-export const Layout = withAuthGuard(true, (props: LayoutProps) => {
-  const { children, name } = props;
+export const Layout = withAuthGuard(true, ({ children }: LayoutProps) => {
   const pathname = usePathname();
   const [openNav, setOpenNav] = useState(false);
 
@@ -51,9 +48,6 @@ export const Layout = withAuthGuard(true, (props: LayoutProps) => {
 
   return (
     <>
-      <Head>
-        <title>{name} | zero</title>
-      </Head>
       <TopNav onNavOpen={() => setOpenNav(true)} />
       <SideNav onClose={() => setOpenNav(false)} open={openNav} />
       <LayoutRoot>
@@ -66,9 +60,6 @@ export const Layout = withAuthGuard(true, (props: LayoutProps) => {
             }}
           >
             <Container maxWidth="lg">
-              <Stack spacing={3}>
-                <Typography variant="h4">{name}</Typography>
-              </Stack>
               {children}
             </Container>
           </Box>

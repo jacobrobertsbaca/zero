@@ -6,6 +6,7 @@ import { Budget } from "src/types/budget/types";
 
 export type ApiContextType = Immutable<{
   getBudgets(): Promise<readonly Budget[]>;
+  getBudget(id: string): Promise<Budget>;
 }>;
 
 /* ================================================================================================================= *
@@ -87,7 +88,7 @@ class Cache<T> {
    * Checks if an item is in the cache.
    * @param id The id of the item to check. If undefined, checks if the cache itself has any items.
    */
-  has(id?: string): id is undefined {
+  has(id?: string): boolean {
     if (!this.cache) return false;
     if (id) return id in this.cache;
     return true;
@@ -97,8 +98,8 @@ class Cache<T> {
    * Gets an item by id from the cache, or undefined it doesn't exist.
    * @param id The id of the item to retrieve
    */
-  get(id: string): T | undefined {
-    if (!this.cache) return undefined;
+  get(id: string): T {
+    if (!this.cache) throw Error("No items in cache!");
     return this.cache[id];
   }
   
@@ -134,6 +135,13 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
       for (const budget of budgets)
         budgetCache.add(budget.id, budget);
       return budgets;
+    },
+
+    async getBudget(id) {
+      if (budgetCache.has(id)) return budgetCache.get(id);
+      const budget: Budget = await httpGet(`/budgets/${id}`, { token });
+      budgetCache.add(budget.id, budget);
+      return budget;
     }
   };
 

@@ -58,8 +58,19 @@ const CategoriesListItem = ({ state, category }: { state: BudgetSummaryState; ca
       title={category.name}
       subtitle={
         current && (
-          <Tooltip title={activeDates} enterTouchDelay={0} placement="top" arrow>
-            <Link color="inherit" underline="hover">
+          <Tooltip 
+            title={activeDates} 
+            enterTouchDelay={0} 
+            onClick={event => event.stopPropagation()}
+            onMouseDown={event => event.stopPropagation()}
+            placement="top" 
+            arrow
+          >
+            <Link 
+              color="inherit" 
+              underline="hover" 
+              onTouchStart={event => event.stopPropagation()}
+            >
               {title}
             </Link>
           </Tooltip>

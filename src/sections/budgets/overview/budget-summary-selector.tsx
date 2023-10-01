@@ -1,7 +1,7 @@
 import ChevronDownIcon from "@heroicons/react/24/solid/ChevronDownIcon";
 import ChevronUpIcon from "@heroicons/react/24/solid/ChevronUpIcon";
 import { Button, Menu, MenuItem, SvgIcon, Typography } from "@mui/material";
-import { useState } from "react";
+import { SyntheticEvent, useState } from "react";
 
 export enum BudgetSummaryState {
   Current = "current",
@@ -19,9 +19,11 @@ type BudgetSummarySelectorProps = {
 };
 
 export const BudgetSummarySelector = ({ value, onChange }: BudgetSummarySelectorProps) => {
-  const [open, setOpen] = useState(null);
+  const [open, setOpen] = useState<Element | null>(null);
 
-  const handleOpen = (event: any) => {
+  const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    event.preventDefault();
     setOpen(event.currentTarget);
   };
 
@@ -29,6 +31,8 @@ export const BudgetSummarySelector = ({ value, onChange }: BudgetSummarySelector
     event: React.MouseEvent<HTMLElement>,
     index: number,
   ) => {
+    event.stopPropagation();
+    event.preventDefault();
     onChange(OPTIONS[index].value);
     setOpen(null);
   };
@@ -43,6 +47,8 @@ export const BudgetSummarySelector = ({ value, onChange }: BudgetSummarySelector
         color="inherit"
         disableRipple
         onClick={handleOpen}
+        onTouchStart={event => event.stopPropagation()}
+        onMouseDown={event => event.stopPropagation()}
         endIcon={<SvgIcon>{open ? <ChevronUpIcon /> : <ChevronDownIcon />}</SvgIcon>}
       >
         <Typography component="span" variant="subtitle2" color="text.secondary">
@@ -62,6 +68,8 @@ export const BudgetSummarySelector = ({ value, onChange }: BudgetSummarySelector
             key={option.value}
             selected={option.value === value}
             onClick={(event) => handleMenuItemClick(event, index)}
+            onTouchStart={event => event.stopPropagation()}
+            onMouseDown={event => event.stopPropagation()}
             sx={{ typography: 'body2' }}
           >
             {option.label}

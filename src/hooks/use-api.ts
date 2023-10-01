@@ -40,4 +40,5 @@ const createApiHook =
  * ================================================================================================================= */
 
 export const useApi = () => useContext(ApiContext);
-export const useBudgets = createApiHook(api => api.getBudgets, result => ({ budgets: result}));
+export const useBudgets = createApiHook(api => api.getBudgets, r => ({ budgets: r}));
+export const useBudget = createApiHook(api => api.getBudget, r => ({ budget: r}));
