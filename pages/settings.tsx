@@ -9,7 +9,7 @@ import { PageTitle } from 'src/components/page-title';
 const Page = () => (
   <>
     <PageTitle title="Settings" />
-    <Stack spacing={3} sx={{ mt: 3 }}>
+    <Stack spacing={3}>
       <SettingsPassword />
       <SettingsSignOut />
     </Stack>

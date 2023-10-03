@@ -9,7 +9,6 @@ const Page = () => {
 
   return <>
     <PageTitle title="Budgets" />
-    <Button onClick={() => console.log(budgets)}>Random</Button>
     <Grid container spacing={4}>
       {budgets && budgets.map(b => <BudgetCard key={b.id} budget={b}/>)}
     </Grid>

@@ -15,7 +15,6 @@ import { CategoryType } from 'src/types/category/types';
 import { useCallback, useState } from 'react';
 import { BudgetSummarySelector, BudgetSummaryState } from './budget-summary-selector';
 import { BudgetCardDetails } from './budget-card-details';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 type BudgetCardProps = {
@@ -30,13 +29,13 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
   const summary = budgetSummaryMerged(budget, CategoryType.Savings);
   const onCardClicked = useCallback(() => {
     router.push(`/budgets/${budget.id}`);
-  }, [budget]);
+  }, [budget, router]);
 
   return (
     <Grid xs={12} sm={active ? 12 : 6} md={active ? 12 : 4}>
-      <Card sx={{ position: "relative", height: "100%" }}>
-        <CardActionArea onClick={onCardClicked}>
-          <CardContent>
+      <Card sx={{ position: "relative", height: 1 }}>
+        <CardActionArea onClick={onCardClicked} sx={{ display: "flex", alignItems: "flex-start", height: 1 }}>
+          <CardContent sx={{ flexGrow: 1 }}>
             <Stack direction="row" justifyContent="space-between">
               <Typography gutterBottom variant="h5" component="div">
                 {budget.name}
