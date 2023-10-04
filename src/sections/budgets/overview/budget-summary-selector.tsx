@@ -14,17 +14,17 @@ const OPTIONS = [
 ];
 
 type BudgetSummarySelectorProps = {
-  value: BudgetSummaryState,
-  onChange: (state: BudgetSummaryState) => void
+  value: BudgetSummaryState;
+  onChange: (state: BudgetSummaryState) => void;
+  anchor: Element | null;
+  onAnchorChange: (anchor: Element | null) => void;
 };
 
-export const BudgetSummarySelector = ({ value, onChange }: BudgetSummarySelectorProps) => {
-  const [open, setOpen] = useState<Element | null>(null);
-
+export const BudgetSummarySelector = ({ value, onChange, anchor, onAnchorChange }: BudgetSummarySelectorProps) => {
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     event.preventDefault();
-    setOpen(event.currentTarget);
+    onAnchorChange(event.currentTarget);
   };
 
   const handleMenuItemClick = (
@@ -34,11 +34,11 @@ export const BudgetSummarySelector = ({ value, onChange }: BudgetSummarySelector
     event.stopPropagation();
     event.preventDefault();
     onChange(OPTIONS[index].value);
-    setOpen(null);
+    onAnchorChange(null);
   };
 
   const handleClose = () => {
-    setOpen(null);
+    onAnchorChange(null);
   };
 
   return (
@@ -49,7 +49,7 @@ export const BudgetSummarySelector = ({ value, onChange }: BudgetSummarySelector
         onClick={handleOpen}
         onTouchStart={event => event.stopPropagation()}
         onMouseDown={event => event.stopPropagation()}
-        endIcon={<SvgIcon>{open ? <ChevronUpIcon /> : <ChevronDownIcon />}</SvgIcon>}
+        endIcon={<SvgIcon>{anchor ? <ChevronUpIcon /> : <ChevronDownIcon />}</SvgIcon>}
       >
         <Typography component="span" variant="subtitle2" color="text.secondary">
           {OPTIONS.find(o => o.value === value)?.label}
@@ -57,8 +57,8 @@ export const BudgetSummarySelector = ({ value, onChange }: BudgetSummarySelector
       </Button>
       <Menu
         keepMounted
-        anchorEl={open}
-        open={!!open}
+        anchorEl={anchor}
+        open={!!anchor}
         onClose={handleClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
