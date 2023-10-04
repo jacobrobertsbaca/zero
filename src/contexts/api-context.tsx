@@ -62,7 +62,7 @@ const httpGet     = <T,>(path: string, options: HTTPGetOptions = {}) => {
  * ================================================================================================================= */
 
 class Cache<T> {
-  private cache: { [id: string]: T} | undefined = undefined;
+  private cache: Map<string, T> | undefined = undefined;
 
   /**
    * Invalidates the cache.
@@ -70,7 +70,7 @@ class Cache<T> {
    */
   invalidate(id?: string): void {
     if (!this.cache) return;
-    if (id) delete this.cache[id];
+    if (id) this.cache.delete(id);
     else this.cache = undefined;
   }
 
@@ -80,8 +80,8 @@ class Cache<T> {
    * @param value The value of the item
    */
   add(id: string, value: T): void {
-    if (!this.cache) this.cache = {};
-    this.cache[id] = value;
+    if (!this.cache) this.cache = new Map();
+    this.cache.set(id, value);
   }
 
   /**
@@ -100,7 +100,8 @@ class Cache<T> {
    */
   get(id: string): T {
     if (!this.cache) throw Error("No items in cache!");
-    return this.cache[id];
+    if (!this.cache.has(id)) throw Error(`No item in cache with id ${id}`);
+    return this.cache.get(id)!;
   }
   
   /**
@@ -108,7 +109,7 @@ class Cache<T> {
    */
   getAll() : T[] {
     if (!this.cache) return [];
-    return Object.values(this.cache);
+    return Array.from(this.cache.values());
   }
 };
 
