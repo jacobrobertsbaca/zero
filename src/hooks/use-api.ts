@@ -8,14 +8,13 @@ import useAsyncEffect from "use-async-effect";
  * ================================================================================================================= */
 
 type ApiSelector<TArgs extends any[], TResult> = (api: ApiContextType) => (...args: TArgs) => TResult | Promise<TResult>; 
-type ApiHook<TName extends string, TArgs extends any[], TResult> = (...args: TArgs) => ApiResult<TName, TResult>;
-type ApiResult<TName extends string, TResult> = { loading: boolean; } & { [N in TName]?: TResult };
+type ApiHook<TArgs extends any[], TResult> = (...args: TArgs) => ApiResult<TResult>;
+type ApiResult<TResult> = { loading: boolean; result?: TResult };
 
 const createApiHook =
-  <TName extends string, TArgs extends any[], TResult>(
-    selector: ApiSelector<TArgs, TResult>,
-    transformer: (result?: TResult) => { [N in TName]?: TResult }
-  ): ApiHook<TName, TArgs, TResult> =>
+  <TArgs extends any[], TResult>(
+    selector: ApiSelector<TArgs, TResult>
+  ): ApiHook<TArgs, TResult> =>
   (...args: TArgs) => {
     const api = useApi();
     const [loading, setLoading] = useState(true);
@@ -32,7 +31,7 @@ const createApiHook =
       setLoading(false);
     }, [...args]);
 
-    return { loading, ...transformer(result) };
+    return { loading, result };
   };
 
 /* ================================================================================================================= *
@@ -40,5 +39,5 @@ const createApiHook =
  * ================================================================================================================= */
 
 export const useApi = () => useContext(ApiContext);
-export const useBudgets = createApiHook(api => api.getBudgets, r => ({ budgets: r}));
-export const useBudget = createApiHook(api => api.getBudget, r => ({ budget: r}));
+export const useBudgets = createApiHook(api => api.getBudgets);
+export const useBudget = createApiHook(api => api.getBudget);
