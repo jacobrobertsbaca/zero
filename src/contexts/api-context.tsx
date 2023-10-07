@@ -90,7 +90,7 @@ class Cache<T> {
    */
   has(id?: string): boolean {
     if (!this.cache) return false;
-    if (id) return id in this.cache;
+    if (id) return this.cache.has(id);
     return true;
   }
 
@@ -100,7 +100,7 @@ class Cache<T> {
    */
   get(id: string): T {
     if (!this.cache) throw Error("No items in cache!");
-    if (!this.cache.has(id)) throw Error(`No item in cache with id ${id}`);
+    if (!this.has(id)) throw Error(`No item in cache with id ${id}`);
     return this.cache.get(id)!;
   }
   
@@ -139,6 +139,7 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
     },
 
     async getBudget(id) {
+      console.log(budgetCache.getAll());
       if (budgetCache.has(id)) return budgetCache.get(id);
       const budget: Budget = await httpGet(`/budgets/${id}`, { token });
       budgetCache.add(budget.id, budget);

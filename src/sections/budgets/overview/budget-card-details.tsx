@@ -41,7 +41,11 @@ const LeftoverTooltip = (props: { leftovers: ActualNominal }) => (
   </Typography>
 );
 
-const CategoriesListItem = ({ state, category }: { state: BudgetSummaryState; category: Category }) => {
+type CategoriesListItemProps = BudgetCardDetailsProps & {
+  category: Category;
+};
+
+const CategoriesListItem = ({ budget, state, category }: CategoriesListItemProps) => {
   const current = state === BudgetSummaryState.Current;
   const activePeriod = categoryActive(category);
   
@@ -49,7 +53,7 @@ const CategoriesListItem = ({ state, category }: { state: BudgetSummaryState; ca
     <TitledSpendingBar
       title={category.name}
       subtitle={
-        current && <PeriodTooltip recurrence={category.recurrence.type} dates={activePeriod!.dates} />
+        current && <PeriodTooltip recurrence={category.recurrence.type} dates={activePeriod!.dates} budget={budget} />
       }
       actual={current ? activePeriod!.actual : categoryActual(category)}
       nominal={current ? activePeriod!.nominal : categoryNominal(category)}
@@ -62,7 +66,8 @@ type CategoriesListProps = BudgetCardDetailsProps & {
   type: CategoryType;
 };
 
-const CategoriesList = ({ type, budget, state }: CategoriesListProps) => {
+const CategoriesList = (props: CategoriesListProps) => {
+  const { type, budget } = props;
   const filtered = budget.categories.filter((c) => c.type === type);
   if (filtered.length === 0) return null;
   return (
@@ -70,7 +75,7 @@ const CategoriesList = ({ type, budget, state }: CategoriesListProps) => {
       <Divider sx={{ mt: 1, mb: 1 }} />
       <Stack spacing={1}>
         {filtered.map((c) => (
-          <CategoriesListItem key={c.id} state={state} category={c} />
+          <CategoriesListItem key={c.id} category={c} {...props} />
         ))}
       </Stack>
     </>
