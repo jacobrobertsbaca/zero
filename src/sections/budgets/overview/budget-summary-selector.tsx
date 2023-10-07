@@ -16,15 +16,19 @@ const OPTIONS = [
 type BudgetSummarySelectorProps = {
   value: BudgetSummaryState;
   onChange: (state: BudgetSummaryState) => void;
-  anchor: Element | null;
-  onAnchorChange: (anchor: Element | null) => void;
+  anchor?: Element | null;
+  onAnchorChange?: (anchor: Element | null) => void;
 };
 
 export const BudgetSummarySelector = ({ value, onChange, anchor, onAnchorChange }: BudgetSummarySelectorProps) => {
+  const [ownAnchor, setOwnAnchor] = useState<Element | null>(null);
+  if (!anchor) anchor = ownAnchor;
+  if (!onAnchorChange) onAnchorChange = setOwnAnchor;
+
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     event.preventDefault();
-    onAnchorChange(event.currentTarget);
+    onAnchorChange!(event.currentTarget);
   };
 
   const handleMenuItemClick = (
@@ -34,11 +38,11 @@ export const BudgetSummarySelector = ({ value, onChange, anchor, onAnchorChange 
     event.stopPropagation();
     event.preventDefault();
     onChange(OPTIONS[index].value);
-    onAnchorChange(null);
+    onAnchorChange!(null);
   };
 
   const handleClose = () => {
-    onAnchorChange(null);
+    onAnchorChange!(null);
   };
 
   return (

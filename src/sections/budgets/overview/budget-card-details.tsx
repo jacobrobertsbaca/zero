@@ -8,7 +8,8 @@ import { moneyFormat } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
 import { dateFormat } from "src/types/utils/methods";
 import { BudgetSummaryState } from "./budget-summary-selector";
-import { TitledSpendingBar } from "./spending-bar";
+import { TitledSpendingBar } from "../common/spending-bar";
+import { PeriodTooltip } from "../common/period-tooltip";
 
 type BudgetCardDetailsProps = {
   budget: Budget;
@@ -42,39 +43,13 @@ const LeftoverTooltip = (props: { leftovers: ActualNominal }) => (
 
 const CategoriesListItem = ({ state, category }: { state: BudgetSummaryState; category: Category }) => {
   const current = state === BudgetSummaryState.Current;
-  const title = {
-    [RecurrenceType.None]: "Overall",
-    [RecurrenceType.Monthly]: "This Month",
-    [RecurrenceType.Weekly]: "This Week",
-  }[category.recurrence.type];
-  
   const activePeriod = categoryActive(category);
-  const beginDate = dateFormat(activePeriod!.dates.begin, { excludeYear: true });
-  const endDate = dateFormat(activePeriod!.dates.end, { excludeYear: true });
-  const activeDates = `${beginDate} — ${endDate}`;
-
+  
   return (
     <TitledSpendingBar
       title={category.name}
       subtitle={
-        current && (
-          <Tooltip 
-            title={activeDates} 
-            enterTouchDelay={0} 
-            onClick={event => event.stopPropagation()}
-            onMouseDown={event => event.stopPropagation()}
-            placement="top" 
-            arrow
-          >
-            <Link 
-              color="inherit" 
-              underline="hover" 
-              onTouchStart={event => event.stopPropagation()}
-            >
-              {title}
-            </Link>
-          </Tooltip>
-        )
+        current && <PeriodTooltip recurrence={category.recurrence.type} dates={activePeriod!.dates} />
       }
       actual={current ? activePeriod!.actual : categoryActual(category)}
       nominal={current ? activePeriod!.nominal : categoryNominal(category)}
