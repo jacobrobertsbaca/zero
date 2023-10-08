@@ -30,14 +30,15 @@ type CategoryRowProps = {
   state: BudgetSummaryState;
   budget: Budget;
   category: Category;
+  onClick: (category: Category) => void;
 };
 
-const CategoryRow = ({ state, budget, category }: CategoryRowProps) => {
+const CategoryRow = ({ state, budget, category, onClick }: CategoryRowProps) => {
   const activePeriod = categoryActive(category);
   const actual = state === BudgetSummaryState.Current ? activePeriod!.actual : categoryActual(category);
   const nominal = state === BudgetSummaryState.Current ? activePeriod!.nominal : categoryNominal(category);
   return (
-    <TableRow hover key={category.id}>
+    <TableRow hover key={category.id} onClick={() => onClick(category)} sx={{ cursor: "pointer" }}>
       <TableCell>
         <Stack direction="column">
           <Typography variant="subtitle2">{category.name}</Typography>
@@ -60,9 +61,10 @@ const CategoryRow = ({ state, budget, category }: CategoryRowProps) => {
 
 type CategoryListProps = {
   budget: Budget;
+  onCategoryClicked: (category: Category) => void;
 };
 
-export const CategoryList = ({ budget }: CategoryListProps) => {
+export const CategoryList = ({ budget, onCategoryClicked }: CategoryListProps) => {
   const active = budgetStatus(budget) === BudgetStatus.Active;
   const [state, setState] = useState(active ? BudgetSummaryState.Current : BudgetSummaryState.Total);
 
@@ -81,7 +83,7 @@ export const CategoryList = ({ budget }: CategoryListProps) => {
             </TableHead>
             <TableBody>
               {budget.categories.map((category) => (
-                <CategoryRow key={category.id} state={state} budget={budget} category={category} />
+                <CategoryRow key={category.id} state={state} budget={budget} category={category} onClick={onCategoryClicked} />
               ))}
             </TableBody>
           </Table>
