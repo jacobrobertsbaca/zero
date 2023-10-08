@@ -63,7 +63,7 @@ export const CategorySidebar = ({ category, onClose }: CategorySidebarProps) => 
       open={!!category}
       onClose={onClose}
       PaperProps={{
-        sx: { width: 500, border: 'none', overflow: 'hidden' },
+        sx: { width: { xs: 1, sm: 500 }, border: 'none', overflow: 'hidden' },
       }}
     >
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 2 }}>

@@ -18,7 +18,7 @@ import {
 import { Scrollbar } from "src/components/scrollbar";
 import { getInitials } from "src/utils/get-initials";
 import { Budget, BudgetStatus } from "src/types/budget/types";
-import { BudgetSummarySelector, BudgetSummaryState } from "../overview/budget-summary-selector";
+import { BudgetSummarySelector, BudgetSummaryState } from "./budget-summary-selector";
 import { useState } from "react";
 import { categoryActive, categoryActual, categoryNominal, categoryTitle } from "src/types/category/methods";
 import { SpendingBar } from "../common/spending-bar";
