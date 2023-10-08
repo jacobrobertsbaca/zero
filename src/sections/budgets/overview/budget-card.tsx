@@ -5,7 +5,7 @@ import { dateFormat } from "src/types/utils/methods";
 import { budgetStatus, budgetSummaryMerged } from "src/types/budget/methods";
 import { CategoryType } from "src/types/category/types";
 import { useCallback, useState } from "react";
-import { BudgetSummarySelector, BudgetSummaryState } from "../single/budget-summary-selector";
+import { BudgetViewSelector, BudgetView } from "../single/budget-view-selector";
 import { BudgetCardDetails } from "./budget-card-details";
 import { useRouter } from "next/router";
 

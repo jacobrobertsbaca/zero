@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import XMarkIcon from '@heroicons/react/24/solid/XMarkIcon';
 import { Scrollbar } from 'src/components/scrollbar';
-import { Category } from 'src/types/category/types';
+import { Category, Recurrence, RecurrenceType } from 'src/types/category/types';
 import { categoryActual, categoryNominal, categoryTitle } from 'src/types/category/methods';
 import { moneyFormat } from 'src/types/money/methods';
 

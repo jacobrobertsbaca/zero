@@ -15,7 +15,7 @@ const Page = () => {
   const router = useRouter();
   const { result } = useBudget(router.query.id as string);
 
-  /* Sidebar state */
+  /* Sidebar state. Use dummy category to ensure non-null */
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCategory, setSidebarCategory] = useState<Category>({
     id: "",

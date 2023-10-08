@@ -3,24 +3,24 @@ import ChevronUpIcon from "@heroicons/react/24/solid/ChevronUpIcon";
 import { Button, Menu, MenuItem, SvgIcon, Typography } from "@mui/material";
 import { SyntheticEvent, useState } from "react";
 
-export enum BudgetSummaryState {
+export enum BudgetView {
   Current = "current",
   Total = "total"
 };
 
 const OPTIONS = [
-  { value: BudgetSummaryState.Current, label: 'Current' },
-  { value: BudgetSummaryState.Total, label: 'Total' },
+  { value: BudgetView.Current, label: 'Current' },
+  { value: BudgetView.Total, label: 'Total' },
 ];
 
-type BudgetSummarySelectorProps = {
-  value: BudgetSummaryState;
-  onChange: (state: BudgetSummaryState) => void;
+type BudgetViewSelectorProps = {
+  value: BudgetView;
+  onChange: (state: BudgetView) => void;
   anchor?: Element | null;
   onAnchorChange?: (anchor: Element | null) => void;
 };
 
-export const BudgetSummarySelector = ({ value, onChange, anchor, onAnchorChange }: BudgetSummarySelectorProps) => {
+export const BudgetViewSelector = ({ value, onChange, anchor, onAnchorChange }: BudgetViewSelectorProps) => {
   const [ownAnchor, setOwnAnchor] = useState<Element | null>(null);
   if (!anchor) anchor = ownAnchor;
   if (!onAnchorChange) onAnchorChange = setOwnAnchor;

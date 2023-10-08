@@ -10,6 +10,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TablePagination,
   TableRow,
@@ -18,16 +19,17 @@ import {
 import { Scrollbar } from "src/components/scrollbar";
 import { getInitials } from "src/utils/get-initials";
 import { Budget, BudgetStatus } from "src/types/budget/types";
-import { BudgetSummarySelector, BudgetSummaryState } from "./budget-summary-selector";
+import { BudgetViewSelector, BudgetView } from "./budget-view-selector";
 import { useState } from "react";
 import { categoryActive, categoryActual, categoryNominal, categoryTitle } from "src/types/category/methods";
 import { SpendingBar } from "../common/spending-bar";
 import { Category } from "src/types/category/types";
 import { budgetStatus } from "src/types/budget/methods";
 import { PeriodTooltip } from "../common/period-tooltip";
+import { BudgetSummaryList } from "./budget-summary-list";
 
 type CategoryRowProps = {
-  state: BudgetSummaryState;
+  state: BudgetView;
   budget: Budget;
   category: Category;
   onClick: (category: Category) => void;
@@ -35,8 +37,8 @@ type CategoryRowProps = {
 
 const CategoryRow = ({ state, budget, category, onClick }: CategoryRowProps) => {
   const activePeriod = categoryActive(category);
-  const actual = state === BudgetSummaryState.Current ? activePeriod!.actual : categoryActual(category);
-  const nominal = state === BudgetSummaryState.Current ? activePeriod!.nominal : categoryNominal(category);
+  const actual = state === BudgetView.Current ? activePeriod!.actual : categoryActual(category);
+  const nominal = state === BudgetView.Current ? activePeriod!.nominal : categoryNominal(category);
   return (
     <TableRow hover key={category.id} onClick={() => onClick(category)} sx={{ cursor: "pointer" }}>
       <TableCell>
@@ -47,7 +49,7 @@ const CategoryRow = ({ state, budget, category, onClick }: CategoryRowProps) => 
           </Typography>
         </Stack>
       </TableCell>
-      {state === BudgetSummaryState.Current && (
+      {state === BudgetView.Current && (
         <TableCell>
           <PeriodTooltip recurrence={category.recurrence.type} dates={activePeriod!.dates} budget={budget} under />
         </TableCell>
@@ -66,26 +68,39 @@ type CategoryListProps = {
 
 export const CategoryList = ({ budget, onCategoryClicked }: CategoryListProps) => {
   const active = budgetStatus(budget) === BudgetStatus.Active;
-  const [state, setState] = useState(active ? BudgetSummaryState.Current : BudgetSummaryState.Total);
+  const [state, setState] = useState(active ? BudgetView.Current : BudgetView.Total);
 
   return (
     <Card>
-      <CardHeader title="Categories" action={active && <BudgetSummarySelector value={state} onChange={setState} />} />
+      <CardHeader title="Categories" action={active && <BudgetViewSelector value={state} onChange={setState} />} />
       <Scrollbar>
         <Box>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell sx={{ minWidth: { xs: 100, sm: 200 } }}>Name</TableCell>
-                {state === BudgetSummaryState.Current && <TableCell sx={{ minWidth: { xs: 100, sm: 200 } }}>Period</TableCell>}
+                {state === BudgetView.Current && <TableCell sx={{ minWidth: { xs: 100, sm: 200 } }}>Period</TableCell>}
                 <TableCell sx={{ width: 0.99 }}>Progress</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {budget.categories.map((category) => (
-                <CategoryRow key={category.id} state={state} budget={budget} category={category} onClick={onCategoryClicked} />
+                <CategoryRow
+                  key={category.id}
+                  state={state}
+                  budget={budget}
+                  category={category}
+                  onClick={onCategoryClicked}
+                />
               ))}
             </TableBody>
+            <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={3} sx={{ borderBottom: "none" }}>
+                    <BudgetSummaryList budget={budget} />
+                  </TableCell>
+                </TableRow>
+            </TableFooter>
           </Table>
         </Box>
       </Scrollbar>
