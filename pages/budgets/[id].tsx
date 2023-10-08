@@ -7,16 +7,27 @@ import { useBudget } from "src/hooks/use-api";
 import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
 import { CategoryList } from "src/sections/budgets/single/category-list";
 import { CategorySidebar } from "src/sections/budgets/single/category-sidebar";
-import { Category } from "src/types/category/types";
+import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
+import { moneyZero } from "src/types/money/methods";
 import { dateFormat } from "src/types/utils/methods";
 
 const Page = () => {
   const router = useRouter();
   const { result } = useBudget(router.query.id as string);
-  const [category, setCategory] = useState<Category | null>(null);
+
+  /* Sidebar state */
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCategory, setSidebarCategory] = useState<Category>({
+    id: "",
+    name: "",
+    type: CategoryType.Income,
+    recurrence: { type: RecurrenceType.None, amount: moneyZero() },
+    periods: [],
+  });
 
   const onCategoryClicked = useCallback((category: Category) => {
-    setCategory(category);
+    setSidebarCategory(category);
+    setSidebarOpen(true);
   }, []);
 
   return (
@@ -30,7 +41,7 @@ const Page = () => {
             </Typography>
             <CategoryList budget={budget} onCategoryClicked={onCategoryClicked} />
           </Stack>
-          <CategorySidebar category={category} onClose={() => setCategory(null)} />
+          <CategorySidebar open={sidebarOpen} category={sidebarCategory} onClose={() => setSidebarOpen(false)} />
         </>
       )}
     </Loading>
