@@ -1,4 +1,15 @@
-import { Box, Card, CardHeader, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import {
+  Box,
+  Card,
+  CardHeader,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
 import { Scrollbar } from "src/components/scrollbar";
 import { Budget } from "src/types/budget/types";
 import { Category, Period } from "src/types/category/types";
@@ -33,15 +44,20 @@ export const PeriodList = ({ budget, category }: PeriodListProps) => {
         </TableHead>
         <TableBody>
           {category.periods.map((period) => (
-            <TableRow hover
+            <TableRow
+              hover
               key={`${period.dates.begin}${period.dates.end}`}
-              // sx={(theme) => ({
-              //   ...(datesContains(datesClamp(period.dates, budget.dates), new Date())
-              //     ? { backgroundColor: theme.palette.primary.light }
-              //     : {}),
-              // })}
             >
-              <TableCell>{getDates(period)}</TableCell>
+              <TableCell>
+                <Stack>
+                  {getDates(period)}
+                  {datesContains(datesClamp(period.dates, budget.dates), new Date()) && (
+                    <Typography variant="caption" color="text.secondary">
+                      Current
+                    </Typography>
+                  )}
+                </Stack>
+              </TableCell>
               <TableCell>
                 <SpendingBar actual={period.actual} nominal={period.nominal} />
               </TableCell>
