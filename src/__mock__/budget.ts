@@ -46,7 +46,7 @@ const generateRecurrence = (): Recurrence => {
     case RecurrenceType.Weekly:
       return { type, day: random(6), amount: randomMoney(1000, 15000) };
     case RecurrenceType.Monthly:
-      return { type, day: random(), amount: randomMoney(3000, 50000) };
+      return { type, day: random(1, 31), amount: randomMoney(3000, 50000) };
   }
 };
 
