@@ -139,7 +139,6 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
     },
 
     async getBudget(id) {
-      console.log(budgetCache.getAll());
       if (budgetCache.has(id)) return budgetCache.get(id);
       const budget: Budget = await httpGet(`/budgets/${id}`, { token });
       budgetCache.add(budget.id, budget);

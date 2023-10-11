@@ -1,4 +1,5 @@
 import { Divider, Stack, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { Fragment } from "react";
 import { budgetSummary } from "src/types/budget/methods";
 import { ActualNominal, Budget } from "src/types/budget/types";
 import { categoryTitle } from "src/types/category/methods";
@@ -22,7 +23,7 @@ export const BudgetSummaryList = ({ budget }: BudgetSummaryListProps) => {
   return (
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 2, sm: 0 }} justifyContent="space-between">
       {items.map((item, index) => (
-        <>
+        <Fragment key={item.title}>
           <Stack justifyItems="center">
             <Typography variant="caption" color="text.secondary">
               {item.title}
@@ -32,7 +33,7 @@ export const BudgetSummaryList = ({ budget }: BudgetSummaryListProps) => {
             </Typography>
           </Stack>
           {index < items.length - 1 && <Divider orientation={mobile ? "horizontal" : "vertical"} flexItem />}
-        </>
+        </Fragment>
       ))}
     </Stack>
   );
