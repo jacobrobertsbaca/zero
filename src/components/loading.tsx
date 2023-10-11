@@ -1,4 +1,4 @@
-import { CircularProgress, Unstable_Grid2 as Grid } from "@mui/material";
+import { CircularProgress, Stack } from "@mui/material";
 
 type LoadingProps<T> = {
   value: T;
@@ -8,18 +8,14 @@ type LoadingProps<T> = {
 export const Loading = <T,>({ value, children }: LoadingProps<T>) => {
   if (!value)
     return (
-      <Grid
-        container
-        spacing={0}
+      <Stack
         direction="column"
         alignItems="center"
         justifyContent="center"
-        sx={{ minHeight: "80vh", height: 1, width: 1 }}
+        sx={{ height: 50 }}
       >
-        <Grid xs={3}>
-          <CircularProgress color="primary" size={30} />
-        </Grid>
-      </Grid>
+        <CircularProgress color="primary" size={30} />
+      </Stack>
     );
 
   return <>{typeof children === "function" ? children(value) : children}</>;
