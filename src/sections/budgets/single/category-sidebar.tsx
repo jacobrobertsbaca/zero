@@ -47,13 +47,12 @@ const SidebarItem = ({ title, children }: { title: React.ReactNode; children: Re
  * ================================================================================================================= */
 
 type CategorySidebarProps = {
-  budget: Budget;
   category: Category;
   open: boolean;
   onClose: () => void;
 };
 
-export const CategorySidebar = ({ budget, category, open, onClose }: CategorySidebarProps) => {
+export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProps) => {
   return (
     <Drawer
       anchor="right"
@@ -85,7 +84,7 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
           {category.recurrence.type !== RecurrenceType.None && (
             <SidebarItem title="Recurrence">{recurrenceSummary(category)}</SidebarItem>
           )}
-          <PeriodList budget={budget} category={category} />
+          <PeriodList category={category} />
         </Stack>
       </Scrollbar>
     </Drawer>

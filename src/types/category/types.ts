@@ -37,12 +37,18 @@ export type Recurrence = Immutable<NoRecurrence | WeeklyRecurrence | MonthlyRecu
 export type Period = Immutable<{
   /**
    * The dates contained in this period.
-   * This value may exceed the dates defined in its containing budget (they are not truncated).
+   * This value is always truncated to fit within its containing budget,
+   * except for the first and last padding periods.
    * */
   dates: Dates;
+
+  /**
+   * The true number of days in this period if it had not been truncated.
+   */
+  days: number;
   nominal: Money;
   actual: Money;
-  truncate?: TruncateMode;
+  truncate: TruncateMode;
 }>;
 
 export type Category = Immutable<{

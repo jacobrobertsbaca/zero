@@ -30,12 +30,11 @@ import { BudgetSummaryList } from "./budget-summary-list";
 
 type CategoryRowProps = {
   state: BudgetView;
-  budget: Budget;
   category: Category;
   onClick: (category: Category) => void;
 };
 
-const CategoryRow = ({ state, budget, category, onClick }: CategoryRowProps) => {
+const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
   const activePeriod = categoryActive(category);
   const actual = state === BudgetView.Current ? activePeriod!.actual : categoryActual(category);
   const nominal = state === BudgetView.Current ? activePeriod!.nominal : categoryNominal(category);
@@ -51,7 +50,7 @@ const CategoryRow = ({ state, budget, category, onClick }: CategoryRowProps) => 
       </TableCell>
       {state === BudgetView.Current && (
         <TableCell>
-          <PeriodTooltip recurrence={category.recurrence.type} dates={activePeriod!.dates} budget={budget} under />
+          <PeriodTooltip recurrence={category.recurrence.type} dates={activePeriod!.dates} under />
         </TableCell>
       )}
       <TableCell>
@@ -88,7 +87,6 @@ export const CategoryList = ({ budget, onCategoryClicked }: CategoryListProps) =
                 <CategoryRow
                   key={category.id}
                   state={state}
-                  budget={budget}
                   category={category}
                   onClick={onCategoryClicked}
                 />

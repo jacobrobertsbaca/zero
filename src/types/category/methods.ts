@@ -58,6 +58,20 @@ const getRangeResolver = (budget: Budget, recurrence: Recurrence): RangeResolver
  * Category                                                                                                          *
  * ================================================================================================================= */
 
+/* NOTE: Category periods always will have the format
+
+ *        [EARLIER]
+ *        [period 1]
+ *        [period 2]
+ *          ...
+ *        [period n]
+ *        [LATER]
+ * 
+ * For n >= 1. In other words, there are always at least three periods,
+ * with the first period representing expenses before the budget
+ * and the last period representing expenses after the budget.
+ */
+
 /**
  * Computes and returns the total nominal amount of a category.
  */
@@ -75,17 +89,17 @@ export const categoryActual = (category: Category): Money => {
 /**
  * Called to set total nominal value of a category.
  */
-export const onCategoryNominal = (budget: Budget, category: Category, total: Money): Category =>
+export const onCategoryNominal = (category: Category, total: Money): Category =>
   produce(category, (draft) => {
     // Edge case: What if every period is omitted? Then sum of weights will be zero.
     // If so, we will change one of the 'Omit's to 'Split' before continuing.
     if (draft.periods.every((p) => p.truncate === TruncateMode.Omit)) {
-      const omitIndex = draft.periods.findIndex((p) => p.truncate == TruncateMode.Omit);
+      const omitIndex = draft.periods.findIndex((p, i) => i !== 0 && p.truncate == TruncateMode.Omit);
       draft.periods[omitIndex].truncate = TruncateMode.Split;
     }
 
     // Allocate total amount among all periods according to their multiplier
-    const weights = draft.periods.map((p) => periodMultiplier(budget, p));
+    const weights = draft.periods.map((p) => periodMultiplier(p));
     const amounts = moneyAllocate(total, weights);
     for (let i = 0; i < amounts.length; i++) draft.periods[i].nominal = amounts[i];
 
@@ -140,26 +154,43 @@ export const categoryActive = (category: Category, today?: Date | DateString): P
 export const onRecurrence = (budget: Budget, category: Category, recurrence: Recurrence): Category =>
   produce(category, (draft) => {
     // If there are no periods or the recurrence type has changed, reset periods
-    if (draft.periods.length === 0 || recurrence.type !== category.recurrence.type) {
+    if (draft.periods.length <= 2 || recurrence.type !== category.recurrence.type) {
       const resolver = getRangeResolver(budget, recurrence);
       draft.periods = resolveRanges(budget, resolver).map((dates) => ({
-        dates: dates,
+        dates: datesClamp(budget.dates, dates),
+        days: datesDays(dates),
         nominal: moneyZero(),
         actual: moneyZero(),
+        truncate: TruncateMode.Keep,
       }));
 
-      // Preserve period truncation on first and last periods
-      if (draft.periods.length === 0) return;
-      if (!datesContains(budget.dates, draft.periods[0].dates))
-        draft.periods[0].truncate = category.periods[0]?.truncate ?? TruncateMode.Split;
-      if (!datesContains(budget.dates, draft.periods[draft.periods.length - 1].dates))
-        draft.periods[draft.periods.length - 1].truncate =
-          category.periods[category.periods.length - 1]?.truncate ?? TruncateMode.Split;
+      // Pad periods for earlier and later expenses (that fall before or after the budget dates)
+      draft.periods.unshift({
+        dates: {
+          begin: asDateString(new Date(Date.parse('01 Jan 0000'))),
+          end: asDateString(draft.periods[0].dates.begin, -1),
+        },
+        days: 0,
+        nominal: moneyZero(),
+        actual: moneyZero(),
+        truncate: TruncateMode.Omit,
+      });
+
+      draft.periods.push({
+        dates: {
+          begin: asDateString(draft.periods[draft.periods.length - 1].dates.end, 1),
+          end: asDateString(new Date(Date.parse('31 Dec 9999'))),
+        },
+        days: 0,
+        nominal: moneyZero(),
+        actual: moneyZero(),
+        truncate: TruncateMode.Omit,
+      });
     }
 
     // Update period nominal amounts
     for (const period of draft.periods)
-      period.nominal = period.nominal = moneyFactor(draft.recurrence.amount, periodMultiplier(budget, period));
+      period.nominal = period.nominal = moneyFactor(draft.recurrence.amount, periodMultiplier(period));
     draft.recurrence = recurrence;
   });
 
@@ -167,29 +198,20 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
  * Period                                                                                                            *
  * ================================================================================================================= */
 
-const periodMultiplier = (budget: Budget, period: Period): number => {
-  if (datesContains(budget.dates, period.dates)) return 1.0;
-  if (!period.truncate) throw new Error(`Truncated period did not have truncate defined.`);
+const periodMultiplier = (period: Period): number => {
   switch (period.truncate) {
     case TruncateMode.Keep:
       return 1.0;
     case TruncateMode.Split:
-      return periodDays(budget, period) / datesDays(period.dates);
+      return datesDays(period.dates) / period.days;
     case TruncateMode.Omit:
       return 0.0;
   }
 };
 
 /** Called when {@link Period.truncate} changes. */
-export const onPeriodTruncate = (budget: Budget, category: Category, period: Period): Period => {
+export const onPeriodTruncate = (category: Category, period: Period): Period => {
   return produce(period, (draft) => {
-    draft.nominal = moneyFactor(category.recurrence.amount, periodMultiplier(budget, draft));
+    draft.nominal = moneyFactor(category.recurrence.amount, periodMultiplier(draft));
   });
-};
-
-/**
- * Returns the number of *effective* days in {@link period}, which occurs in {@link budget}.
- */
-export const periodDays = (budget: Budget, period: Period): number => {
-  return datesDays(datesClamp(period.dates, budget.dates));
 };
