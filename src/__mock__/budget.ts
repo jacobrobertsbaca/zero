@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { Draft, produce } from "immer";
 import { Budget, BudgetStatus } from "src/types/budget/types";
-import { Category, CategoryType, Recurrence, RecurrenceType } from "src/types/category/types";
+import { Category, CategoryType, Recurrence, RecurrenceType, RolloverMode } from "src/types/category/types";
 import { onCategoryNominal, onRecurrence } from "src/types/category/methods";
 import { sample, random } from "lodash";
 import { randomMoney } from "./money";
@@ -59,7 +59,11 @@ const generateCategory = (budget: Budget): Category => {
     name: sample(CATEGORY_NAMES[type])!,
     type,
     recurrence,
-    periods: []
+    periods: [],
+    rollover: {
+      surplus: RolloverMode.Average,
+      loss: RolloverMode.Average
+    }
   };
   
   category = onRecurrence(budget, category, recurrence);

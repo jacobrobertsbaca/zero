@@ -1,23 +1,17 @@
-import PropTypes from "prop-types";
-import { format } from "date-fns";
 import {
-  Avatar,
   Box,
   Card,
   CardHeader,
-  Checkbox,
   Stack,
   Table,
   TableBody,
   TableCell,
   TableFooter,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
 } from "@mui/material";
 import { Scrollbar } from "src/components/scrollbar";
-import { getInitials } from "src/utils/get-initials";
 import { Budget, BudgetStatus } from "src/types/budget/types";
 import { BudgetViewSelector, BudgetView } from "./budget-view-selector";
 import { useState } from "react";

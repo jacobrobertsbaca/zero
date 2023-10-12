@@ -21,6 +21,14 @@ export enum RecurrenceType {
   Monthly = "monthly",
 }
 
+export enum RolloverMode {
+  /** Don't rollover this amount to future periods */
+  None = "none",
+
+  /** Average this amount across all future periods */
+  Average = "average"
+}
+
 export type NoRecurrence = Immutable<{ type: RecurrenceType.None; amount: Money }>;
 export type WeeklyRecurrence = Immutable<{
   type: RecurrenceType.Weekly;
@@ -57,4 +65,8 @@ export type Category = Immutable<{
   type: CategoryType;
   recurrence: Recurrence;
   periods: Period[];
+  rollover: {
+    loss: RolloverMode,
+    surplus: RolloverMode
+  }
 }>;
