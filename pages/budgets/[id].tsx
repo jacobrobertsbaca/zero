@@ -7,7 +7,7 @@ import { useBudget } from "src/hooks/use-api";
 import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
 import { CategoryList } from "src/sections/budgets/single/category-list";
 import { CategorySidebar } from "src/sections/budgets/single/category-sidebar";
-import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
+import { Category, CategoryType, RecurrenceType, RolloverMode } from "src/types/category/types";
 import { moneyZero } from "src/types/money/methods";
 import { dateFormat } from "src/types/utils/methods";
 
@@ -23,6 +23,7 @@ const Page = () => {
     type: CategoryType.Income,
     recurrence: { type: RecurrenceType.None, amount: moneyZero() },
     periods: [],
+    rollover: { loss: RolloverMode.Average, surplus: RolloverMode.Average }
   });
 
   const onCategoryClicked = useCallback((category: Category) => {
