@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { Draft, produce } from "immer";
 import { Budget, BudgetStatus } from "src/types/budget/types";
 import { Category, CategoryType, Recurrence, RecurrenceType, RolloverMode } from "src/types/category/types";
-import { categoryRollover, onCategoryNominal, onRecurrence } from "src/types/category/methods";
+import { onRecurrence } from "src/types/category/methods";
 import { sample, random } from "lodash";
 import { randomMoney } from "./money";
 import { asDateString } from "src/types/utils/methods";
@@ -73,7 +73,6 @@ const generateCategory = (budget: Budget): Category => {
       period.actual = randomMoney(-1000, 1.25 * period.nominal.amount);
     }
   });
-  category = categoryRollover(category);
   return category;
 };
 

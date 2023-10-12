@@ -56,11 +56,6 @@ export type Period = Immutable<{
   days: number;
   nominal: Money;
   actual: Money;
-
-  /**
-   * Amount rolled over from previous periods. Can be computed using {@link categoryRollover}.
-   */
-  rollover: Money;
   truncate: TruncateMode;
 }>;
 

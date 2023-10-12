@@ -3,7 +3,7 @@ import { Category, Period } from "src/types/category/types";
 import { dateFormat, datesContains } from "src/types/utils/methods";
 import { SpendingBar } from "../common/spending-bar";
 import { useCallback } from "react";
-import { categoryActiveIndex } from "src/types/category/methods";
+import { categoryActiveIndex, categoryRollover } from "src/types/category/methods";
 import { MoneyText } from "src/components/money-text";
 import { moneySum } from "src/types/money/methods";
 
@@ -13,6 +13,7 @@ type PeriodListProps = {
 
 export const PeriodList = ({ category }: PeriodListProps) => {
   const activeIndex = categoryActiveIndex(category);
+  const rollovers = categoryRollover(category);
   const getDates = useCallback((period: Period) => {
     const beginDate = dateFormat(period.dates.begin, { excludeYear: true });
     if (period.dates.begin === period.dates.end) return beginDate;
@@ -47,10 +48,10 @@ export const PeriodList = ({ category }: PeriodListProps) => {
                 <TableCell>
                   <SpendingBar
                     actual={period.actual}
-                    nominal={moneySum(period.nominal, period.rollover)}
+                    nominal={moneySum(period.nominal, rollovers[index])}
                     remaining={
                       index >= activeIndex &&
-                      period.rollover.amount !== 0 && <MoneyText amount={period.rollover} plus variant="caption" />
+                      rollovers[index].amount !== 0 && <MoneyText amount={rollovers[index]} plus variant="caption" />
                     }
                   />
                 </TableCell>

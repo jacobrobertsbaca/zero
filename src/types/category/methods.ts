@@ -108,7 +108,7 @@ export const onCategoryNominal = (category: Category, total: Money): Category =>
     draft.recurrence.amount = moneyFactor(amounts[index], 1 / weights[index]);
   });
 
-export const categoryRollover = (category: Category): Category => {
+export const categoryRollover = (category: Category): Money[] => {
   const active = categoryActiveIndex(category);
 
   // Calculate remaining amount.
@@ -120,23 +120,18 @@ export const categoryRollover = (category: Category): Category => {
     remaining = moneySum(remaining, moneySub(period.nominal, period.actual));
   }
 
-  return produce(category, (draft) => {
-    const handleRollover = (remaining: Money, mode: RolloverMode): void => {
-      switch (mode) {
-        case RolloverMode.None:
-          return;
-        case RolloverMode.Average:
-          // Average across future periods according to nominal amount
-          const weights = [];
-          for (let i = active; i < draft.periods.length - 1; i++) weights.push(draft.periods[i].nominal.amount);
-          const amounts = moneyAllocate(remaining, weights);
-          for (let i = active; i < draft.periods.length - 1; i++) draft.periods[i].rollover = amounts[i - active];
-      }
-    };
+  const handleRollover = (remaining: Money, mode: RolloverMode): Money[] => {
+    switch (mode) {
+      case RolloverMode.None: return category.periods.map(_ => moneyZero());
+      case RolloverMode.Average:
+        // Average across future periods according to multiplier
+        const weights = category.periods.map((p, i) => i >= active ? periodMultiplier(p) : 0);
+        return moneyAllocate(remaining, weights);
+    }
+  };
 
-    if (remaining.amount > 0) handleRollover(remaining, draft.rollover.surplus);
-    else if (remaining.amount < 0) handleRollover(remaining, draft.rollover.loss);
-  });
+  if (remaining.amount >= 0) return handleRollover(remaining, category.rollover.surplus);
+  else return handleRollover(remaining, category.rollover.loss);
 };
 
 export const categorySort = <T>(selector: (e: T) => CategoryType): ((a: T, b: T) => number) => {
@@ -209,7 +204,6 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
         days: 0,
         nominal: moneyZero(),
         actual: moneyZero(),
-        rollover: moneyZero(),
         truncate: TruncateMode.Omit,
       });
 
@@ -221,7 +215,6 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
         days: 0,
         nominal: moneyZero(),
         actual: moneyZero(),
-        rollover: moneyZero(),
         truncate: TruncateMode.Omit,
       });
     }

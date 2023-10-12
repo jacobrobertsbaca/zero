@@ -50,9 +50,10 @@ export const moneyAllocate = (money: Money, weights: number[]): Money[] => {
   // Distribute remainder among all non-zero parties
   let i = 0;
   while (remainder > 0) {
-    if (weights[i] === 0) continue;
-    amounts[i]++;
-    remainder--;
+    if (weights[i] !== 0) {
+      amounts[i]++;
+      remainder--;
+    }
     i = (i + 1) % weights.length;
   }
   return amounts.map(amount => ({amount, currency: money.currency}));

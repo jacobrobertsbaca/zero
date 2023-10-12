@@ -15,7 +15,7 @@ import { Scrollbar } from "src/components/scrollbar";
 import { Budget, BudgetStatus } from "src/types/budget/types";
 import { BudgetViewSelector, BudgetView } from "./budget-view-selector";
 import { useState } from "react";
-import { categoryActive, categoryActual, categoryNominal, categoryTitle } from "src/types/category/methods";
+import { categoryActive, categoryActiveIndex, categoryActual, categoryNominal, categoryRollover, categoryTitle } from "src/types/category/methods";
 import { SpendingBar } from "../common/spending-bar";
 import { Category } from "src/types/category/types";
 import { budgetStatus } from "src/types/budget/methods";
@@ -30,9 +30,11 @@ type CategoryRowProps = {
 };
 
 const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
-  const activePeriod = categoryActive(category);
+  const activeIndex = categoryActiveIndex(category);
+  const activePeriod = category.periods[activeIndex];
+  const rollovers = categoryRollover(category);
   const actual = state === BudgetView.Current ? activePeriod!.actual : categoryActual(category);
-  const nominal = state === BudgetView.Current ? moneySum(activePeriod!.nominal, activePeriod!.rollover) : categoryNominal(category);
+  const nominal = state === BudgetView.Current ? moneySum(activePeriod!.nominal, rollovers[activeIndex]) : categoryNominal(category);
   return (
     <TableRow hover key={category.id} onClick={() => onClick(category)} sx={{ cursor: "pointer" }}>
       <TableCell>
