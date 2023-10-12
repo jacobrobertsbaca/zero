@@ -5,15 +5,14 @@ import { ActualNominal } from "src/types/budget/types";
 import { moneyFactor, moneyFormat, moneySub } from "src/types/money/methods";
 
 type SpendingBarProps = ActualNominal & {
-  remaining?: boolean
+  remaining?: boolean | React.ReactNode;
 };
 
 export const SpendingBar = ({ actual, nominal, remaining }: SpendingBarProps) => {
-
   const getValue = useCallback(() => {
     if (nominal.amount === 0) return actual.amount >= 0 ? 100 : 0;
     if ((nominal.amount < 0 && actual.amount < 0) || (nominal.amount > 0 && actual.amount > 0))
-      return Math.min(100, 100 * actual.amount / nominal.amount);
+      return Math.min(100, (100 * actual.amount) / nominal.amount);
     return 0;
   }, [actual, nominal]);
 
@@ -21,29 +20,31 @@ export const SpendingBar = ({ actual, nominal, remaining }: SpendingBarProps) =>
 
   return (
     <Box>
-      <LinearProgress
-        variant="determinate"
-        value={getValue()}
-      />
+      <LinearProgress variant="determinate" value={getValue()} />
       <Box
         sx={{
           mt: 0.5,
           display: "flex",
-          justifyContent: "space-between"
+          justifyContent: "space-between",
         }}
       >
         <Typography variant="caption">
           <Typography display="inline" variant="inherit" fontWeight={700}>
             {moneyFormat(actual, true)}
-          </Typography> of {moneyFormat(nominal, true)}
+          </Typography>{" "}
+          of {moneyFormat(nominal, true)}
         </Typography>
         {remaining &&
-          <Typography variant="caption">
-            <Typography display="inline" variant="inherit" fontWeight={700}>
-              {moneyFormat(delta.amount >= 0 ? delta : moneyFactor(delta, -1), true)}
-            </Typography> {delta.amount >= 0 ? "left" : "over"}
-          </Typography>
-        }
+          (typeof remaining === "boolean" ? (
+            <Typography variant="caption">
+              <Typography display="inline" variant="inherit" fontWeight={700}>
+                {moneyFormat(delta.amount >= 0 ? delta : moneyFactor(delta, -1), true)}
+              </Typography>{" "}
+              {delta.amount >= 0 ? "left" : "over"}
+            </Typography>
+          ) : (
+            remaining
+          ))}
       </Box>
     </Box>
   );

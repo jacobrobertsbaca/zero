@@ -1,25 +1,19 @@
-import {
-  Box,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
+import { Box, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
 import { Category, Period } from "src/types/category/types";
 import { dateFormat, datesContains } from "src/types/utils/methods";
 import { SpendingBar } from "../common/spending-bar";
 import { useCallback } from "react";
+import { categoryActiveIndex } from "src/types/category/methods";
+import { MoneyText } from "src/components/money-text";
+import { moneySum } from "src/types/money/methods";
 
 type PeriodListProps = {
   category: Category;
 };
 
 export const PeriodList = ({ category }: PeriodListProps) => {
-  const getDates = useCallback((period: Period) => 
-  {
+  const activeIndex = categoryActiveIndex(category);
+  const getDates = useCallback((period: Period) => {
     const beginDate = dateFormat(period.dates.begin, { excludeYear: true });
     if (period.dates.begin === period.dates.end) return beginDate;
     const endDate = dateFormat(period.dates.end, { excludeYear: true });
@@ -36,15 +30,14 @@ export const PeriodList = ({ category }: PeriodListProps) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {category.periods.map((period, index) =>
-            index === 0 && period.nominal.amount === 0 ? null :
-            index === category.periods.length - 1 && period.nominal.amount === 0 ? null :
-            (
+          {category.periods.map((period: Period, index: number) =>
+            index === 0 && period.actual.amount === 0 ? null : index === category.periods.length - 1 &&
+              period.actual.amount === 0 ? null : (
               <TableRow hover key={`${period.dates.begin}${period.dates.end}`}>
                 <TableCell>
                   <Stack>
                     {index === 0 ? "Earlier" : index === category.periods.length - 1 ? "Later" : getDates(period)}
-                    {datesContains(period.dates, new Date()) && (
+                    {index === activeIndex && (
                       <Typography variant="caption" color="text.secondary">
                         Current
                       </Typography>
@@ -52,7 +45,14 @@ export const PeriodList = ({ category }: PeriodListProps) => {
                   </Stack>
                 </TableCell>
                 <TableCell>
-                  <SpendingBar actual={period.actual} nominal={period.nominal} />
+                  <SpendingBar
+                    actual={period.actual}
+                    nominal={moneySum(period.nominal, period.rollover)}
+                    remaining={
+                      index >= activeIndex &&
+                      period.rollover.amount !== 0 && <MoneyText amount={period.rollover} plus variant="caption" />
+                    }
+                  />
                 </TableCell>
               </TableRow>
             )

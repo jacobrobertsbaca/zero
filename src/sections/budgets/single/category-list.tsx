@@ -21,6 +21,7 @@ import { Category } from "src/types/category/types";
 import { budgetStatus } from "src/types/budget/methods";
 import { PeriodTooltip } from "../common/period-tooltip";
 import { BudgetSummaryList } from "./budget-summary-list";
+import { moneySum } from "src/types/money/methods";
 
 type CategoryRowProps = {
   state: BudgetView;
@@ -31,7 +32,7 @@ type CategoryRowProps = {
 const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
   const activePeriod = categoryActive(category);
   const actual = state === BudgetView.Current ? activePeriod!.actual : categoryActual(category);
-  const nominal = state === BudgetView.Current ? activePeriod!.nominal : categoryNominal(category);
+  const nominal = state === BudgetView.Current ? moneySum(activePeriod!.nominal, activePeriod!.rollover) : categoryNominal(category);
   return (
     <TableRow hover key={category.id} onClick={() => onClick(category)} sx={{ cursor: "pointer" }}>
       <TableCell>

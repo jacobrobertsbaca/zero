@@ -1,4 +1,5 @@
 import { Divider, Stack, Typography } from "@mui/material";
+import { MoneyText } from "src/components/money-text";
 import { ActualNominal, Budget, BudgetSummary } from "src/types/budget/types";
 import { categoryTitle } from "src/types/category/methods";
 import { CategoryType } from "src/types/category/types";
@@ -15,22 +16,11 @@ type BudgetCardDetailsProps = {
  * Utility Components                                                                                                *
  * ================================================================================================================= */
 
-const MoneyText = ({ amount }: { amount: Money }) => (
-  <Typography
-    variant="inherit"
-    display="inline"
-    color={amount.amount >= 0 ? "success.light" : "warning.main"}
-    fontWeight={600}
-  >
-    &nbsp;{moneyFormat(amount)}&nbsp;
-  </Typography>
-);
-
 const LeftoverTooltip = (props: { leftovers: ActualNominal }) => (
   <Typography variant="caption">
-    <MoneyText amount={props.leftovers.actual} />
+    <MoneyText amount={props.leftovers.actual} fontWeight={600} display="inline" />
     leftover of
-    <MoneyText amount={props.leftovers.nominal} />
+    <MoneyText amount={props.leftovers.nominal} fontWeight={600} display="inline"/>
     planned
   </Typography>
 );

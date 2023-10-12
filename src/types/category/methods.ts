@@ -1,10 +1,10 @@
-import { produce } from "immer";
+import { Draft, produce } from "immer";
 import { Budget } from "../budget/types";
-import { moneyAllocate, moneyFactor, moneySum, moneyZero } from "../money/methods";
+import { moneyAllocate, moneyFactor, moneySub, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
 import { datesClamp, datesContains, datesDays, asDate, asDateString } from "../utils/methods";
 import { Dates, DateString } from "../utils/types";
-import { Category, CategoryType, Period, Recurrence, RecurrenceType, TruncateMode } from "./types";
+import { Category, CategoryType, Period, Recurrence, RecurrenceType, RolloverMode, TruncateMode } from "./types";
 
 /* ================================================================================================================= *
  * Utility Methods                                                                                                   *
@@ -108,6 +108,37 @@ export const onCategoryNominal = (category: Category, total: Money): Category =>
     draft.recurrence.amount = moneyFactor(amounts[index], 1 / weights[index]);
   });
 
+export const categoryRollover = (category: Category): Category => {
+  const active = categoryActiveIndex(category);
+
+  // Calculate remaining amount.
+  // If positive, we spent LESS than we planned.
+  // If negative, we spent MORE than we planned.
+  let remaining = moneyZero();
+  for (let i = 0; i < active; i++) {
+    const period = category.periods[i];
+    remaining = moneySum(remaining, moneySub(period.nominal, period.actual));
+  }
+
+  return produce(category, (draft) => {
+    const handleRollover = (remaining: Money, mode: RolloverMode): void => {
+      switch (mode) {
+        case RolloverMode.None:
+          return;
+        case RolloverMode.Average:
+          // Average across future periods according to nominal amount
+          const weights = [];
+          for (let i = active; i < draft.periods.length - 1; i++) weights.push(draft.periods[i].nominal.amount);
+          const amounts = moneyAllocate(remaining, weights);
+          for (let i = active; i < draft.periods.length - 1; i++) draft.periods[i].rollover = amounts[i - active];
+      }
+    };
+
+    if (remaining.amount > 0) handleRollover(remaining, draft.rollover.surplus);
+    else if (remaining.amount < 0) handleRollover(remaining, draft.rollover.loss);
+  });
+};
+
 export const categorySort = <T>(selector: (e: T) => CategoryType): ((a: T, b: T) => number) => {
   const order: Record<CategoryType, number> = {
     [CategoryType.Income]: 0,
@@ -129,19 +160,23 @@ export const categoryTitle = (type: CategoryType): string => {
   return titles[type];
 };
 
+export const categoryActiveIndex = (category: Category, today?: Date | DateString): number => {
+  if (!today) today = new Date();
+  today = asDate(today);
+
+  for (let i = 0; i < category.periods.length; i++) {
+    if (datesContains(category.periods[i].dates, today)) return i;
+  }
+
+  return -1;
+};
+
 /**
  * Returns the currently active period within the given category.
  * @param category A category
  */
-export const categoryActive = (category: Category, today?: Date | DateString): Period | undefined => {
-  if (!today) today = new Date();
-  today = asDate(today);
-
-  for (const period of category.periods) {
-    if (datesContains(period.dates, today)) return period;
-  }
-
-  return undefined;
+export const categoryActive = (category: Category, today?: Date | DateString): Period => {
+  return category.periods[categoryActiveIndex(category, today)];
 };
 
 /* ================================================================================================================= *
@@ -161,29 +196,32 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
         days: datesDays(dates),
         nominal: moneyZero(),
         actual: moneyZero(),
+        rollover: moneyZero(),
         truncate: TruncateMode.Keep,
       }));
 
       // Pad periods for earlier and later expenses (that fall before or after the budget dates)
       draft.periods.unshift({
         dates: {
-          begin: asDateString(new Date(Date.parse('01 Jan 0000'))),
+          begin: asDateString(new Date(Date.parse("01 Jan 0000"))),
           end: asDateString(draft.periods[0].dates.begin, -1),
         },
         days: 0,
         nominal: moneyZero(),
         actual: moneyZero(),
+        rollover: moneyZero(),
         truncate: TruncateMode.Omit,
       });
 
       draft.periods.push({
         dates: {
           begin: asDateString(draft.periods[draft.periods.length - 1].dates.end, 1),
-          end: asDateString(new Date(Date.parse('31 Dec 9999'))),
+          end: asDateString(new Date(Date.parse("31 Dec 9999"))),
         },
         days: 0,
         nominal: moneyZero(),
         actual: moneyZero(),
+        rollover: moneyZero(),
         truncate: TruncateMode.Omit,
       });
     }
