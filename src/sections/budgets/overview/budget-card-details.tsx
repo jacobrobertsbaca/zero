@@ -3,8 +3,6 @@ import { MoneyText } from "src/components/money-text";
 import { ActualNominal, Budget, BudgetSummary } from "src/types/budget/types";
 import { categoryTitle } from "src/types/category/methods";
 import { CategoryType } from "src/types/category/types";
-import { moneyFormat } from "src/types/money/methods";
-import { Money } from "src/types/money/types";
 import { TitledSpendingBar } from "../common/spending-bar";
 
 type BudgetCardDetailsProps = {
@@ -18,10 +16,10 @@ type BudgetCardDetailsProps = {
 
 const LeftoverTooltip = (props: { leftovers: ActualNominal }) => (
   <Typography variant="caption">
-    <MoneyText amount={props.leftovers.actual} fontWeight={600} display="inline" />
-    leftover of
-    <MoneyText amount={props.leftovers.nominal} fontWeight={600} display="inline"/>
-    planned
+    <MoneyText amount={props.leftovers.actual} fontWeight={600} status />
+    &nbsp;leftover of&nbsp;
+    <MoneyText amount={props.leftovers.nominal} fontWeight={600} status />
+    &nbsp;planned
   </Typography>
 );
 

@@ -1,8 +1,9 @@
 import { Box, LinearProgress, Link, Stack, Typography } from "@mui/material";
 import { useCallback } from "react";
 import { InfoTooltip } from "src/components/info-tooltip";
+import { MoneyText } from "src/components/money-text";
 import { ActualNominal } from "src/types/budget/types";
-import { moneyFactor, moneyFormat, moneySub } from "src/types/money/methods";
+import { moneyFactor, moneySub, RoundingMode } from "src/types/money/methods";
 
 type SpendingBarProps = ActualNominal & {
   remaining?: boolean | React.ReactNode;
@@ -29,17 +30,19 @@ export const SpendingBar = ({ actual, nominal, remaining }: SpendingBarProps) =>
         }}
       >
         <Typography variant="caption">
-          <Typography display="inline" variant="inherit" fontWeight={700}>
-            {moneyFormat(actual, true)}
-          </Typography>{" "}
-          of {moneyFormat(nominal, true)}
+          <MoneyText variant="inherit" fontWeight={700} amount={actual} round={RoundingMode.RoundZero} /> of&nbsp;
+          <MoneyText variant="inherit" amount={nominal} round={RoundingMode.RoundZero} />
         </Typography>
         {remaining &&
           (typeof remaining === "boolean" ? (
             <Typography variant="caption">
-              <Typography display="inline" variant="inherit" fontWeight={700}>
-                {moneyFormat(delta.amount >= 0 ? delta : moneyFactor(delta, -1), true)}
-              </Typography>{" "}
+              <MoneyText
+                variant="inherit"
+                amount={delta.amount >= 0 ? delta : moneyFactor(delta, -1)}
+                round={RoundingMode.RoundZero}
+                fontWeight={700}
+              />
+              &nbsp;
               {delta.amount >= 0 ? "left" : "over"}
             </Typography>
           ) : (

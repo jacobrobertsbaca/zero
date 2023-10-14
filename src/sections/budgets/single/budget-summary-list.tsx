@@ -1,9 +1,10 @@
 import { Divider, Stack, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { Fragment } from "react";
+import { MoneyText } from "src/components/money-text";
 import { budgetSummary } from "src/types/budget/methods";
 import { ActualNominal, Budget } from "src/types/budget/types";
 import { categoryTitle } from "src/types/category/methods";
-import { moneyFormat } from "src/types/money/methods";
+import { RoundingMode } from "src/types/money/methods";
 
 type BudgetSummaryListProps = {
   budget: Budget;
@@ -29,7 +30,9 @@ export const BudgetSummaryList = ({ budget }: BudgetSummaryListProps) => {
               {item.title}
             </Typography>
             <Typography variant="subtitle2" color="text.primary">
-              {moneyFormat(item.actual, true)} of {moneyFormat(item.nominal, true)}
+              <MoneyText variant="inherit" amount={item.actual} round={RoundingMode.RoundZero} />
+              &nbsp;of&nbsp;
+              <MoneyText variant="inherit" amount={item.nominal} round={RoundingMode.RoundZero} />
             </Typography>
           </Stack>
           {index < items.length - 1 && <Divider orientation={mobile ? "horizontal" : "vertical"} flexItem />}

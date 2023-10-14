@@ -1,25 +1,23 @@
 import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon } from "@mui/material";
 import XMarkIcon from "@heroicons/react/24/solid/XMarkIcon";
 import { Scrollbar } from "src/components/scrollbar";
-import { Category, Recurrence, RecurrenceType, RolloverMode } from "src/types/category/types";
+import { Category, RecurrenceType } from "src/types/category/types";
 import { categoryActual, categoryNominal, categoryTitle } from "src/types/category/methods";
-import { moneyFormat } from "src/types/money/methods";
-import { Budget } from "src/types/budget/types";
 import { PeriodList } from "./period-list";
+import { MoneyText } from "src/components/money-text";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
  * ================================================================================================================= */
 
 const recurrenceSummary = (category: Category): string => {
-  const amount = moneyFormat(category.recurrence.amount);
   switch (category.recurrence.type) {
     case RecurrenceType.None:
-      return `${amount} overall`;
+      return `overall`;
     case RecurrenceType.Monthly:
-      return `${amount} monthly on day ${category.recurrence.day}`;
+      return `monthly on day ${category.recurrence.day}`;
     case RecurrenceType.Weekly:
-      return `${amount} weekly on ${
+      return `weekly on ${
         {
           0: "Sunday",
           1: "Monday",
@@ -79,10 +77,16 @@ export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProp
         <Stack spacing={3} sx={{ p: 3 }}>
           <SidebarItem title="Type">{categoryTitle(category.type)}</SidebarItem>
           <SidebarItem title="Amount">
-            {moneyFormat(categoryActual(category))} of {moneyFormat(categoryNominal(category))}
+            <MoneyText variant="inherit" amount={categoryActual(category)} />
+            &nbsp;of&nbsp;
+            <MoneyText variant="inherit" amount={categoryNominal(category)} />
           </SidebarItem>
           {category.recurrence.type !== RecurrenceType.None && (
-            <SidebarItem title="Recurrence">{recurrenceSummary(category)}</SidebarItem>
+            <SidebarItem title="Recurrence">
+              <MoneyText variant="inherit" amount={category.recurrence.amount} />
+              &nbsp;
+              {recurrenceSummary(category)}
+            </SidebarItem>
           )}
           <PeriodList category={category} />
         </Stack>

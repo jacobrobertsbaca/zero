@@ -59,12 +59,51 @@ export const moneyAllocate = (money: Money, weights: number[]): Money[] => {
   return amounts.map(amount => ({amount, currency: money.currency}));
 }
 
-export const moneyFormat = (money: Money, round: boolean = false): string => {
-  // Note: Currently this only works for USD
+export enum RoundingMode {
+  /**
+   * Round to the nearest dollar.
+   */
+  Round,
+
+  /**
+   * Round to the nearest dollar unless doing so results in zero dollars for a non-zero input.
+   */
+  RoundZero,
+}
+
+export type MoneyFormatOptions = {
+  /**
+   * Whether to round amounts.
+   */
+  round?: RoundingMode;
+
+  /**
+   * Include a plus symbol (+) for positive amounts.
+   */
+  plus?: boolean;
+};
+
+export const moneyFormat = (money: Money, options?: MoneyFormatOptions): string => {
+  const { round, plus } = options ?? {};
   const mag   = Math.abs(money.amount);
+  const major = Math.floor(mag / 100);
   const minor = mag % 100;
-  const major = Math.floor(mag / 100) + (round && minor >= 50 ? 1 : 0);
-  const prefix = `${money.amount < 0 ? "–" : ""}$${major}`;
-  if (round) return prefix;
-  return `${prefix}.${minor.toString().padStart(2, "0")}`;
+
+  const addPrefix = (repr: string, amount: number): string => {
+    if (amount > 0) return `${plus ? "+" : ""}$${repr}`;
+    if (amount == 0) return `$${repr}`;
+    return `-$${repr}`;
+  }
+
+  // Note: Currently this only works for USD
+  switch (round) {
+    case undefined:
+      return addPrefix(`${major}.${minor.toString().padStart(2, "0")}`, money.amount);
+    case RoundingMode.RoundZero:
+    case RoundingMode.Round:
+      if (round === RoundingMode.RoundZero && mag < 50 && mag > 0)
+        return addPrefix(`0.${mag.toString().padStart(2, "0")}`, money.amount);
+      const rounded = major + (minor >= 50 ? 1 : 0);
+      return addPrefix(rounded.toString(), Math.sign(money.amount) * rounded);
+  }
 };

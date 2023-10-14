@@ -51,7 +51,9 @@ export const PeriodList = ({ category }: PeriodListProps) => {
                     nominal={moneySum(period.nominal, rollovers[index])}
                     remaining={
                       index >= activeIndex &&
-                      rollovers[index].amount !== 0 && <MoneyText amount={rollovers[index]} plus variant="caption" />
+                      rollovers[index].amount !== 0 && (
+                        <MoneyText variant="caption" fontWeight={700} amount={rollovers[index]} plus status />
+                      )
                     }
                   />
                 </TableCell>
