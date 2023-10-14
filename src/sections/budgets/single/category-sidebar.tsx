@@ -1,10 +1,12 @@
-import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon } from "@mui/material";
+import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon, Button } from "@mui/material";
 import XMarkIcon from "@heroicons/react/24/solid/XMarkIcon";
 import { Scrollbar } from "src/components/scrollbar";
 import { Category, RecurrenceType } from "src/types/category/types";
 import { categoryActual, categoryNominal, categoryTitle } from "src/types/category/methods";
 import { PeriodList } from "./period-list";
 import { MoneyText } from "src/components/money-text";
+import { CategoryEditActions, CategoryEditState } from "./category-edit-actions";
+import { useState } from "react";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
@@ -51,6 +53,7 @@ type CategorySidebarProps = {
 };
 
 export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProps) => {
+  const [ editState, setEditState ] = useState(CategoryEditState.View);
   return (
     <Drawer
       anchor="right"
@@ -73,7 +76,7 @@ export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProp
 
       <Divider />
 
-      <Scrollbar>
+      <Scrollbar sx={{ flexGrow: 1 }}>
         <Stack spacing={3} sx={{ p: 3 }}>
           <SidebarItem title="Type">{categoryTitle(category.type)}</SidebarItem>
           <SidebarItem title="Amount">
@@ -91,6 +94,10 @@ export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProp
           <PeriodList category={category} />
         </Stack>
       </Scrollbar>
+
+      <Divider />
+
+      <CategoryEditActions category={category} state={editState} onStateChanged={setEditState} dirty={false} />
     </Drawer>
   );
 };

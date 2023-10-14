@@ -22,7 +22,7 @@ export const BudgetSummaryList = ({ budget }: BudgetSummaryListProps) => {
   const mobile = !useMediaQuery(theme.breakpoints.up('sm'));
 
   return (
-    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 2, sm: 0 }} justifyContent="space-between">
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} >
       {items.map((item, index) => (
         <Fragment key={item.title}>
           <Stack justifyItems="center">

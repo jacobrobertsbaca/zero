@@ -3,6 +3,7 @@ import {
   Card,
   CardHeader,
   Stack,
+  SvgIcon,
   Table,
   TableBody,
   TableCell,
@@ -22,6 +23,8 @@ import { budgetStatus } from "src/types/budget/methods";
 import { PeriodTooltip } from "../common/period-tooltip";
 import { BudgetSummaryList } from "./budget-summary-list";
 import { moneySum } from "src/types/money/methods";
+
+import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
 
 type CategoryRowProps = {
   state: BudgetView;
@@ -88,14 +91,14 @@ export const CategoryList = ({ budget, onCategoryClicked }: CategoryListProps) =
                   onClick={onCategoryClicked}
                 />
               ))}
+              <TableRow hover sx={{ cursor: "pointer" }}>
+                <TableCell colSpan={3} align="center">
+                  <SvgIcon color="disabled">
+                    <PlusIcon />
+                  </SvgIcon>
+                </TableCell>
+              </TableRow>
             </TableBody>
-            <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={3} sx={{ borderBottom: "none" }}>
-                    <BudgetSummaryList budget={budget} />
-                  </TableCell>
-                </TableRow>
-            </TableFooter>
           </Table>
         </Box>
       </Scrollbar>

@@ -5,6 +5,7 @@ import { Loading } from "src/components/loading";
 import { PageTitle } from "src/components/page-title";
 import { useBudget } from "src/hooks/use-api";
 import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
+import { BudgetSummaryList } from "src/sections/budgets/single/budget-summary-list";
 import { CategoryList } from "src/sections/budgets/single/category-list";
 import { CategorySidebar } from "src/sections/budgets/single/category-sidebar";
 import { Category, CategoryType, RecurrenceType, RolloverMode } from "src/types/category/types";
@@ -40,6 +41,7 @@ const Page = () => {
             <Typography variant="subtitle1" color="text.secondary">
               {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
             </Typography>
+            <BudgetSummaryList budget={budget} />
             <CategoryList budget={budget} onCategoryClicked={onCategoryClicked} />
           </Stack>
           <CategorySidebar open={sidebarOpen} category={sidebarCategory} onClose={() => setSidebarOpen(false)} />
