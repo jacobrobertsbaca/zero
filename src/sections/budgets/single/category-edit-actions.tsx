@@ -54,13 +54,13 @@ export const CategoryEditActions = (props: CategoryEditActionsProps) => {
           )}
         </ButtonGroup>
 
-        {(state === CategoryEditState.ConfirmDelete || state === CategoryEditState.Edit) && (
+        {(state === CategoryEditState.ConfirmDelete) && (
           <Typography variant="subtitle2">
-            {state === CategoryEditState.Edit ? "Editing" : "Really delete"}&nbsp;
+            Really delete&nbsp;
             <Typography variant="inherit" display="inline" fontWeight={600}>
               {category.name}
             </Typography>
-            {state === CategoryEditState.Edit ? "..." : "?"}
+            ?
           </Typography>
         )}
       </Stack>

@@ -6,7 +6,13 @@ import { categoryActual, categoryNominal, categoryTitle } from "src/types/catego
 import { PeriodList } from "./period-list";
 import { MoneyText } from "src/components/money-text";
 import { CategoryEditActions, CategoryEditState } from "./category-edit-actions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isEqual } from "lodash";
+
+import { useForm } from "src/hooks/use-form";
+import * as Yup from "yup";
+import { TextField } from "src/components/form/text-field";
+import { FormikProps } from "formik";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
@@ -43,6 +49,35 @@ const SidebarItem = ({ title, children }: { title: React.ReactNode; children: Re
 );
 
 /* ================================================================================================================= *
+ * Edit vs. View                                                                                                     *
+ * ================================================================================================================= */
+
+const CategoryEditView = ({ form }: { form: FormikProps<Category> }) => (
+  <>
+    <TextField fullWidth label="Name" name="name" type="text" />
+  </>
+);
+
+const CategoryDetailsView = ({ category }: { category: Category}) => (
+  <>
+    <SidebarItem title="Type">{categoryTitle(category.type)}</SidebarItem>
+    <SidebarItem title="Amount">
+      <MoneyText variant="inherit" amount={categoryActual(category)} />
+      &nbsp;of&nbsp;
+      <MoneyText variant="inherit" amount={categoryNominal(category)} />
+    </SidebarItem>
+    {category.recurrence.type !== RecurrenceType.None && (
+      <SidebarItem title="Recurrence">
+        <MoneyText variant="inherit" amount={category.recurrence.amount} />
+        &nbsp;
+        {recurrenceSummary(category)}
+      </SidebarItem>
+    )}
+    <PeriodList category={category} />
+  </>
+);
+
+/* ================================================================================================================= *
  * Sidebar                                                                                                           *
  * ================================================================================================================= */
 
@@ -53,7 +88,26 @@ type CategorySidebarProps = {
 };
 
 export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProps) => {
-  const [ editState, setEditState ] = useState(CategoryEditState.View);
+  const [editState, setEditState] = useState(CategoryEditState.View);
+  const [draft, setDraft] = useState<Category>(category);
+
+  useEffect(() => {
+    if (open) {
+      setEditState(CategoryEditState.View);
+      setDraft(category);
+    }
+  }, [open, category]);
+
+  /* Form for editting category */
+  const Form = useForm({
+    initialValues: category,
+    validationSchema: Yup.object({
+      password: Yup.string().label("Password").max(255).min(8).optional(),
+      passwordConfirmed: Yup.string().oneOf([Yup.ref("password")], "Passwords must match!"),
+    }),
+    async onSubmit(values, helpers) {},
+  });
+
   return (
     <Drawer
       anchor="right"
@@ -63,41 +117,40 @@ export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProp
         sx: { width: { xs: 1, sm: 500 }, border: "none", overflow: "hidden" },
       }}
     >
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 2 }}>
-        <Typography variant="subtitle1" sx={{ ml: 1 }}>
-          {category.name}
-        </Typography>
-        <IconButton onClick={onClose}>
-          <SvgIcon>
-            <XMarkIcon />
-          </SvgIcon>
-        </IconButton>
-      </Stack>
+      <Form>
+        {(formik) => (
+          <Stack height={1}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 2 }}>
+              <Typography variant="subtitle1" sx={{ ml: 1 }}>
+                {editState !== CategoryEditState.Edit ? draft.name : formik.values.name }
+              </Typography>
+              <IconButton onClick={onClose}>
+                <SvgIcon>
+                  <XMarkIcon />
+                </SvgIcon>
+              </IconButton>
+            </Stack>
 
-      <Divider />
+            <Divider />
 
-      <Scrollbar sx={{ flexGrow: 1 }}>
-        <Stack spacing={3} sx={{ p: 3 }}>
-          <SidebarItem title="Type">{categoryTitle(category.type)}</SidebarItem>
-          <SidebarItem title="Amount">
-            <MoneyText variant="inherit" amount={categoryActual(category)} />
-            &nbsp;of&nbsp;
-            <MoneyText variant="inherit" amount={categoryNominal(category)} />
-          </SidebarItem>
-          {category.recurrence.type !== RecurrenceType.None && (
-            <SidebarItem title="Recurrence">
-              <MoneyText variant="inherit" amount={category.recurrence.amount} />
-              &nbsp;
-              {recurrenceSummary(category)}
-            </SidebarItem>
-          )}
-          <PeriodList category={category} />
-        </Stack>
-      </Scrollbar>
+            <Scrollbar sx={{ flexGrow: 1 }}>
+              <Stack spacing={3} sx={{ p: 3 }}>
+                {editState === CategoryEditState.Edit && <CategoryEditView form={formik} />}
+                {editState !== CategoryEditState.Edit && <CategoryDetailsView category={category} />}
+              </Stack>
+            </Scrollbar>
 
-      <Divider />
+            <Divider />
 
-      <CategoryEditActions category={category} state={editState} onStateChanged={setEditState} dirty={false} />
+            <CategoryEditActions
+              category={draft}
+              state={editState}
+              onStateChanged={setEditState}
+              dirty={!isEqual(category, formik.values)}
+            />
+          </Stack>
+        )}
+      </Form>
     </Drawer>
   );
 };

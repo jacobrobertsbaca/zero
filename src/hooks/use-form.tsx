@@ -1,3 +1,4 @@
+import { styled } from "@mui/material";
 import { Formik, FormikConfig, FormikProps, FormikValues } from "formik";
 import { produce } from "immer";
 import { useSnackbar } from "notistack";
@@ -5,6 +6,8 @@ import { useSnackbar } from "notistack";
 type PropTypes<T> = {
   children: React.ReactNode | ((props: FormikProps<T>) => React.ReactNode);
 };
+
+const Form = styled("form")``;
 
 export const useForm = <T extends FormikValues>(config: FormikConfig<T>) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -25,9 +28,9 @@ export const useForm = <T extends FormikValues>(config: FormikConfig<T>) => {
 
   return ({ children }: PropTypes<T>) => <Formik {...config}>
     {props => (
-      <form onSubmit={props.handleSubmit}>
+      <Form sx={{ flexGrow: 1 }} onSubmit={props.handleSubmit}>
         {typeof children === 'function' ? children(props) : children}
-      </form>
+      </Form>
     )}
   </Formik>;
 };
