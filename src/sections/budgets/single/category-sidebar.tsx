@@ -117,7 +117,7 @@ export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProp
         sx: { width: { xs: 1, sm: 500 }, border: "none", overflow: "hidden" },
       }}
     >
-      <Form>
+      <Form sx={{ display: "block", height: 1 }}>
         {(formik) => (
           <Stack height={1}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 2 }}>

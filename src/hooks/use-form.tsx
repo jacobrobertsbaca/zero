@@ -2,6 +2,7 @@ import { styled } from "@mui/material";
 import { Formik, FormikConfig, FormikProps, FormikValues } from "formik";
 import { produce } from "immer";
 import { useSnackbar } from "notistack";
+import { ComponentProps } from "react";
 
 type PropTypes<T> = {
   children: React.ReactNode | ((props: FormikProps<T>) => React.ReactNode);
@@ -14,7 +15,7 @@ export const useForm = <T extends FormikValues>(config: FormikConfig<T>) => {
   const { onSubmit } = config;
 
   /* Modify onSubmit to show snackbar errors */
-  config = produce(config, draft => {
+  config = produce(config, (draft) => {
     draft.onSubmit = async (values, helpers) => {
       try {
         await onSubmit(values, helpers);
@@ -26,11 +27,13 @@ export const useForm = <T extends FormikValues>(config: FormikConfig<T>) => {
     };
   });
 
-  return ({ children }: PropTypes<T>) => <Formik {...config}>
-    {props => (
-      <Form sx={{ flexGrow: 1 }} onSubmit={props.handleSubmit}>
-        {typeof children === 'function' ? children(props) : children}
-      </Form>
-    )}
-  </Formik>;
+  return ({ children, ...props }: PropTypes<T> & Omit<ComponentProps<typeof Form>, "children">) => (
+    <Formik {...config}>
+      {(formik) => (
+        <Form onSubmit={formik.handleSubmit} {...props}>
+          {typeof children === "function" ? children(formik) : children}
+        </Form>
+      )}
+    </Formik>
+  );
 };
