@@ -129,9 +129,9 @@ export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProp
         sx: { width: { xs: 1, sm: 500 }, border: "none", overflow: "hidden" },
       }}
     >
-      <Form initialValues={category} onSubmit={() => {}} sx={{ height: 1 }}>
+      <Form initialValues={category} onSubmit={() => {}} sx={{ height: 1, overflow: "hidden" }}>
         {(formik) => (
-          <Stack height={1}>
+          <Stack height={1} sx={{ overflow: "hidden" }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 2 }}>
               <Typography variant="subtitle1" sx={{ ml: 1 }}>
                 {editState !== CategoryEditState.Edit ? category.name : formik.values.name}
