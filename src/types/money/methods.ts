@@ -81,18 +81,24 @@ export type MoneyFormatOptions = {
    * Include a plus symbol (+) for positive amounts.
    */
   plus?: boolean;
+
+  /**
+   * Exclude the currency symbol.
+   */
+  excludeSymbol?: boolean;
 };
 
 export const moneyFormat = (money: Money, options?: MoneyFormatOptions): string => {
-  const { round, plus } = options ?? {};
+  const { round, plus, excludeSymbol } = options ?? { };
   const mag   = Math.abs(money.amount);
   const major = Math.floor(mag / 100);
   const minor = mag % 100;
 
   const addPrefix = (repr: string, amount: number): string => {
-    if (amount > 0) return `${plus ? "+" : ""}$${repr}`;
-    if (amount == 0) return `$${repr}`;
-    return `-$${repr}`;
+    const sym = excludeSymbol ? "" : "$";
+    if (amount > 0) return `${plus ? "+" : ""}${sym}${repr}`;
+    if (amount == 0) return `${sym}${repr}`;
+    return `-${sym}${repr}`;
   }
 
   // Note: Currently this only works for USD

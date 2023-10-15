@@ -41,7 +41,7 @@ export const CategoryEditActions = (props: CategoryEditActionsProps) => {
           {state === CategoryEditState.View && (
             <>
               <Button onClick={() => onStateChanged(CategoryEditState.Edit)}>Edit</Button>
-              <Button color="error" onClick={() => onStateChanged(CategoryEditState.ConfirmDelete)}>
+              <Button onClick={() => onStateChanged(CategoryEditState.ConfirmDelete)}>
                 Delete
               </Button>
             </>

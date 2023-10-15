@@ -1,4 +1,5 @@
 import { Draft, produce } from "immer";
+import { isEqual, isEqualWith } from "lodash";
 import { Budget } from "../budget/types";
 import { moneyAllocate, moneyFactor, moneySub, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
@@ -172,6 +173,19 @@ export const categoryActiveIndex = (category: Category, today?: Date | DateStrin
  */
 export const categoryActive = (category: Category, today?: Date | DateString): Period => {
   return category.periods[categoryActiveIndex(category, today)];
+};
+
+/**
+ * Checks the category was edited. Does not consider actual amounts.
+ * @param prev The old {@link Category}
+ * @param next The new {@link Category}
+ */
+export const categoryDirty = (prev: Category, next: Category): boolean => {
+  const { periods: prevPeriods, ...prevRest } = prev;
+  const { periods: nextPeriods, ...nextRest } = next;
+  return !isEqual(prevRest, nextRest) || !isEqualWith(prevPeriods, nextPeriods, (_, __, key) => {
+    if (key === "actual") return true;
+  });
 };
 
 /* ================================================================================================================= *

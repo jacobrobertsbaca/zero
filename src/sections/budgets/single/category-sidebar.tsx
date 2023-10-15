@@ -1,18 +1,19 @@
-import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon, Button } from "@mui/material";
+import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon } from "@mui/material";
 import XMarkIcon from "@heroicons/react/24/solid/XMarkIcon";
 import { Scrollbar } from "src/components/scrollbar";
-import { Category, RecurrenceType } from "src/types/category/types";
-import { categoryActual, categoryNominal, categoryTitle } from "src/types/category/methods";
+import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
+import { categoryActual, categoryDirty, categoryNominal, categoryTitle } from "src/types/category/methods";
 import { PeriodList } from "./period-list";
 import { MoneyText } from "src/components/money-text";
 import { CategoryEditActions, CategoryEditState } from "./category-edit-actions";
 import { useEffect, useState } from "react";
-import { isEqual } from "lodash";
 
 import { useForm } from "src/hooks/use-form";
 import * as Yup from "yup";
 import { TextField } from "src/components/form/text-field";
 import { FormikProps } from "formik";
+import { SelectField } from "src/components/form/select-field";
+import { MoneyField } from "src/components/form/money-field";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
@@ -52,9 +53,15 @@ const SidebarItem = ({ title, children }: { title: React.ReactNode; children: Re
  * Edit vs. View                                                                                                     *
  * ================================================================================================================= */
 
+const TYPE_OPTIONS = Object.values(CategoryType).map((t) => ({
+  value: t,
+  label: categoryTitle(t),
+}));
+
 const CategoryEditView = ({ form }: { form: FormikProps<Category> }) => (
   <>
     <TextField fullWidth label="Name" name="name" type="text" />
+    <SelectField fullWidth label="Type" name="type" values={TYPE_OPTIONS} />
   </>
 );
 
@@ -146,7 +153,7 @@ export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProp
               category={draft}
               state={editState}
               onStateChanged={setEditState}
-              dirty={!isEqual(category, formik.values)}
+              dirty={categoryDirty(category, formik.values)}
             />
           </Stack>
         )}
