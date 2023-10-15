@@ -39,20 +39,18 @@ export const moneyAllocate = (money: Money, weights: number[]): Money[] => {
   if (weights.length === 0) return [];
 
   const total = weights.reduce((total, w) => total + w, 0);
-  let remainder = money.amount;
   if (total === 0) throw new Error("Sum of weights cannot be zero");
-  const amounts = weights.map(w => {
-    const amount = Math.round(money.amount * w / total); 
-    remainder -= amount;
-    return amount;
-  });
+  let remainder = money.amount;
+  const amounts = weights.map(w => Math.trunc(money.amount * w / total));
+  remainder -= amounts.reduce((total, a) => total + a, 0);
   
   // Distribute remainder among all non-zero parties
   let i = 0;
-  while (remainder > 0) {
+  while (remainder !== 0) {
     if (weights[i] !== 0) {
-      amounts[i]++;
-      remainder--;
+      const inc = Math.sign(remainder);
+      amounts[i] += inc;
+      remainder -= inc;
     }
     i = (i + 1) % weights.length;
   }

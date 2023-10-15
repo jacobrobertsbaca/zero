@@ -1,19 +1,24 @@
-import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon } from "@mui/material";
+import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon, styled } from "@mui/material";
 import XMarkIcon from "@heroicons/react/24/solid/XMarkIcon";
 import { Scrollbar } from "src/components/scrollbar";
 import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
-import { categoryActual, categoryDirty, categoryNominal, categoryTitle } from "src/types/category/methods";
+import {
+  categoryActual,
+  categoryDirty,
+  categoryNominal,
+  categoryTitle,
+  onCategoryNominal,
+} from "src/types/category/methods";
 import { PeriodList } from "./period-list";
 import { MoneyText } from "src/components/money-text";
 import { CategoryEditActions, CategoryEditState } from "./category-edit-actions";
 import { useEffect, useState } from "react";
 
-import { useForm } from "src/hooks/use-form";
-import * as Yup from "yup";
 import { TextField } from "src/components/form/text-field";
 import { FormikProps } from "formik";
 import { SelectField } from "src/components/form/select-field";
 import { MoneyField } from "src/components/form/money-field";
+import { Form } from "src/components/form/form";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
@@ -58,14 +63,28 @@ const TYPE_OPTIONS = Object.values(CategoryType).map((t) => ({
   label: categoryTitle(t),
 }));
 
-const CategoryEditView = ({ form }: { form: FormikProps<Category> }) => (
-  <>
-    <TextField fullWidth label="Name" name="name" type="text" />
-    <SelectField fullWidth label="Type" name="type" values={TYPE_OPTIONS} />
-  </>
-);
+const CategoryEditView = ({ form }: { form: FormikProps<Category> }) => {
 
-const CategoryDetailsView = ({ category }: { category: Category}) => (
+  /* Reset the form on unmount */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => () => form.resetForm(), []);
+
+  return (
+    <>
+      <TextField fullWidth label="Name" name="name" type="text" />
+      <SelectField fullWidth label="Type" name="type" values={TYPE_OPTIONS} />
+      <MoneyField
+        fullWidth
+        label="Total"
+        value={categoryNominal(form.values)}
+        onChange={(total) => form.setValues(onCategoryNominal(form.values, total))}
+      />
+      <PeriodList category={form.values} />
+    </>
+  );
+};
+
+const CategoryDetailsView = ({ category }: { category: Category }) => (
   <>
     <SidebarItem title="Type">{categoryTitle(category.type)}</SidebarItem>
     <SidebarItem title="Amount">
@@ -96,24 +115,10 @@ type CategorySidebarProps = {
 
 export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProps) => {
   const [editState, setEditState] = useState(CategoryEditState.View);
-  const [draft, setDraft] = useState<Category>(category);
 
   useEffect(() => {
-    if (open) {
-      setEditState(CategoryEditState.View);
-      setDraft(category);
-    }
+    if (open) setEditState(CategoryEditState.View);
   }, [open, category]);
-
-  /* Form for editting category */
-  const Form = useForm({
-    initialValues: category,
-    validationSchema: Yup.object({
-      password: Yup.string().label("Password").max(255).min(8).optional(),
-      passwordConfirmed: Yup.string().oneOf([Yup.ref("password")], "Passwords must match!"),
-    }),
-    async onSubmit(values, helpers) {},
-  });
 
   return (
     <Drawer
@@ -124,12 +129,12 @@ export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProp
         sx: { width: { xs: 1, sm: 500 }, border: "none", overflow: "hidden" },
       }}
     >
-      <Form sx={{ display: "block", height: 1 }}>
+      <Form initialValues={category} onSubmit={() => {}} sx={{ height: 1 }}>
         {(formik) => (
           <Stack height={1}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 2 }}>
               <Typography variant="subtitle1" sx={{ ml: 1 }}>
-                {editState !== CategoryEditState.Edit ? draft.name : formik.values.name }
+                {editState !== CategoryEditState.Edit ? category.name : formik.values.name}
               </Typography>
               <IconButton onClick={onClose}>
                 <SvgIcon>
@@ -150,7 +155,7 @@ export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProp
             <Divider />
 
             <CategoryEditActions
-              category={draft}
+              category={category}
               state={editState}
               onStateChanged={setEditState}
               dirty={categoryDirty(category, formik.values)}
