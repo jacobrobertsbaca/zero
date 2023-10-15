@@ -38,7 +38,7 @@ export const PeriodList = ({ category }: PeriodListProps) => {
                 <TableCell>
                   <Stack>
                     {index === 0 ? "Earlier" : index === category.periods.length - 1 ? "Later" : getDates(period)}
-                    {index === activeIndex && (
+                    {index > 0 && index < category.periods.length - 1 && index === activeIndex && (
                       <Typography variant="caption" color="text.secondary">
                         Current
                       </Typography>
