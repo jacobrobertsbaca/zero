@@ -74,10 +74,12 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
 
   return (
     <TextField
-      inputProps={{
+      InputProps={{
         startAdornment: <InputAdornment position="start">$</InputAdornment>,
-        inputMode: "numeric",
-        pattern: "[0-9.]*",
+      }}
+      inputProps={{
+        inputMode: "decimal",
+        pattern: "[0-9]*"
       }}
       value={raw}
       onChange={handleChange}
