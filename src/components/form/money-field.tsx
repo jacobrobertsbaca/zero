@@ -64,10 +64,8 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
 
   const handleBlur = useCallback(() => {
     const money = parseCurrency(raw);
-    if (money) {
-      if (onChange) onChange(money);
-      else formik.setFieldValue(name, money);
-    }
+    if (onChange) onChange(money);
+    else formik.setFieldValue(name, money);
   }, [raw]);
 
   useEffect(() => {
