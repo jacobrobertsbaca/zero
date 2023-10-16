@@ -12,6 +12,15 @@ type PropTypes = TextFieldProps & {
   values: SelectValue[];
 };
 
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: 225,
+      width: 250,
+    },
+  },
+};
+
 export const SelectField = <T extends FormikValues>(props: PropTypes): JSX.Element => {
   const { name, values, ...rest } = props;
   const formik = useFormikContext<T>();
@@ -25,6 +34,9 @@ export const SelectField = <T extends FormikValues>(props: PropTypes): JSX.Eleme
       onChange={formik.handleChange}
       value={get(formik.values, name)}
       name={name}
+      SelectProps={{
+        MenuProps
+      }}
       {...rest}
     >
       {values.map((v) => (

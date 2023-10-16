@@ -1,5 +1,5 @@
 import { Draft, produce } from "immer";
-import { isEqual, isEqualWith } from "lodash";
+import { isEqual, isEqualWith, reduce } from "lodash";
 import { Budget } from "../budget/types";
 import { moneyAllocate, moneyFactor, moneySub, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
@@ -123,10 +123,11 @@ export const categoryRollover = (category: Category): Money[] => {
 
   const handleRollover = (remaining: Money, mode: RolloverMode): Money[] => {
     switch (mode) {
-      case RolloverMode.None: return category.periods.map(_ => moneyZero());
+      case RolloverMode.None:
+        return category.periods.map((_) => moneyZero());
       case RolloverMode.Average:
         // Average across future periods according to multiplier
-        const weights = category.periods.map((p, i) => i >= active ? periodMultiplier(p) : 0);
+        const weights = category.periods.map((p, i) => (i >= active ? periodMultiplier(p) : 0));
         return moneyAllocate(remaining, weights);
     }
   };
@@ -183,9 +184,12 @@ export const categoryActive = (category: Category, today?: Date | DateString): P
 export const categoryDirty = (prev: Category, next: Category): boolean => {
   const { periods: prevPeriods, ...prevRest } = prev;
   const { periods: nextPeriods, ...nextRest } = next;
-  return !isEqual(prevRest, nextRest) || !isEqualWith(prevPeriods, nextPeriods, (_, __, key) => {
-    if (key === "actual") return true;
-  });
+  return (
+    !isEqual(prevRest, nextRest) ||
+    !isEqualWith(prevPeriods, nextPeriods, (_, __, key) => {
+      if (key === "actual") return true;
+    })
+  );
 };
 
 /* ================================================================================================================= *
@@ -197,8 +201,13 @@ export const categoryDirty = (prev: Category, next: Category): boolean => {
  */
 export const onRecurrence = (budget: Budget, category: Category, recurrence: Recurrence): Category =>
   produce(category, (draft) => {
-    // If there are no periods or the recurrence type has changed, reset periods
-    if (draft.periods.length <= 2 || recurrence.type !== category.recurrence.type) {
+    // If there are no periods or anything about the recurrence except its amount has changed, update periods.
+    if (
+      draft.periods.length <= 2 ||
+      !isEqualWith(recurrence, category.recurrence, (_, __, key) => {
+        if (key === "amount") return true;
+      })
+    ) {
       const resolver = getRangeResolver(budget, recurrence);
       draft.periods = resolveRanges(budget, resolver).map((dates) => ({
         dates: datesClamp(budget.dates, dates),
@@ -212,7 +221,7 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
       // Pad periods for earlier and later expenses (that fall before or after the budget dates)
       draft.periods.unshift({
         dates: {
-          begin: asDateString(new Date(Date.parse("01 Jan 0000"))),
+          begin: "00000101",
           end: asDateString(draft.periods[0].dates.begin, -1),
         },
         days: 0,
@@ -224,7 +233,7 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
       draft.periods.push({
         dates: {
           begin: asDateString(draft.periods[draft.periods.length - 1].dates.end, 1),
-          end: asDateString(new Date(Date.parse("31 Dec 9999"))),
+          end: "99991231",
         },
         days: 0,
         nominal: moneyZero(),
@@ -234,9 +243,9 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
     }
 
     // Update period nominal amounts
+    draft.recurrence = recurrence;
     for (const period of draft.periods)
       period.nominal = period.nominal = moneyFactor(draft.recurrence.amount, periodMultiplier(period));
-    draft.recurrence = recurrence;
   });
 
 /* ================================================================================================================= *

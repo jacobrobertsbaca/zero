@@ -35,7 +35,6 @@ const parseCurrency = (input: string): Money => {
   if (input === "" || input === ".") return moneyZero();
   const negative = input[0] === "-";
   if (negative) input = input.slice(1);
-  console.log(input);
   const parts = input.split(".");
   let major = parseInt(parts[0]);
   let minor = parseInt(parts[1]);
@@ -76,6 +75,7 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
     <TextField
       InputProps={{
         startAdornment: <InputAdornment position="start">$</InputAdornment>,
+        ...rest.InputProps,
       }}
       inputProps={{
         inputMode: "decimal",

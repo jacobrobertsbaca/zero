@@ -1,7 +1,7 @@
 import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon, styled } from "@mui/material";
 import XMarkIcon from "@heroicons/react/24/solid/XMarkIcon";
 import { Scrollbar } from "src/components/scrollbar";
-import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
+import { Category, CategoryType, RecurrenceType, RolloverMode } from "src/types/category/types";
 import {
   categoryActual,
   categoryDirty,
@@ -20,6 +20,9 @@ import { SelectField } from "src/components/form/select-field";
 import { MoneyField } from "src/components/form/money-field";
 import { Form } from "src/components/form/form";
 import { PeriodListMutable } from "./period-list-mutable";
+import { RecurrencePicker } from "./recurrence-picker";
+import { Budget } from "src/types/budget/types";
+import { RolloverPicker } from "./rollover-picker";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
@@ -64,23 +67,7 @@ const TYPE_OPTIONS = Object.values(CategoryType).map((t) => ({
   label: categoryTitle(t),
 }));
 
-const RECURRENCE_OPTIONS = [
-  { value: RecurrenceType.None, label: "None" },
-  { value: RecurrenceType.Weekly, label: "Weekly" },
-  { value: RecurrenceType.Monthly, label: "Monthly" },
-];
-
-const WEEKLY_OPTIONS = [
-  { value: 0, label: "Sunday" },
-  { value: 1, label: "Monday" },
-  { value: 2, label: "Tuesday" },
-  { value: 3, label: "Wednesday" },
-  { value: 4, label: "Thursday" },
-  { value: 5, label: "Friday" },
-  { value: 6, label: "Saturday" },
-];
-
-const CategoryEditView = ({ form }: { form: FormikProps<Category> }) => {
+const CategoryEditView = ({ budget, form }: { budget: Budget, form: FormikProps<Category> }) => {
   /* Reset the form on unmount */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => form.resetForm(), []);
@@ -95,21 +82,17 @@ const CategoryEditView = ({ form }: { form: FormikProps<Category> }) => {
         value={categoryNominal(form.values)}
         onChange={(total) => form.setValues(onCategoryNominal(form.values, total))}
       />
-      <SelectField label="Recurrence" name="recurrence.type" values={RECURRENCE_OPTIONS} />
-      {form.values.recurrence.type !== RecurrenceType.None && (
-        <Stack direction="row" spacing={2}>
-          <MoneyField
-            fullWidth
-            sx={{ flex: 2 }}
-            InputProps={{ sx: { height: 1 } }}
-            label="Amount"
-            value={form.values.recurrence.amount}
-            onChange={() => {}}
-          />
-          <SelectField fullWidth sx={{ flex: 1 }} label="Every" name="recurrence.day" values={WEEKLY_OPTIONS} />
-        </Stack>
-      )}
+      <RecurrencePicker budget={budget} form={form} />
+
       <PeriodListMutable form={form} />
+
+      <Divider textAlign="left">
+        <Typography variant="caption" color="text.secondary">
+          Advanced
+        </Typography>
+      </Divider>
+      
+      <RolloverPicker form={form} />
     </>
   );
 };
@@ -138,12 +121,13 @@ const CategoryDetailsView = ({ category }: { category: Category }) => (
  * ================================================================================================================= */
 
 type CategorySidebarProps = {
+  budget: Budget;
   category: Category;
   open: boolean;
   onClose: () => void;
 };
 
-export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProps) => {
+export const CategorySidebar = ({ budget, category, open, onClose }: CategorySidebarProps) => {
   const [editState, setEditState] = useState(CategoryEditState.View);
 
   useEffect(() => {
@@ -177,7 +161,7 @@ export const CategorySidebar = ({ category, open, onClose }: CategorySidebarProp
 
             <Scrollbar sx={{ flexGrow: 1 }}>
               <Stack spacing={3} sx={{ p: 3 }}>
-                {editState === CategoryEditState.Edit && <CategoryEditView form={formik} />}
+                {editState === CategoryEditState.Edit && <CategoryEditView budget={budget} form={formik} />}
                 {editState !== CategoryEditState.Edit && <CategoryDetailsView category={category} />}
               </Stack>
             </Scrollbar>

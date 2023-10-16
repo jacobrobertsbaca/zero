@@ -26,14 +26,14 @@ export const PeriodListMutable = ({ form }: PeriodListMutableProps) => {
       const truncate = event.target.value as TruncateMode;
       form.setFieldValue(`periods[${index}]`, onPeriodTruncate(form.values, form.values.periods[index], truncate));
     },
-    []
+    [form]
   );
 
   return (
     <Table>
       <TableHead>
         <TableRow>
-          <TableCell>Period</TableCell>
+          <TableCell>Periods ({form.values.periods.length - 2})</TableCell>
           <TableCell>Options</TableCell>
           <TableCell>Amount</TableCell>
         </TableRow>

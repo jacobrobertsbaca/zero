@@ -44,7 +44,12 @@ const Page = () => {
             <BudgetSummaryList budget={budget} />
             <CategoryList budget={budget} onCategoryClicked={onCategoryClicked} />
           </Stack>
-          <CategorySidebar open={sidebarOpen} category={sidebarCategory} onClose={() => setSidebarOpen(false)} />
+          <CategorySidebar
+            open={sidebarOpen}
+            budget={budget}
+            category={sidebarCategory}
+            onClose={() => setSidebarOpen(false)}
+          />
         </>
       )}
     </Loading>
