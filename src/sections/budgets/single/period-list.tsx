@@ -3,7 +3,7 @@ import { Category, Period } from "src/types/category/types";
 import { SpendingBar } from "../common/spending-bar";
 import { categoryActiveIndex, categoryRollover, periodDatesFormat } from "src/types/category/methods";
 import { MoneyText } from "src/components/money-text";
-import { moneySum } from "src/types/money/methods";
+import { moneySum, RoundingMode } from "src/types/money/methods";
 
 type PeriodListProps = {
   category: Category;
@@ -28,7 +28,11 @@ export const PeriodList = ({ category }: PeriodListProps) => {
             <TableRow hover key={`${period.dates.begin}${period.dates.end}`}>
               <TableCell>
                 <Stack>
-                  {index === 0 ? "Earlier" : index === category.periods.length - 1 ? "Later" : periodDatesFormat(period)}
+                  {index === 0
+                    ? "Earlier"
+                    : index === category.periods.length - 1
+                    ? "Later"
+                    : periodDatesFormat(period)}
                   {index > 0 && index < category.periods.length - 1 && index === activeIndex && (
                     <Typography variant="caption" color="text.secondary">
                       Current
@@ -43,7 +47,14 @@ export const PeriodList = ({ category }: PeriodListProps) => {
                   remaining={
                     index >= activeIndex &&
                     rollovers[index].amount !== 0 && (
-                      <MoneyText variant="caption" fontWeight={700} amount={rollovers[index]} plus status />
+                      <MoneyText
+                        variant="caption"
+                        fontWeight={700}
+                        amount={rollovers[index]}
+                        plus
+                        status
+                        round={RoundingMode.RoundZero}
+                      />
                     )
                   }
                 />
