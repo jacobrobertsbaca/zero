@@ -19,6 +19,7 @@ import { FormikProps } from "formik";
 import { SelectField } from "src/components/form/select-field";
 import { MoneyField } from "src/components/form/money-field";
 import { Form } from "src/components/form/form";
+import { PeriodListMutable } from "./period-list-mutable";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
@@ -79,7 +80,7 @@ const CategoryEditView = ({ form }: { form: FormikProps<Category> }) => {
         value={categoryNominal(form.values)}
         onChange={(total) => form.setValues(onCategoryNominal(form.values, total))}
       />
-      <PeriodList category={form.values} />
+      <PeriodListMutable form={form} />
     </>
   );
 };

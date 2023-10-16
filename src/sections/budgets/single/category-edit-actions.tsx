@@ -6,8 +6,7 @@ import TrashIcon from "@heroicons/react/24/outline/TrashIcon";
 export enum CategoryEditState {
   View,
   Edit,
-  ConfirmDelete,
-  Wait,
+  ConfirmDelete
 }
 
 type CategoryEditActionsProps = {

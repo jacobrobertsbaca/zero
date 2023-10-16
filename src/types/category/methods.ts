@@ -3,7 +3,7 @@ import { isEqual, isEqualWith } from "lodash";
 import { Budget } from "../budget/types";
 import { moneyAllocate, moneyFactor, moneySub, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
-import { datesClamp, datesContains, datesDays, asDate, asDateString } from "../utils/methods";
+import { datesClamp, datesContains, datesDays, asDate, asDateString, dateFormat } from "../utils/methods";
 import { Dates, DateString } from "../utils/types";
 import { Category, CategoryType, Period, Recurrence, RecurrenceType, RolloverMode, TruncateMode } from "./types";
 
@@ -93,10 +93,10 @@ export const categoryActual = (category: Category): Money => {
 export const onCategoryNominal = (category: Category, total: Money): Category =>
   produce(category, (draft) => {
     // Edge case: What if every period is omitted? Then sum of weights will be zero.
-    // If so, we will change one of the 'Omit's to 'Split' before continuing.
+    // If so, we will change one of the 'Omit's to 'Keep' before continuing.
     if (draft.periods.every((p) => p.truncate === TruncateMode.Omit)) {
       const omitIndex = draft.periods.findIndex((p, i) => i !== 0 && p.truncate == TruncateMode.Omit);
-      draft.periods[omitIndex].truncate = TruncateMode.Split;
+      draft.periods[omitIndex].truncate = TruncateMode.Keep;
     }
 
     // Allocate total amount among all periods according to their multiplier
@@ -255,8 +255,16 @@ const periodMultiplier = (period: Period): number => {
 };
 
 /** Called when {@link Period.truncate} changes. */
-export const onPeriodTruncate = (category: Category, period: Period): Period => {
+export const onPeriodTruncate = (category: Category, period: Period, truncate: TruncateMode): Period => {
   return produce(period, (draft) => {
+    draft.truncate = truncate;
     draft.nominal = moneyFactor(category.recurrence.amount, periodMultiplier(draft));
   });
+};
+
+export const periodDatesFormat = (period: Period): string => {
+  const beginDate = dateFormat(period.dates.begin, { excludeYear: true });
+  if (period.dates.begin === period.dates.end) return beginDate;
+  const endDate = dateFormat(period.dates.end, { excludeYear: true });
+  return `${beginDate} — ${endDate}`;
 };

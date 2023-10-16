@@ -31,8 +31,8 @@ const maskCurrency = (prev: string, current: string): string => {
   return current;
 };
 
-const parseCurrency = (input: string): Money | undefined => {
-  if (input === "" || input === "." || input === "-.") return moneyZero();
+const parseCurrency = (input: string): Money => {
+  if (input === "" || input === ".") return moneyZero();
   const negative = input[0] === "-";
   if (negative) input = input.slice(1);
   console.log(input);
@@ -40,7 +40,7 @@ const parseCurrency = (input: string): Money | undefined => {
   let major = parseInt(parts[0]);
   let minor = parseInt(parts[1]);
   if (parts[1] && parts[1].length === 1) minor *= 10;
-  if (isNaN(major) && isNaN(minor)) return;
+  if (isNaN(major) && isNaN(minor)) return moneyZero();
   major = isNaN(major) ? 0 : major;
   minor = isNaN(minor) ? 0 : minor;
   return {
@@ -57,18 +57,20 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      const current = maskCurrency(raw, event.currentTarget.value);
-      setRaw(current);
-      let money = parseCurrency(current);
-      if (money) {
-        if (onChange) onChange(money);
-        else formik.setFieldValue(name, money);
-      }
+      setRaw(maskCurrency(raw, event.currentTarget.value));
     },
     [formik, name, onChange, raw]
   );
 
   const handleBlur = useCallback(() => {
+    const money = parseCurrency(raw);
+    if (money) {
+      if (onChange) onChange(money);
+      else formik.setFieldValue(name, money);
+    }
+  }, [raw]);
+
+  useEffect(() => {
     setRaw(moneyFormat(current, { excludeSymbol: true }));
   }, [current]);
 
