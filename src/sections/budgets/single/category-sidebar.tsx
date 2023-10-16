@@ -82,11 +82,11 @@ const CategoryEditView = ({ budget, form }: { budget: Budget, form: FormikProps<
         value={categoryNominal(form.values)}
         onChange={(total) => form.setValues(onCategoryNominal(form.values, total))}
       />
-      <RecurrencePicker budget={budget} form={form} />
+      <RecurrencePicker budget={budget} />
 
-      <PeriodListMutable form={form} />
+      <PeriodListMutable />
 
-      <RolloverPicker form={form} />
+      <RolloverPicker />
     </>
   );
 };

@@ -1,5 +1,5 @@
 import { Stack } from "@mui/material";
-import { FormikProps } from "formik";
+import { FormikProps, useFormikContext } from "formik";
 import { produce } from "immer";
 import { ChangeEvent, useCallback } from "react";
 import { MoneyField } from "src/components/form/money-field";
@@ -66,7 +66,9 @@ const onRecurrenceChanged = (budget: Budget, category: Category, changes: Partia
   return category;
 };
 
-export const RecurrencePicker = ({ budget, form }: { budget: Budget; form: FormikProps<Category> }) => {
+export const RecurrencePicker = ({ budget }: { budget: Budget }) => {
+  const form = useFormikContext<Category>();
+
   const onChange = useCallback(
     (changes: Partial<Recurrence>) => {
       form.setValues(onRecurrenceChanged(budget, form.values, changes));

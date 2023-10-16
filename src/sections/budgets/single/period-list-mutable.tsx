@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
-import { FormikProps } from "formik";
+import { useFormikContext } from "formik";
 import { ChangeEvent, useCallback } from "react";
 import { SelectField } from "src/components/form/select-field";
 import { MoneyText } from "src/components/money-text";
@@ -7,11 +7,9 @@ import { onPeriodTruncate, periodDatesFormat } from "src/types/category/methods"
 import { Category, Period, TruncateMode } from "src/types/category/types";
 import { datesDays } from "src/types/utils/methods";
 
-type PeriodListMutableProps = {
-  form: FormikProps<Category>;
-};
+export const PeriodListMutable = () => {
+  const form = useFormikContext<Category>();
 
-export const PeriodListMutable = ({ form }: PeriodListMutableProps) => {
   const getValues = useCallback((period: Period) => {
     const values = [
       { value: TruncateMode.Omit, label: "Omit" },

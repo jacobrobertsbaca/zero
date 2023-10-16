@@ -1,5 +1,5 @@
 import { Stack } from "@mui/material";
-import { FormikProps } from "formik";
+import { FormikProps, useFormikContext } from "formik";
 import { SelectField } from "src/components/form/select-field";
 import { Category, RolloverMode } from "src/types/category/types";
 
@@ -17,21 +17,24 @@ const helperText = (surplus: boolean, mode: RolloverMode): string | undefined =>
   }
 };
 
-export const RolloverPicker = ({ form }: { form: FormikProps<Category> }) => (
-  <>
-    <SelectField
-      fullWidth
-      label="Surplus"
-      name="rollover.surplus"
-      values={ROLLOVER_OPTIONS}
-      helperText={helperText(true, form.values.rollover.surplus)}
-    />
-    <SelectField
-      fullWidth
-      label="Losses"
-      name="rollover.loss"
-      values={ROLLOVER_OPTIONS}
-      helperText={helperText(false, form.values.rollover.loss)}
-    />
-  </>
-);
+export const RolloverPicker = () => {
+  const form = useFormikContext<Category>();
+  return (
+    <>
+      <SelectField
+        fullWidth
+        label="Surplus"
+        name="rollover.surplus"
+        values={ROLLOVER_OPTIONS}
+        helperText={helperText(true, form.values.rollover.surplus)}
+      />
+      <SelectField
+        fullWidth
+        label="Losses"
+        name="rollover.loss"
+        values={ROLLOVER_OPTIONS}
+        helperText={helperText(false, form.values.rollover.loss)}
+      />
+    </>
+  )
+};
