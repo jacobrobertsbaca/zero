@@ -1,4 +1,4 @@
-import { CircularProgress, Stack } from "@mui/material";
+import { Box, CircularProgress, Divider, Stack } from "@mui/material";
 
 type LoadingProps<T> = {
   value: T;
@@ -8,14 +8,18 @@ type LoadingProps<T> = {
 export const Loading = <T,>({ value, children }: LoadingProps<T>) => {
   if (!value)
     return (
-      <Stack
-        direction="column"
-        alignItems="center"
-        justifyContent="center"
-        sx={{ height: 50 }}
-      >
-        <CircularProgress color="primary" size={30} />
-      </Stack>
+      <Box>
+        <Divider />
+        <Stack
+          direction="column"
+          alignItems="center"
+          justifyContent="center"
+          sx={{ height: 50, my: 5 }}
+        >
+          <CircularProgress size={24} />
+        </Stack>
+        <Divider />
+      </Box>
     );
 
   return <>{typeof children === "function" ? children(value) : children}</>;
