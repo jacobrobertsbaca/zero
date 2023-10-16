@@ -64,8 +64,23 @@ const TYPE_OPTIONS = Object.values(CategoryType).map((t) => ({
   label: categoryTitle(t),
 }));
 
-const CategoryEditView = ({ form }: { form: FormikProps<Category> }) => {
+const RECURRENCE_OPTIONS = [
+  { value: RecurrenceType.None, label: "None" },
+  { value: RecurrenceType.Weekly, label: "Weekly" },
+  { value: RecurrenceType.Monthly, label: "Monthly" },
+];
 
+const WEEKLY_OPTIONS = [
+  { value: 0, label: "Sunday" },
+  { value: 1, label: "Monday" },
+  { value: 2, label: "Tuesday" },
+  { value: 3, label: "Wednesday" },
+  { value: 4, label: "Thursday" },
+  { value: 5, label: "Friday" },
+  { value: 6, label: "Saturday" },
+];
+
+const CategoryEditView = ({ form }: { form: FormikProps<Category> }) => {
   /* Reset the form on unmount */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => form.resetForm(), []);
@@ -80,6 +95,20 @@ const CategoryEditView = ({ form }: { form: FormikProps<Category> }) => {
         value={categoryNominal(form.values)}
         onChange={(total) => form.setValues(onCategoryNominal(form.values, total))}
       />
+      <SelectField label="Recurrence" name="recurrence.type" values={RECURRENCE_OPTIONS} />
+      {form.values.recurrence.type !== RecurrenceType.None && (
+        <Stack direction="row" spacing={2}>
+          <MoneyField
+            fullWidth
+            sx={{ flex: 2 }}
+            InputProps={{ sx: { height: 1 } }}
+            label="Amount"
+            value={form.values.recurrence.amount}
+            onChange={() => {}}
+          />
+          <SelectField fullWidth sx={{ flex: 1 }} label="Every" name="recurrence.day" values={WEEKLY_OPTIONS} />
+        </Stack>
+      )}
       <PeriodListMutable form={form} />
     </>
   );

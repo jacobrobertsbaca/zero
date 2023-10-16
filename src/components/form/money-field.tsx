@@ -59,14 +59,14 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
     (event: ChangeEvent<HTMLInputElement>) => {
       setRaw(maskCurrency(raw, event.currentTarget.value));
     },
-    [formik, name, onChange, raw]
+    [raw]
   );
 
   const handleBlur = useCallback(() => {
     const money = parseCurrency(raw);
     if (onChange) onChange(money);
     else formik.setFieldValue(name, money);
-  }, [raw]);
+  }, [formik, name, onChange, raw]);
 
   useEffect(() => {
     setRaw(moneyFormat(current, { excludeSymbol: true }));
@@ -79,7 +79,8 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
       }}
       inputProps={{
         inputMode: "decimal",
-        pattern: "[0-9]*"
+        pattern: "[0-9]*",
+        ...rest.inputProps
       }}
       value={raw}
       onChange={handleChange}
