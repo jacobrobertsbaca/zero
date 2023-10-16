@@ -86,7 +86,7 @@ export const RecurrencePicker = ({ budget, form }: { budget: Budget; form: Formi
         <Stack direction="row" spacing={2}>
           <MoneyField
             fullWidth
-            sx={{ flex: 2 }}
+            sx={{ flex: 1.5 }}
             inputProps={{ sx: { height: 1 }}}
             label="Amount"
             value={form.values.recurrence.amount}

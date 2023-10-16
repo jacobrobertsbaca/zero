@@ -86,12 +86,6 @@ const CategoryEditView = ({ budget, form }: { budget: Budget, form: FormikProps<
 
       <PeriodListMutable form={form} />
 
-      <Divider textAlign="left">
-        <Typography variant="caption" color="text.secondary">
-          Advanced
-        </Typography>
-      </Divider>
-      
       <RolloverPicker form={form} />
     </>
   );
@@ -136,6 +130,7 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
 
   return (
     <Drawer
+      keepMounted
       anchor="right"
       open={open}
       onClose={onClose}
@@ -143,7 +138,7 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
         sx: { width: { xs: 1, sm: 500 }, border: "none", overflow: "hidden" },
       }}
     >
-      <Form initialValues={category} onSubmit={() => {}} sx={{ height: 1, overflow: "hidden" }}>
+      <Form enableReinitialize initialValues={category} onSubmit={() => {}} sx={{ height: 1, overflow: "hidden" }}>
         {(formik) => (
           <Stack height={1} sx={{ overflow: "hidden" }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 2 }}>
