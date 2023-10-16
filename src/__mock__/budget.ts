@@ -61,8 +61,8 @@ const generateCategory = (budget: Budget): Category => {
     recurrence,
     periods: [],
     rollover: {
-      surplus: RolloverMode.Average,
-      loss: RolloverMode.Average
+      surplus: Math.random() > 0.5 ? RolloverMode.Average : RolloverMode.Next,
+      loss: Math.random() > 0.5 ? RolloverMode.Average : RolloverMode.Next
     }
   };
   

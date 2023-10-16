@@ -15,7 +15,7 @@ import { CategoryEditActions, CategoryEditState } from "./category-edit-actions"
 import { useEffect, useState } from "react";
 
 import { TextField } from "src/components/form/text-field";
-import { FormikProps } from "formik";
+import { FormikProps, useFormikContext } from "formik";
 import { SelectField } from "src/components/form/select-field";
 import { MoneyField } from "src/components/form/money-field";
 import { Form } from "src/components/form/form";
@@ -67,7 +67,9 @@ const TYPE_OPTIONS = Object.values(CategoryType).map((t) => ({
   label: categoryTitle(t),
 }));
 
-const CategoryEditView = ({ budget, form }: { budget: Budget, form: FormikProps<Category> }) => {
+const CategoryEditView = ({ budget }: { budget: Budget }) => {
+  const form = useFormikContext<Category>();
+
   /* Reset the form on unmount */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => form.resetForm(), []);
@@ -156,7 +158,7 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
 
             <Scrollbar sx={{ flexGrow: 1 }}>
               <Stack spacing={3} sx={{ p: 3 }}>
-                {editState === CategoryEditState.Edit && <CategoryEditView budget={budget} form={formik} />}
+                {editState === CategoryEditState.Edit && <CategoryEditView budget={budget} />}
                 {editState !== CategoryEditState.Edit && <CategoryDetailsView category={category} />}
               </Stack>
             </Scrollbar>

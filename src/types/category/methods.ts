@@ -129,6 +129,10 @@ export const categoryRollover = (category: Category): Money[] => {
         // Average across future periods according to multiplier
         const weights = category.periods.map((p, i) => (i >= active ? periodMultiplier(p) : 0));
         return moneyAllocate(remaining, weights);
+      case RolloverMode.Next:
+        return category.periods.map((_, i) => 
+          i == active && active != category.periods.length - 1 ? remaining : moneyZero()
+        );
     }
   };
 

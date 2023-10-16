@@ -26,7 +26,10 @@ export enum RolloverMode {
   None = "none",
 
   /** Average this amount across all future periods */
-  Average = "average"
+  Average = "average",
+
+  /** Rollover this amount to the next period */
+  Next = "next"
 }
 
 export type NoRecurrence = Immutable<{ type: RecurrenceType.None; amount: Money }>;

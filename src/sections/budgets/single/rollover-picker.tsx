@@ -6,14 +6,18 @@ import { Category, RolloverMode } from "src/types/category/types";
 const ROLLOVER_OPTIONS = [
   { value: RolloverMode.None, label: "None" },
   { value: RolloverMode.Average, label: "Average" },
+  { value: RolloverMode.Next, label: "Next" }
 ];
 
 const helperText = (surplus: boolean, mode: RolloverMode): string | undefined => {
+  const noun = `${surplus ? "Money left over" : "Overspending"} from prior periods`;
   switch (mode) {
     case RolloverMode.None:
       return;
     case RolloverMode.Average:
-      return `${surplus ? "Money left over" : "Overspending"} from prior periods will be averaged across future periods`;
+      return `${noun} will be averaged across later periods`;
+    case RolloverMode.Next:
+      return `${noun} will be rolled over to the current period`;
   }
 };
 

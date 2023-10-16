@@ -39,7 +39,7 @@ export const moneyAllocate = (money: Money, weights: number[]): Money[] => {
   if (weights.length === 0) return [];
 
   const total = weights.reduce((total, w) => total + w, 0);
-  if (total === 0) throw new Error("Sum of weights cannot be zero");
+  if (total === 0) return weights.map(_ => moneyZero());
   let remainder = money.amount;
   const amounts = weights.map(w => Math.trunc(money.amount * w / total));
   remainder -= amounts.reduce((total, a) => total + a, 0);
