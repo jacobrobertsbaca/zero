@@ -58,6 +58,15 @@ const SidebarItem = ({ title, children }: { title: React.ReactNode; children: Re
   </Stack>
 );
 
+const FormReset = ({ open }: { open: boolean }) => {
+  const form = useFormikContext<Category>();
+  useEffect(() => {
+    if (open && !form.values.id) form.resetForm();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+  return null;
+};
+
 /* ================================================================================================================= *
  * Edit vs. View                                                                                                     *
  * ================================================================================================================= */
@@ -135,7 +144,6 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
 
   return (
     <Drawer
-      keepMounted
       anchor="right"
       open={open}
       onClose={onClose}
@@ -143,12 +151,23 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
         sx: { width: { xs: 1, sm: 500 }, border: "none", overflow: "hidden" },
       }}
     >
-      <Form enableReinitialize initialValues={category} onSubmit={() => {}} sx={{ height: 1, overflow: "hidden" }}>
+      <Form
+        enableReinitialize
+        initialValues={category}
+        sx={{ height: 1, overflow: "hidden" }}
+        onSubmit={async () => {
+          await new Promise((r) => setTimeout(r, 2000));
+        }}
+      >
         {(formik) => (
           <Stack height={1} sx={{ overflow: "hidden" }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 2 }}>
               <Typography variant="subtitle1" sx={{ ml: 1 }}>
-                {editState !== CategoryEditState.Edit ? category.name : formik.values.name}
+                {editState !== CategoryEditState.Edit
+                  ? category.name
+                  : category.id
+                  ? formik.values.name
+                  : formik.values.name || "New Category"}
               </Typography>
               <IconButton onClick={onClose}>
                 <SvgIcon>
@@ -172,8 +191,11 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
               category={category}
               state={editState}
               onStateChanged={setEditState}
-              dirty={categoryDirty(category, formik.values)}
+              onDelete={async () => {
+                await new Promise((r) => setTimeout(r, 2000));
+              }}
             />
+            <FormReset open={open} />
           </Stack>
         )}
       </Form>

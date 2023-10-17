@@ -79,7 +79,6 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
       }}
       inputProps={{
         inputMode: "decimal",
-        pattern: "[0-9]*",
         ...rest.inputProps
       }}
       value={raw}
