@@ -58,15 +58,6 @@ const SidebarItem = ({ title, children }: { title: React.ReactNode; children: Re
   </Stack>
 );
 
-const FormReset = ({ open }: { open: boolean }) => {
-  const form = useFormikContext<Category>();
-  useEffect(() => {
-    if (open && !form.values.id) form.resetForm();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-  return null;
-};
-
 /* ================================================================================================================= *
  * Edit vs. View                                                                                                     *
  * ================================================================================================================= */
@@ -195,7 +186,6 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
                 await new Promise((r) => setTimeout(r, 2000));
               }}
             />
-            <FormReset open={open} />
           </Stack>
         )}
       </Form>

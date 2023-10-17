@@ -33,6 +33,7 @@ import { BudgetSummaryList } from "./budget-summary-list";
 import { moneySum } from "src/types/money/methods";
 
 import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
+import { produce } from "immer";
 
 type CategoryRowProps = {
   state: BudgetView;
@@ -79,6 +80,19 @@ export const CategoryList = ({ budget, onCategoryClicked }: CategoryListProps) =
   const active = budgetStatus(budget) === BudgetStatus.Active;
   const [state, setState] = useState(active ? BudgetView.Current : BudgetView.Total);
 
+  const onAddCategory = useCallback(() => {
+    /* This is a small hack. In order for Formik to reset form state, it
+     * uses deep equality on the initial values. By seeding a random value to
+     * category._, we ensure that the form state gets reset
+     */
+    const category = categoryDefault(budget);
+    onCategoryClicked(
+      produce(category, (draft) => {
+        (draft as any)._ = Math.random();
+      })
+    );
+  }, [budget, onCategoryClicked]);
+
   return (
     <Stack>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
@@ -102,7 +116,7 @@ export const CategoryList = ({ budget, onCategoryClicked }: CategoryListProps) =
               onClick={onCategoryClicked} 
               />
           ))}
-          <TableRow hover sx={{ cursor: "pointer" }} onClick={() => onCategoryClicked(categoryDefault(budget))}>
+          <TableRow hover sx={{ cursor: "pointer" }} onClick={onAddCategory}>
             <TableCell colSpan={3} align="center">
               <SvgIcon color="disabled">
                 <PlusIcon />
