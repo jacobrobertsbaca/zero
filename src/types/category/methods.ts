@@ -196,6 +196,19 @@ export const categoryDirty = (prev: Category, next: Category): boolean => {
   );
 };
 
+export const categoryDefault = (budget?: Budget): Category => {
+  const category: Category = {
+    id: "",
+    name: "",
+    type: CategoryType.Income,
+    recurrence: { type: RecurrenceType.None, amount: moneyZero() },
+    periods: [],
+    rollover: { loss: RolloverMode.Average, surplus: RolloverMode.Average }
+  };
+  if (!budget) return category;
+  return onRecurrence(budget, category, category.recurrence);
+};
+
 /* ================================================================================================================= *
  * Recurrence                                                                                                        *
  * ================================================================================================================= */

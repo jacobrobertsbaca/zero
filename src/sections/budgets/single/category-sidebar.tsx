@@ -127,7 +127,10 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
   const [editState, setEditState] = useState(CategoryEditState.View);
 
   useEffect(() => {
-    if (open) setEditState(CategoryEditState.View);
+    if (open) {
+      setEditState(CategoryEditState.View);
+      if (!category.id) setEditState(CategoryEditState.Edit);
+    }
   }, [open, category]);
 
   return (

@@ -1,4 +1,4 @@
-import { Unstable_Grid2 as Grid, Button, Typography, Stack } from "@mui/material";
+import { Typography, Stack } from "@mui/material";
 import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
 import { Loading } from "src/components/loading";
@@ -8,8 +8,8 @@ import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
 import { BudgetSummaryList } from "src/sections/budgets/single/budget-summary-list";
 import { CategoryList } from "src/sections/budgets/single/category-list";
 import { CategorySidebar } from "src/sections/budgets/single/category-sidebar";
-import { Category, CategoryType, RecurrenceType, RolloverMode } from "src/types/category/types";
-import { moneyZero } from "src/types/money/methods";
+import { categoryDefault } from "src/types/category/methods";
+import { Category } from "src/types/category/types";
 import { dateFormat } from "src/types/utils/methods";
 
 const Page = () => {
@@ -18,14 +18,7 @@ const Page = () => {
 
   /* Sidebar state. Use dummy category to ensure non-null */
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCategory, setSidebarCategory] = useState<Category>({
-    id: "",
-    name: "",
-    type: CategoryType.Income,
-    recurrence: { type: RecurrenceType.None, amount: moneyZero() },
-    periods: [],
-    rollover: { loss: RolloverMode.Average, surplus: RolloverMode.Average }
-  });
+  const [sidebarCategory, setSidebarCategory] = useState(categoryDefault());
 
   const onCategoryClicked = useCallback((category: Category) => {
     setSidebarCategory(category);

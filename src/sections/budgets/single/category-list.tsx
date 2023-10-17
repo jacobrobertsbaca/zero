@@ -15,11 +15,12 @@ import {
 import { Scrollbar } from "src/components/scrollbar";
 import { Budget, BudgetStatus } from "src/types/budget/types";
 import { BudgetViewSelector, BudgetView } from "./budget-view-selector";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   categoryActive,
   categoryActiveIndex,
   categoryActual,
+  categoryDefault,
   categoryNominal,
   categoryRollover,
   categoryTitle,
@@ -46,6 +47,7 @@ const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
   const actual = state === BudgetView.Current ? activePeriod!.actual : categoryActual(category);
   const nominal =
     state === BudgetView.Current ? moneySum(activePeriod!.nominal, rollovers[activeIndex]) : categoryNominal(category);
+
   return (
     <TableRow hover key={category.id} onClick={() => onClick(category)} sx={{ cursor: "pointer" }}>
       <TableCell>
@@ -93,9 +95,14 @@ export const CategoryList = ({ budget, onCategoryClicked }: CategoryListProps) =
         </TableHead>
         <TableBody>
           {budget.categories.map((category) => (
-            <CategoryRow key={category.id} state={state} category={category} onClick={onCategoryClicked} />
+            <CategoryRow 
+              key={category.id} 
+              state={state} 
+              category={category} 
+              onClick={onCategoryClicked} 
+              />
           ))}
-          <TableRow hover sx={{ cursor: "pointer" }}>
+          <TableRow hover sx={{ cursor: "pointer" }} onClick={() => onCategoryClicked(categoryDefault(budget))}>
             <TableCell colSpan={3} align="center">
               <SvgIcon color="disabled">
                 <PlusIcon />
