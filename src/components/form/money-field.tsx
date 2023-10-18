@@ -1,6 +1,6 @@
 import { InputAdornment, TextField, TextFieldProps } from "@mui/material";
 import { FormikValues, useFormikContext } from "formik";
-import { get } from "lodash";
+import { get, isEqual } from "lodash";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { defaultCurrency, moneyFormat, moneyZero } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
@@ -63,9 +63,10 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
 
   const handleBlur = useCallback(() => {
     const money = parseCurrency(raw);
+    if (isEqual(current, money)) return;
     if (onChange) onChange(money);
     else formik.setFieldValue(name, money);
-  }, [formik, name, onChange, raw]);
+  }, [current, formik, name, onChange, raw]);
 
   useEffect(() => {
     setRaw(moneyFormat(current, { excludeSymbol: true }));
