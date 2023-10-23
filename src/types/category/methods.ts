@@ -3,7 +3,7 @@ import { isEqual, isEqualWith, reduce } from "lodash";
 import { Budget } from "../budget/types";
 import { moneyAllocate, moneyFactor, moneySub, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
-import { datesClamp, datesContains, datesDays, asDate, asDateString, dateFormat } from "../utils/methods";
+import { datesClamp, datesContains, datesDays, asDate, asDateString, dateFormat, dateMin, dateMax } from "../utils/methods";
 import { Dates, DateString } from "../utils/types";
 import { Category, CategoryType, Period, Recurrence, RecurrenceType, RolloverMode, TruncateMode } from "./types";
 
@@ -17,6 +17,7 @@ const resolveRanges = (budget: Budget, resolver: RangeResolver): Dates[] => {
   let current = asDate(budget.dates.begin);
   const end = asDate(budget.dates.end);
   const ranges: Dates[] = [];
+
   while (current <= end) {
     const range = resolver(current);
     ranges.push(range);
@@ -31,8 +32,8 @@ const getRangeResolver = (budget: Budget, recurrence: Recurrence): RangeResolver
       return (_) => budget.dates;
     case RecurrenceType.Weekly:
       return (date) => {
-        const daysAfter = (date.getDay() - recurrence.day + 6) % 7;
-        const daysBefore = (recurrence.day - date.getDay() + 7) % 7;
+        const daysAfter = (date.getUTCDay() - recurrence.day + 6) % 7;
+        const daysBefore = (recurrence.day - date.getUTCDay() + 7) % 7;
         return { begin: asDateString(date, -daysAfter), end: asDateString(date, daysBefore) };
       };
     case RecurrenceType.Monthly:
@@ -231,14 +232,13 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
         days: datesDays(dates),
         nominal: moneyZero(),
         actual: moneyZero(),
-        rollover: moneyZero(),
         truncate: TruncateMode.Keep,
       }));
 
       // Pad periods for earlier and later expenses (that fall before or after the budget dates)
       draft.periods.unshift({
         dates: {
-          begin: "00000101",
+          begin: dateMin(),
           end: asDateString(draft.periods[0].dates.begin, -1),
         },
         days: 0,
@@ -250,7 +250,7 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
       draft.periods.push({
         dates: {
           begin: asDateString(draft.periods[draft.periods.length - 1].dates.end, 1),
-          end: "99991231",
+          end: dateMax(),
         },
         days: 0,
         nominal: moneyZero(),

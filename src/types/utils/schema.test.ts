@@ -1,4 +1,4 @@
-import { fails, passes } from "src/utils/schema-test";
+import { fails, passes } from "src/utils/schema";
 import { dateStringSchema, datesSchema } from "./schema";
 
 const dateString = dateStringSchema();
@@ -33,4 +33,5 @@ test('Invalid dates fail', () => {
   fails(dates, { end: "20231018" });
   fails(dates, { });
   fails(dates, { begin: true });
+  fails(dates, { begin: "20231022", end: "20231011" }); // Begin after end
 });

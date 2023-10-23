@@ -1,4 +1,4 @@
-import { fails, passes } from "src/utils/schema-test";
+import { fails, passes } from "src/utils/schema";
 import { moneySchema } from "./schema";
 
 const schema = moneySchema();

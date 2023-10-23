@@ -1,9 +1,10 @@
 import * as Yup from "yup";
-import { Dates } from "./types";
 
 // Largely taken from: https://stackoverflow.com/a/6178341
 // Validates that the input string is a valid date formatted as "mm/dd/yyyy"
-const isValidDate = (dateString: string) => {
+const isValidDate = (dateString: string | undefined) => {
+  if (!dateString) return true; 
+  
   // First check for the pattern
   if (!/^\d{2}\d{2}\d{4}$/.test(dateString)) return false;
 
@@ -25,10 +26,13 @@ const isValidDate = (dateString: string) => {
 
 export const dateStringSchema = () => Yup
   .string()
-  .required()
-  .test("valid-date", "Invalid date!", isValidDate)
+  .test("valid-date", "${path} is an invalid date! Format is YYYYMMDD", isValidDate)
 
 export const datesSchema = () => Yup.object({
-  begin: dateStringSchema(),
-  end: dateStringSchema()
-});
+  begin: dateStringSchema().required(),
+  end: dateStringSchema().required()
+}).test(
+  "is-valid", 
+  "${path} cannot have an end date before its begin date",
+  value => value.begin <= value.end
+);

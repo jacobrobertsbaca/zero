@@ -64,6 +64,9 @@ export const dateFormat = (date: Date | DateString, options?: DateFormatOptions)
   return `${month} ${day}` + (!options?.excludeYear ? ` ${year}` : '');
 };
 
+export const dateMin = (): DateString => "00000101";
+export const dateMax = (): DateString => "99991231";
+
 /* ================================================================================================================= *
  * Date Ranges                                                                                                       *
  * ================================================================================================================= */
