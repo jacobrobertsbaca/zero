@@ -1,10 +1,9 @@
-import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon, styled } from "@mui/material";
+import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon } from "@mui/material";
 import XMarkIcon from "@heroicons/react/24/solid/XMarkIcon";
 import { Scrollbar } from "src/components/scrollbar";
-import { Category, CategoryType, RecurrenceType, RolloverMode } from "src/types/category/types";
+import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
 import {
   categoryActual,
-  categoryDirty,
   categoryNominal,
   categoryTitle,
   onCategoryNominal,
@@ -15,7 +14,7 @@ import { CategoryEditActions, CategoryEditState } from "./category-edit-actions"
 import { useEffect, useState } from "react";
 
 import { TextField } from "src/components/form/text-field";
-import { FormikProps, useFormikContext } from "formik";
+import { useFormikContext } from "formik";
 import { SelectField } from "src/components/form/select-field";
 import { MoneyField } from "src/components/form/money-field";
 import { Form } from "src/components/form/form";
@@ -23,6 +22,8 @@ import { PeriodListMutable } from "./period-list-mutable";
 import { RecurrencePicker } from "./recurrence-picker";
 import { Budget } from "src/types/budget/types";
 import { RolloverPicker } from "./rollover-picker";
+import * as Yup from "yup";
+import { useApi } from "src/hooks/use-api";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
@@ -121,10 +122,13 @@ type CategorySidebarProps = {
   category: Category;
   open: boolean;
   onClose: () => void;
+  onUpdate: (category: Category) => void;
+  onDelete: () => void;
 };
 
-export const CategorySidebar = ({ budget, category, open, onClose }: CategorySidebarProps) => {
+export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onDelete }: CategorySidebarProps) => {
   const [editState, setEditState] = useState(CategoryEditState.View);
+  const { putCategory, deleteCategory } = useApi();
 
   useEffect(() => {
     if (open) {
@@ -145,9 +149,14 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
       <Form
         enableReinitialize
         initialValues={category}
+        validationSchema={Yup.object({
+          name: Yup.string().required("You must provide a name!")
+        })}
         sx={{ height: 1, overflow: "hidden" }}
-        onSubmit={async () => {
-          await new Promise((r) => setTimeout(r, 2000));
+        onSubmit={async (category) => {
+          category = await putCategory(budget.id, category);
+          setEditState(CategoryEditState.View);
+          onUpdate(category);
         }}
       >
         {(formik) => (
@@ -183,7 +192,8 @@ export const CategorySidebar = ({ budget, category, open, onClose }: CategorySid
               state={editState}
               onStateChanged={setEditState}
               onDelete={async () => {
-                await new Promise((r) => setTimeout(r, 2000));
+                await deleteCategory(budget.id, category.id);
+                onDelete();
               }}
             />
           </Stack>

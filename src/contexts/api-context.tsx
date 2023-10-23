@@ -1,12 +1,15 @@
-import { Immutable, produce } from "immer";
+import { Draft, Immutable, produce } from "immer";
 import { useSnackbar } from "notistack";
 import { Dispatch, createContext } from "react";
 import { useAuth } from "src/hooks/use-auth";
 import { Budget } from "src/types/budget/types";
+import { Category } from "src/types/category/types";
 
 export type ApiContextType = Immutable<{
   getBudgets(): Promise<readonly Budget[]>;
   getBudget(id: string): Promise<Budget>;
+  putCategory(budgetID: string, category: Category): Promise<Category>;
+  deleteCategory(budgetID: string, categoryID: string): Promise<void>;
 }>;
 
 /* ================================================================================================================= *
@@ -36,7 +39,10 @@ const http = async <T,>(path: string, method: string, options: HTTPOptions = {})
   });
   
   if (response.status != 200) throw new Error(await response.text());
-  return await response.json();
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.indexOf("application/json") >= 0)
+    return await response.json();
+  return await response.text() as T;
 };
 
 const httpPut     = <T,>(path: string, options: HTTPOptions = {}) => http<T>(path, "PUT", options);
@@ -143,7 +149,32 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
       const budget: Budget = await httpGet(`/budgets/${id}`, { token });
       budgetCache.add(budget.id, budget);
       return budget;
-    }
+    },
+
+    async putCategory(budgetID, category) {
+      const path = `/budgets/${budgetID}/categories`;
+      if (category.id === "") category = await httpPost(path, { token, data: { category }});
+      else category = await httpPut(path, { token, data: { category }});
+      if (budgetCache.has(budgetID)) {
+        budgetCache.add(budgetID, produce(budgetCache.get(budgetID), (draft) => {
+          const index = draft.categories.findIndex(c => c.id === category.id);
+          if (index >= 0)
+            draft.categories[index] = category as Draft<Category>;
+          else draft.categories.push(category as Draft<Category>);
+        }));
+      }
+      return category;
+    },
+
+    async deleteCategory(budgetID, categoryID) {
+      await httpDelete(`/budgets/${budgetID}/categories/${categoryID}`, { token });
+      if (budgetCache.has(budgetID)) {
+        budgetCache.add(budgetID, produce(budgetCache.get(budgetID), (draft) => {
+          const index = draft.categories.findIndex(c => c.id === categoryID);
+          if (index >= 0) draft.categories.splice(index, 1);
+        }));
+      }
+    },
   };
 
   return <ApiContext.Provider value={api}>

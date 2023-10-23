@@ -21,7 +21,7 @@ const courseRecurrenceCheck = (category: Category): boolean => {
     case RecurrenceType.Weekly:
       for (let i = 1; i < periods.length - 2; i++) {
         const period = periods[i];
-        if (asDate(period.dates.end).getUTCDate() !== recurrence.day) 
+        if (asDate(period.dates.end).getUTCDay() !== recurrence.day) 
           return false;
       }
 
@@ -104,6 +104,8 @@ export const CategorySchema = z.object({
     }
 
     // TODO: Do a rigorous check on periods using onRecurrence
+
+    return true;
   }, 
   "Invalid periods for specified recurrence"
 );

@@ -14,7 +14,7 @@ import { dateFormat } from "src/types/utils/methods";
 
 const Page = () => {
   const router = useRouter();
-  const { result } = useBudget(router.query.id as string);
+  const { result, refresh } = useBudget(router.query.id as string);
 
   /* Sidebar state. Use dummy category to ensure non-null */
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -42,6 +42,14 @@ const Page = () => {
             budget={budget}
             category={sidebarCategory}
             onClose={() => setSidebarOpen(false)}
+            onUpdate={(category) => {
+              refresh();
+              setSidebarCategory(category);
+            }}
+            onDelete={() => {
+              refresh();
+              setSidebarOpen(false);
+            }}
           />
         </>
       )}

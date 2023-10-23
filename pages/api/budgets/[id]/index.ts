@@ -1,6 +1,6 @@
 import { budgets } from "src/__mock__/budget";
-import { route, routes } from "../route";
-import { NotFound } from "../errors";
+import { route, routes } from "../../route";
+import { NotFound } from "../../errors";
 import { z } from "zod";
 
 const router = routes();

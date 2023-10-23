@@ -1,5 +1,5 @@
 import { useSnackbar } from "notistack";
-import { useContext, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import { ApiContext, ApiContextType } from "src/contexts/api-context";
 import useAsyncEffect from "use-async-effect";
 
@@ -9,7 +9,7 @@ import useAsyncEffect from "use-async-effect";
 
 type ApiSelector<TArgs extends any[], TResult> = (api: ApiContextType) => (...args: TArgs) => TResult | Promise<TResult>; 
 type ApiHook<TArgs extends any[], TResult> = (...args: TArgs) => ApiResult<TResult>;
-type ApiResult<TResult> = { loading: boolean; result?: TResult };
+type ApiResult<TResult> = { loading: boolean; result?: TResult, refresh: () => void };
 
 const createApiHook =
   <TArgs extends any[], TResult>(
@@ -22,6 +22,12 @@ const createApiHook =
     const { enqueueSnackbar } = useSnackbar();
     const request = selector(api);
 
+    const [refreshCounter, setRefreshCounter] = useState(0);
+    const refresh = useCallback(() => {
+      setLoading(true);
+      setRefreshCounter(refreshCounter + 1);
+    }, [refreshCounter]);
+
     useAsyncEffect(async () => {
       try {
         setResult(await request(...args));
@@ -29,9 +35,9 @@ const createApiHook =
         enqueueSnackbar(err.message, { variant: "error" });
       }
       setLoading(false);
-    }, [...args]);
+    }, [...args, refreshCounter]);
 
-    return { loading, result };
+    return { loading, result, refresh };
   };
 
 /* ================================================================================================================= *
