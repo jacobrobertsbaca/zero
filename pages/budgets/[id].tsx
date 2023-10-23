@@ -31,7 +31,7 @@ const Page = () => {
     <Loading value={result}>
       {(budget) => (
         <>
-          <Stack direction="row" alignItems="normal">
+          <Stack direction="row" alignItems="normal" spacing={0.5}>
             <PageTitle title={budget.name} />
             <Box>
               <IconButton color="inherit">

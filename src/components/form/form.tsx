@@ -6,9 +6,9 @@ import { ComponentProps, useCallback } from "react";
 
 const StyledForm = styled("form")``;
 
-type PropTypes<T> = FormikConfig<T> & Omit<ComponentProps<typeof StyledForm>, "children" | "onSubmit">;
+export type FormProps<T> = FormikConfig<T> & Omit<ComponentProps<typeof StyledForm>, "children" | "onSubmit">;
 
-export const Form = <T extends FormikValues>(props: PropTypes<T>) => {
+export const Form = <T extends FormikValues>(props: FormProps<T>) => {
   const { enqueueSnackbar } = useSnackbar();
   const { onSubmit, children, ...rest } = props; 
 

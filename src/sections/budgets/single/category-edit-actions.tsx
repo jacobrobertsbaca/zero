@@ -1,4 +1,4 @@
-import { Box, Button, ButtonGroup, CircularProgress, Stack, SvgIcon, Typography } from "@mui/material";
+import { Box, Button, ButtonGroup, CircularProgress, Divider, Stack, SvgIcon, Typography } from "@mui/material";
 import { Category } from "src/types/category/types";
 
 import TrashIcon from "@heroicons/react/24/outline/TrashIcon";
@@ -37,58 +37,61 @@ export const CategoryEditActions = (props: CategoryEditActionsProps) => {
   }, [form, onDelete, enqueueSnackbar]);
 
   return (
-    <Box sx={{ px: 3, py: 2 }}>
-      {form.isSubmitting && (
-        <Stack direction="row" alignItems="center" justifyContent="center">
-          <CircularProgress size={24} />
-        </Stack>
-      )}
-      {!form.isSubmitting && (
-        <Stack direction="row-reverse" alignItems="center" justifyContent="space-between">
-          <ButtonGroup variant="text">
-            {state === CategoryEditState.ConfirmDelete && (
-              <>
-                <Button
-                  color="error"
-                  startIcon={
-                    <SvgIcon>
-                      <TrashIcon />
-                    </SvgIcon>
-                  }
-                  onClick={handleDelete}
-                >
-                  Delete
-                </Button>
-                <Button onClick={() => onStateChanged(CategoryEditState.View)}>Cancel</Button>
-              </>
-            )}
-            {state === CategoryEditState.View && (
-              <>
-                <Button onClick={() => onStateChanged(CategoryEditState.Edit)}>Edit</Button>
-                <Button onClick={() => onStateChanged(CategoryEditState.ConfirmDelete)}>Delete</Button>
-              </>
-            )}
-            {state === CategoryEditState.Edit && (
-              <>
-                <Button disabled={!dirty} type="submit">
-                  Save
-                </Button>
-                {category.id && <Button onClick={() => onStateChanged(CategoryEditState.View)}>Cancel</Button>}
-              </>
-            )}
-          </ButtonGroup>
+    <Box>
+      <Divider />
+      <Box sx={{ px: 3, py: 2 }}>
+        {form.isSubmitting && (
+          <Stack direction="row" alignItems="center" justifyContent="center">
+            <CircularProgress size={24} />
+          </Stack>
+        )}
+        {!form.isSubmitting && (
+          <Stack direction="row-reverse" alignItems="center" justifyContent="space-between">
+            <ButtonGroup variant="text">
+              {state === CategoryEditState.ConfirmDelete && (
+                <>
+                  <Button
+                    color="error"
+                    startIcon={
+                      <SvgIcon>
+                        <TrashIcon />
+                      </SvgIcon>
+                    }
+                    onClick={handleDelete}
+                  >
+                    Delete
+                  </Button>
+                  <Button onClick={() => onStateChanged(CategoryEditState.View)}>Cancel</Button>
+                </>
+              )}
+              {state === CategoryEditState.View && (
+                <>
+                  <Button onClick={() => onStateChanged(CategoryEditState.Edit)}>Edit</Button>
+                  <Button onClick={() => onStateChanged(CategoryEditState.ConfirmDelete)}>Delete</Button>
+                </>
+              )}
+              {state === CategoryEditState.Edit && (
+                <>
+                  <Button disabled={!dirty} type="submit">
+                    Save
+                  </Button>
+                  {category.id && <Button onClick={() => onStateChanged(CategoryEditState.View)}>Cancel</Button>}
+                </>
+              )}
+            </ButtonGroup>
 
-          {state === CategoryEditState.ConfirmDelete && (
-            <Typography variant="subtitle2">
-              Really delete&nbsp;
-              <Typography variant="inherit" display="inline" fontWeight={600}>
-                {category.name}
+            {state === CategoryEditState.ConfirmDelete && (
+              <Typography variant="subtitle2">
+                Really delete&nbsp;
+                <Typography variant="inherit" display="inline" fontWeight={600}>
+                  {category.name}
+                </Typography>
+                ?
               </Typography>
-              ?
-            </Typography>
-          )}
-        </Stack>
-      )}
+            )}
+          </Stack>
+        )}
+      </Box>
     </Box>
   );
 };

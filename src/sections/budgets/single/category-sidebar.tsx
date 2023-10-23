@@ -1,13 +1,8 @@
 import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon } from "@mui/material";
-import XMarkIcon from "@heroicons/react/24/solid/XMarkIcon";
+
 import { Scrollbar } from "src/components/scrollbar";
 import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
-import {
-  categoryActual,
-  categoryNominal,
-  categoryTitle,
-  onCategoryNominal,
-} from "src/types/category/methods";
+import { categoryActual, categoryNominal, categoryTitle, onCategoryNominal } from "src/types/category/methods";
 import { PeriodList } from "./period-list";
 import { MoneyText } from "src/components/money-text";
 import { CategoryEditActions, CategoryEditState } from "./category-edit-actions";
@@ -24,6 +19,8 @@ import { Budget } from "src/types/budget/types";
 import { RolloverPicker } from "./rollover-picker";
 import * as Yup from "yup";
 import { useApi } from "src/hooks/use-api";
+import { Sidebar } from "src/components/sidebar/sidebar";
+import { SidebarHeader } from "src/components/sidebar/sidebar-header";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
@@ -138,67 +135,50 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
   }, [open, category]);
 
   return (
-    <Drawer
-      anchor="right"
+    <Sidebar
       open={open}
       onClose={onClose}
-      PaperProps={{
-        sx: { width: { xs: 1, sm: 500 }, border: "none", overflow: "hidden" },
-      }}
-    >
-      <Form
-        enableReinitialize
-        initialValues={category}
-        validationSchema={Yup.object({
-          name: Yup.string().required("You must provide a name!")
-        })}
-        sx={{ height: 1, overflow: "hidden" }}
-        onSubmit={async (category) => {
+      FormProps={{
+        enableReinitialize: true,
+        initialValues: category,
+        validationSchema: Yup.object({
+          name: Yup.string().required("You must provide a name!"),
+        }),
+        async onSubmit(category) {
           category = await putCategory(budget.id, category);
           setEditState(CategoryEditState.View);
           onUpdate(category);
-        }}
-      >
-        {(formik) => (
-          <Stack height={1} sx={{ overflow: "hidden" }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 2 }}>
-              <Typography variant="subtitle1" sx={{ ml: 1 }}>
-                {editState !== CategoryEditState.Edit
-                  ? category.name
-                  : category.id
-                  ? formik.values.name
-                  : formik.values.name || "New Category"}
-              </Typography>
-              <IconButton onClick={onClose}>
-                <SvgIcon>
-                  <XMarkIcon />
-                </SvgIcon>
-              </IconButton>
+        },
+      }}
+    >
+      {(formik) => (
+        <>
+          <SidebarHeader onClose={onClose}>
+            {editState !== CategoryEditState.Edit
+              ? category.name
+              : category.id
+              ? formik.values.name
+              : formik.values.name || "New Category"}
+          </SidebarHeader>
+
+          <Scrollbar sx={{ flexGrow: 1 }}>
+            <Stack spacing={3} sx={{ p: 3 }}>
+              {editState === CategoryEditState.Edit && <CategoryEditView budget={budget} />}
+              {editState !== CategoryEditState.Edit && <CategoryDetailsView category={category} />}
             </Stack>
+          </Scrollbar>
 
-            <Divider />
-
-            <Scrollbar sx={{ flexGrow: 1 }}>
-              <Stack spacing={3} sx={{ p: 3 }}>
-                {editState === CategoryEditState.Edit && <CategoryEditView budget={budget} />}
-                {editState !== CategoryEditState.Edit && <CategoryDetailsView category={category} />}
-              </Stack>
-            </Scrollbar>
-
-            <Divider />
-
-            <CategoryEditActions
-              category={category}
-              state={editState}
-              onStateChanged={setEditState}
-              onDelete={async () => {
-                await deleteCategory(budget.id, category.id);
-                onDelete();
-              }}
-            />
-          </Stack>
-        )}
-      </Form>
-    </Drawer>
+          <CategoryEditActions
+            category={category}
+            state={editState}
+            onStateChanged={setEditState}
+            onDelete={async () => {
+              await deleteCategory(budget.id, category.id);
+              onDelete();
+            }}
+          />
+        </>
+      )}
+    </Sidebar>
   );
 };
