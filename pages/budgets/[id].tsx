@@ -1,4 +1,4 @@
-import { Typography, Stack, Button } from "@mui/material";
+import { Typography, Stack, Button, IconButton, SvgIcon, Box } from "@mui/material";
 import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
 import { Loading } from "src/components/loading";
@@ -11,6 +11,8 @@ import { CategorySidebar } from "src/sections/budgets/single/category-sidebar";
 import { categoryDefault } from "src/types/category/methods";
 import { Category } from "src/types/category/types";
 import { dateFormat } from "src/types/utils/methods";
+
+import PencilSquareIcon from "@heroicons/react/20/solid/PencilSquareIcon";
 
 const Page = () => {
   const router = useRouter();
@@ -29,11 +31,15 @@ const Page = () => {
     <Loading value={result}>
       {(budget) => (
         <>
-          <Stack direction="row" justifyContent="space-between">
+          <Stack direction="row" alignItems="normal">
             <PageTitle title={budget.name} />
-            <Button variant="contained" sx={{ height: 40 }}>
-              Edit
-            </Button>
+            <Box>
+              <IconButton color="inherit">
+                <SvgIcon>
+                  <PencilSquareIcon />
+                </SvgIcon>
+              </IconButton>
+            </Box>
           </Stack>
           <Stack spacing={3}>
             <Typography variant="subtitle1" color="text.secondary">
