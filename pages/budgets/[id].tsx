@@ -1,4 +1,4 @@
-import { Typography, Stack } from "@mui/material";
+import { Typography, Stack, Button } from "@mui/material";
 import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
 import { Loading } from "src/components/loading";
@@ -29,7 +29,12 @@ const Page = () => {
     <Loading value={result}>
       {(budget) => (
         <>
-          <PageTitle title={budget.name} />
+          <Stack direction="row" justifyContent="space-between">
+            <PageTitle title={budget.name} />
+            <Button variant="contained" sx={{ height: 40 }}>
+              Edit
+            </Button>
+          </Stack>
           <Stack spacing={3}>
             <Typography variant="subtitle1" color="text.secondary">
               {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}

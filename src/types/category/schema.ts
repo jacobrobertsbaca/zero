@@ -17,12 +17,12 @@ import { asDate, asDateString, dateMax, dateMin, datesDays } from "../utils/meth
 const courseRecurrenceCheck = (category: Category): boolean => {
   const { periods, recurrence } = category;
   switch (recurrence.type) {
-    case RecurrenceType.None: return periods.length === 3;
+    case RecurrenceType.None:
+      return periods.length === 3;
     case RecurrenceType.Weekly:
       for (let i = 1; i < periods.length - 2; i++) {
         const period = periods[i];
-        if (asDate(period.dates.end).getUTCDay() !== recurrence.day) 
-          return false;
+        if (asDate(period.dates.end).getUTCDay() !== recurrence.day) return false;
       }
 
       for (let i = 1; i < periods.length - 1; i++) {
@@ -30,13 +30,12 @@ const courseRecurrenceCheck = (category: Category): boolean => {
       }
 
       return true;
-    
+
     case RecurrenceType.Monthly:
       for (let i = 1; i < periods.length - 2; i++) {
         const end = asDate(periods[i].dates.end);
         const lastDayOfMonth = new Date(end.getFullYear(), end.getMonth() + 1, 0).getUTCDate();
-        if (end.getUTCDate() !== Math.min(recurrence.day, lastDayOfMonth))
-          return false;
+        if (end.getUTCDate() !== Math.min(recurrence.day, lastDayOfMonth)) return false;
       }
 
       for (let i = 1; i < periods.length - 1; i++) {
@@ -45,7 +44,7 @@ const courseRecurrenceCheck = (category: Category): boolean => {
 
       return true;
   }
-}
+};
 
 /* ================================================================================================================= *
  * Schemas                                                                                                           *
@@ -57,31 +56,32 @@ const RecurrenceSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal(RecurrenceType.Monthly), amount: MoneySchema, day: z.number().min(1).max(31) }),
 ]);
 
-const PeriodSchema = z.object({
-  dates: DatesSchema,
-  days: z.number().min(0),
-  nominal: MoneySchema,
-  actual: MoneySchema,
-  truncate: z.nativeEnum(TruncateMode)
-}).refine(value => {
-    if (value.truncate === TruncateMode.Split)
-      return value.days = datesDays(value.dates);
-    return true;
-  }, 
-  "Only truncated periods may be split"
-);
-
-export const CategorySchema = z.object({
-  id: z.string(),
-  name: z.string().min(1),
-  type: z.nativeEnum(CategoryType),
-  recurrence: RecurrenceSchema,
-  periods: PeriodSchema.array().min(3),
-  rollover: z.object({
-    loss: z.nativeEnum(RolloverMode),
-    surplus: z.nativeEnum(RolloverMode)
+const PeriodSchema = z
+  .object({
+    dates: DatesSchema,
+    days: z.number().min(0),
+    nominal: MoneySchema,
+    actual: MoneySchema,
+    truncate: z.nativeEnum(TruncateMode),
   })
-}).refine(value => {
+  .refine((value) => {
+    if (value.truncate === TruncateMode.Split) return (value.days = datesDays(value.dates));
+    return true;
+  }, "Only truncated periods may be split");
+
+export const CategorySchema = z
+  .object({
+    id: z.string(),
+    name: z.string().min(1),
+    type: z.nativeEnum(CategoryType),
+    recurrence: RecurrenceSchema,
+    periods: PeriodSchema.array().min(3),
+    rollover: z.object({
+      loss: z.nativeEnum(RolloverMode),
+      surplus: z.nativeEnum(RolloverMode),
+    }),
+  })
+  .refine((value) => {
     // Check that all periods are back to back
     if (!value.periods.every((p, i) => i === 0 || p.dates.begin === asDateString(value.periods[i - 1].dates.end, 1)))
       return false;
@@ -99,13 +99,10 @@ export const CategorySchema = z.object({
 
     // Check that internal periods have days equal to their dates
     for (let i = 2; i < value.periods.length - 2; i++) {
-      if (value.periods[i].days !== datesDays(value.periods[i].dates))
-        return false;
+      if (value.periods[i].days !== datesDays(value.periods[i].dates)) return false;
     }
 
     // TODO: Do a rigorous check on periods using onRecurrence
 
     return true;
-  }, 
-  "Invalid periods for specified recurrence"
-);
+  }, "Invalid periods for specified recurrence");

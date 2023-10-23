@@ -6,5 +6,5 @@ export const BudgetSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
   dates: DatesSchema,
-  categories: CategorySchema.array()
+  categories: CategorySchema.array(),
 });

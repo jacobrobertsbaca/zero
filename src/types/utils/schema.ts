@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const isValidDate = (dateString: string) => {  
+const isValidDate = (dateString: string) => {
   // First check for the pattern
   if (!/^\d{2}\d{2}\d{4}$/.test(dateString)) return false;
 
@@ -13,19 +13,19 @@ const isValidDate = (dateString: string) => {
   const months = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
   // Adjust for leap years
-  if (year % 400 == 0 || (year % 100 != 0 && year % 4 == 0))
-    months[1] = 29;
+  if (year % 400 == 0 || (year % 100 != 0 && year % 4 == 0)) months[1] = 29;
 
   // Check the range of the day
   return day > 0 && day <= months[month - 1];
 };
 
-export const DateStringSchema = z.string()
-  .refine(isValidDate, "Invalid date string! Must have format YYYYMMDD");
+export const DateStringSchema = z.string().refine(isValidDate, "Invalid date string! Must have format YYYYMMDD");
 
-export const DatesSchema = z.object({
-  begin: DateStringSchema,
-  end: DateStringSchema
-}).refine(value => {
-  return value.begin <= value.end;
-}, "Dates cannot end before it begins!");
+export const DatesSchema = z
+  .object({
+    begin: DateStringSchema,
+    end: DateStringSchema,
+  })
+  .refine((value) => {
+    return value.begin <= value.end;
+  }, "Dates cannot end before it begins!");
