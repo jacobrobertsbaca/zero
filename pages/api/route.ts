@@ -1,9 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "./supabase";
 import { HttpError, Unauthorized } from "./errors";
-import * as Yup from "yup";
 import { createRouter } from "next-connect";
 import { RequestHandler } from "next-connect/dist/types/node";
+import { ZodError, ZodType } from "zod";
 
 type User = {
   /**
@@ -35,14 +35,14 @@ type RouteOptions<TBody, TQuery> = {
    * If the body does not conform, then a 400 is returned.
    * If undefined, the body is not validated.
    */
-  bodySchema?: Yup.Schema<TBody>;
+  bodySchema?: ZodType<TBody>;
 
   /**
    * If defined, specifies the schema which the query parameters must conform to.
    * If the query parameters do not conform, then a 400 is returned.
    * If undefined, the query parameters are not validated.
    */
-  querySchema?: Yup.Schema<TQuery>;
+  querySchema?: ZodType<TQuery>;
 } & ({
   protect: false;
   handler: RequestHandler<Request<TBody, TQuery>, NextApiResponse>;
@@ -51,14 +51,12 @@ type RouteOptions<TBody, TQuery> = {
   handler: RequestHandler<AuthorizedRequest<TBody, TQuery>, NextApiResponse>;
 });
 
-const validate = async <T>(o: any, schema: Yup.Schema<T>): Promise<T> => {
+const validate = async <T>(o: any, schema: ZodType<T>): Promise<T> => {
   try {
-    return await schema.validate(o, {
-      stripUnknown: true
-    });
+    return await schema.parseAsync(o);
   } catch (err) {
-    if (err instanceof Yup.ValidationError)
-      throw new HttpError(400, err.message);
+    if (err instanceof ZodError)
+      throw new HttpError(400, err.toString());
     throw err;
   }
 };
