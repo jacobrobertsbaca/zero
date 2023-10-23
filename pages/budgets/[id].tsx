@@ -13,6 +13,8 @@ import { Category } from "src/types/category/types";
 import { dateFormat } from "src/types/utils/methods";
 
 import PencilSquareIcon from "@heroicons/react/20/solid/PencilSquareIcon";
+import { BudgetSidebar } from "src/sections/budgets/common/budget-sidebar";
+import { produce } from "immer";
 
 const Page = () => {
   const router = useRouter();
@@ -21,6 +23,7 @@ const Page = () => {
   /* Sidebar state. Use dummy category to ensure non-null */
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCategory, setSidebarCategory] = useState(categoryDefault());
+  const [detailsSidebarOpen, setDetailsSidebarOpen] = useState(false);
 
   const onCategoryClicked = useCallback((category: Category) => {
     setSidebarCategory(category);
@@ -34,7 +37,7 @@ const Page = () => {
           <Stack direction="row" alignItems="normal" spacing={0.5}>
             <PageTitle title={budget.name} />
             <Box>
-              <IconButton color="inherit">
+              <IconButton color="inherit" onClick={() => setDetailsSidebarOpen(true)}>
                 <SvgIcon>
                   <PencilSquareIcon />
                 </SvgIcon>
@@ -62,6 +65,7 @@ const Page = () => {
               setSidebarOpen(false);
             }}
           />
+          <BudgetSidebar budget={budget} open={detailsSidebarOpen} onClose={() => setDetailsSidebarOpen(false)} />
         </>
       )}
     </Loading>

@@ -5,7 +5,7 @@ import { Form, FormProps } from "../form/form";
 type SidebarProps<T extends FormikValues> = {
   open: boolean;
   onClose: () => void;
-  children: FormProps<T>["children"];
+  children?: FormProps<T>["children"];
   FormProps?: Omit<FormProps<T>, "children">;
 };
 
