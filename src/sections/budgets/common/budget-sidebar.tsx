@@ -1,5 +1,6 @@
 import { Stack } from "@mui/material";
-import { Form } from "formik";
+import { DatePicker } from "@mui/x-date-pickers";
+import { DateField } from "src/components/form/date-field";
 import { TextField } from "src/components/form/text-field";
 import { Scrollbar } from "src/components/scrollbar";
 import { Sidebar } from "src/components/sidebar/sidebar";
@@ -30,6 +31,7 @@ export const BudgetSidebar = ({ budget, open, onClose }: BudgetSidebarProps) => 
           <Scrollbar sx={{ flexGrow: 1 }}>
             <Stack spacing={3} sx={{ p: 3 }}>
               <TextField fullWidth label="Name" name="name" type="text" />
+              <DateField label="Begin" name="dates.begin" />
             </Stack>
           </Scrollbar>
         </>
