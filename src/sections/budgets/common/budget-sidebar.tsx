@@ -1,11 +1,11 @@
 import { Stack } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers";
 import { DateField } from "src/components/form/date-field";
 import { TextField } from "src/components/form/text-field";
 import { Scrollbar } from "src/components/scrollbar";
 import { Sidebar } from "src/components/sidebar/sidebar";
 import { SidebarHeader } from "src/components/sidebar/sidebar-header";
 import { Budget } from "src/types/budget/types";
+import * as Yup from "yup";
 
 type BudgetSidebarProps = {
   budget: Budget;
@@ -21,6 +21,15 @@ export const BudgetSidebar = ({ budget, open, onClose }: BudgetSidebarProps) => 
       FormProps={{
         enableReinitialize: true,
         initialValues: budget,
+        validationSchema: Yup.object({
+          name: Yup.string().required("You must provide a name!"),
+          dates: Yup.object({
+            begin: Yup.string().required("Enter a valid date!"),
+            end: Yup.string()
+              .required("Enter a valid date!")
+              .test("before-begin", "Can't be before begin date!", (value, ctx) => value >= ctx.parent.begin),
+          }),
+        }),
         async onSubmit(values) {},
       }}
     >
@@ -32,6 +41,7 @@ export const BudgetSidebar = ({ budget, open, onClose }: BudgetSidebarProps) => 
             <Stack spacing={3} sx={{ p: 3 }}>
               <TextField fullWidth label="Name" name="name" type="text" />
               <DateField label="Begin" name="dates.begin" />
+              <DateField label="End" name="dates.end" />
             </Stack>
           </Scrollbar>
         </>
