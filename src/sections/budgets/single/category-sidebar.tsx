@@ -1,18 +1,26 @@
-import { Stack, Drawer, Divider, IconButton, Typography, SvgIcon } from "@mui/material";
+import {
+  Stack,
+  Typography,
+} from "@mui/material";
 
 import { Scrollbar } from "src/components/scrollbar";
 import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
-import { categoryActual, categoryNominal, categoryTitle, onCategoryNominal } from "src/types/category/methods";
+import {
+  categoryActual,
+  categoryDirty,
+  categoryNominal,
+  categoryTitle,
+  onCategoryNominal,
+} from "src/types/category/methods";
 import { PeriodList } from "./period-list";
 import { MoneyText } from "src/components/money-text";
-import { CategoryEditActions, CategoryEditState } from "./category-edit-actions";
-import { useEffect, useState } from "react";
+import { EditActions, EditState } from "../../../components/sidebar/edit-actions";
+import { useCallback, useEffect, useState } from "react";
 
 import { TextField } from "src/components/form/text-field";
 import { useFormikContext } from "formik";
 import { SelectField } from "src/components/form/select-field";
 import { MoneyField } from "src/components/form/money-field";
-import { Form } from "src/components/form/form";
 import { PeriodListMutable } from "./period-list-mutable";
 import { RecurrencePicker } from "./recurrence-picker";
 import { Budget } from "src/types/budget/types";
@@ -21,6 +29,7 @@ import * as Yup from "yup";
 import { useApi } from "src/hooks/use-api";
 import { Sidebar } from "src/components/sidebar/sidebar";
 import { SidebarHeader } from "src/components/sidebar/sidebar-header";
+import { DeleteDialog } from "src/components/delete-dialog";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
@@ -124,13 +133,22 @@ type CategorySidebarProps = {
 };
 
 export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onDelete }: CategorySidebarProps) => {
-  const [editState, setEditState] = useState(CategoryEditState.View);
+  const [editState, setEditState] = useState(EditState.View);
   const { putCategory, deleteCategory } = useApi();
+
+  const [deleteModal, setDeleteModal] = useState(false);
+  const openModal = useCallback(() => setDeleteModal(true), []);
+  const closeModal = useCallback(() => setDeleteModal(false), []);
+
+  const handleDelete = async () => {
+    await deleteCategory(budget.id, category.id);
+    onDelete();
+  };
 
   useEffect(() => {
     if (open) {
-      setEditState(CategoryEditState.View);
-      if (!category.id) setEditState(CategoryEditState.Edit);
+      setEditState(EditState.View);
+      if (!category.id) setEditState(EditState.Edit);
     }
   }, [open, category]);
 
@@ -146,7 +164,7 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
         }),
         async onSubmit(category) {
           category = await putCategory(budget.id, category);
-          setEditState(CategoryEditState.View);
+          setEditState(EditState.View);
           onUpdate(category);
         },
       }}
@@ -154,29 +172,34 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
       {(formik) => (
         <>
           <SidebarHeader onClose={onClose}>
-            {editState !== CategoryEditState.Edit
+            {editState !== EditState.Edit
               ? category.name
               : category.id
               ? formik.values.name
               : formik.values.name || "New Category"}
           </SidebarHeader>
 
+          <DeleteDialog
+            open={deleteModal}
+            title={`Delete category ${category.name}?`}
+            desc={"This will delete this category and any transactions associated with it."}
+            onClose={closeModal}
+            onDelete={handleDelete}
+          />
+
           <Scrollbar sx={{ flexGrow: 1 }}>
             <Stack spacing={3} sx={{ p: 3 }}>
-              {editState === CategoryEditState.Edit && <CategoryEditView budget={budget} />}
-              {editState !== CategoryEditState.Edit && <CategoryDetailsView category={category} />}
+              {editState === EditState.Edit && <CategoryEditView budget={budget} />}
+              {editState !== EditState.Edit && <CategoryDetailsView category={category} />}
+              <EditActions
+                allowDelete={!!category.id}
+                dirty={categoryDirty(formik.values, category)}
+                state={editState}
+                onStateChanged={setEditState}
+                onDelete={openModal}
+              />
             </Stack>
           </Scrollbar>
-
-          <CategoryEditActions
-            category={category}
-            state={editState}
-            onStateChanged={setEditState}
-            onDelete={async () => {
-              await deleteCategory(budget.id, category.id);
-              onDelete();
-            }}
-          />
         </>
       )}
     </Sidebar>

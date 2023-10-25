@@ -90,6 +90,7 @@ export const RecurrencePicker = ({ budget }: { budget: Budget }) => {
             fullWidth
             sx={{ flex: 1.5 }}
             inputProps={{ sx: { height: 1 }}}
+            InputProps={{ sx: { height: 1 }}}
             label="Amount"
             value={form.values.recurrence.amount}
             onChange={(a) => onChange({ amount: a })}

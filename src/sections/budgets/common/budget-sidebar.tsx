@@ -1,28 +1,18 @@
 import {
   Alert,
-  AlertTitle,
-  Button,
-  Collapse,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   Stack,
-  SvgIcon,
-  Typography,
 } from "@mui/material";
 import { DateField } from "src/components/form/date-field";
-import { SubmitButton } from "src/components/form/submit-button";
 import { TextField } from "src/components/form/text-field";
 import { Scrollbar } from "src/components/scrollbar";
 import { Sidebar } from "src/components/sidebar/sidebar";
 import { SidebarHeader } from "src/components/sidebar/sidebar-header";
 import { Budget } from "src/types/budget/types";
-import TrashIcon from "@heroicons/react/24/outline/TrashIcon";
 import * as Yup from "yup";
 import { isEqual } from "lodash";
 import { useCallback, useState } from "react";
+import { EditActions, EditState } from "src/components/sidebar/edit-actions";
+import { DeleteDialog } from "src/components/delete-dialog";
 
 type BudgetSidebarProps = {
   budget: Budget;
@@ -34,8 +24,9 @@ export const BudgetSidebar = ({ budget, open, onClose }: BudgetSidebarProps) => 
   const [deleteModal, setDeleteModal] = useState(false);
   const openModal = useCallback(() => setDeleteModal(true), []);
   const closeModal = useCallback(() => setDeleteModal(false), []);
-
   const isExisting = !!budget.id;
+
+  const handleDelete = async () => {};
 
   return (
     <Sidebar
@@ -60,27 +51,13 @@ export const BudgetSidebar = ({ budget, open, onClose }: BudgetSidebarProps) => 
         <>
           <SidebarHeader onClose={onClose}>Edit Budget Details</SidebarHeader>
 
-          <Dialog
+          <DeleteDialog
             open={deleteModal}
+            title={`Delete budget ${budget.name}?`}
+            desc={"This will delete this budget and any transactions associated with it."}
             onClose={closeModal}
-            aria-aria-labelledby="delete-dialog-title"
-            aria-describedby="delete-dialog-description"
-          >
-            <DialogTitle id="delete-dialog-title">Delete budget {budget.name}?</DialogTitle>
-            <DialogContent>
-              <DialogContentText id="delete-dialog-description">
-                This will delete this budget and any transactions associated with it.
-              </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={closeModal} autoFocus>
-                Cancel
-              </Button>
-              <Button onClick={closeModal} color="error">
-                Delete
-              </Button>
-            </DialogActions>
-          </Dialog>
+            onDelete={handleDelete}
+          />
 
           <Scrollbar sx={{ flexGrow: 1 }}>
             <Stack spacing={3} sx={{ p: 3 }}>
@@ -92,28 +69,14 @@ export const BudgetSidebar = ({ budget, open, onClose }: BudgetSidebarProps) => 
                   Changing budget dates will preserve the total value of any existing categories.
                 </Alert>
               )}
+              <EditActions
+                allowDelete={!!budget.id}
+                dirty={!isEqual(form.values, budget)}
+                state={EditState.Edit}
+                onDelete={openModal}
+              />
             </Stack>
           </Scrollbar>
-
-          <Stack spacing={1} sx={{ px: 3, py: 2 }}>
-            <SubmitButton variant="outlined" disabled={isEqual(form.values, budget)}>
-              Save
-            </SubmitButton>
-            {isExisting && (
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={
-                  <SvgIcon>
-                    <TrashIcon />
-                  </SvgIcon>
-                }
-                onClick={openModal}
-              >
-                Delete
-              </Button>
-            )}
-          </Stack>
         </>
       )}
     </Sidebar>
