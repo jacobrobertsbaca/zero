@@ -9,6 +9,7 @@ export type ApiContextType = Immutable<{
   getBudgets(): Promise<readonly Budget[]>;
   getBudget(id: string): Promise<Budget>;
   putBudget(budget: Budget): Promise<Budget>;
+  deleteBudget(budget: Budget): Promise<void>;
   putCategory(budgetID: string, category: Category): Promise<Category>;
   deleteCategory(budgetID: string, categoryID: string): Promise<void>;
 }>;
@@ -156,6 +157,11 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
       budget = await httpPut(`/budgets`, { token, data: { budget }});
       budgetCache.add(budget.id, budget);
       return budget;
+    },
+
+    async deleteBudget(budget) {
+      await httpDelete(`/budgets/${budget.id}`, { token });
+      budgetCache.invalidate(budget.id);
     },
 
     async putCategory(budgetID, category) {

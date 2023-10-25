@@ -1,7 +1,4 @@
-import {
-  Alert,
-  Stack,
-} from "@mui/material";
+import { Alert, Stack } from "@mui/material";
 import { DateField } from "src/components/form/date-field";
 import { TextField } from "src/components/form/text-field";
 import { Scrollbar } from "src/components/scrollbar";
@@ -20,16 +17,20 @@ type BudgetSidebarProps = {
   open: boolean;
   onClose: () => void;
   onUpdate: (budget: Budget) => void;
+  onDelete: () => void;
 };
 
-export const BudgetSidebar = ({ budget, open, onClose, onUpdate }: BudgetSidebarProps) => {
-  const { putBudget } = useApi();
+export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: BudgetSidebarProps) => {
+  const { putBudget, deleteBudget } = useApi();
   const [deleteModal, setDeleteModal] = useState(false);
   const openModal = useCallback(() => setDeleteModal(true), []);
   const closeModal = useCallback(() => setDeleteModal(false), []);
   const isExisting = !!budget.id;
 
-  const handleDelete = async () => {};
+  const handleDelete = async () => {
+    await deleteBudget(budget);
+    onDelete();
+  };
 
   return (
     <Sidebar
@@ -73,7 +74,8 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate }: BudgetSidebar
               <DateField label="End" name="dates.end" />
               {isExisting && !isEqual(form.values.dates, budget.dates) && (
                 <Alert severity="warning">
-                  Changing budget dates will preserve the total value of any existing categories.
+                  Changing budget dates will preserve the total planned amount of existing categories, but their
+                  recurring amounts may change.
                 </Alert>
               )}
               <EditActions

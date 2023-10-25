@@ -16,4 +16,15 @@ router.get(route({
   }
 }));
 
+router.delete(route({
+  querySchema: z.object({
+    id: z.string()
+  }),
+  handler(req, res) {
+    const budgetIndex = budgets.findIndex(b => b.id === req.query.id);
+    if (budgetIndex >= 0) budgets.splice(budgetIndex, 1);
+    res.status(200).end();
+  }
+}))
+
 export default router.handler();

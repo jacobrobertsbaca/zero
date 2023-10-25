@@ -70,6 +70,7 @@ const Page = () => {
             open={detailsSidebarOpen}
             onClose={() => setDetailsSidebarOpen(false)}
             onUpdate={() => refresh()}
+            onDelete={() => router.replace("/budgets") }
           />
         </>
       )}

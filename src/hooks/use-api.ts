@@ -32,6 +32,7 @@ const createApiHook =
       try {
         setResult(await request(...args));
       } catch (err: any) {
+        console.log(err);
         enqueueSnackbar(err.message, { variant: "error" });
       }
       setLoading(false);

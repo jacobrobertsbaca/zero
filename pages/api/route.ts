@@ -79,6 +79,7 @@ const forwardErrors = (
   return async (req, res) => {
     try { await handler(req, res); }
     catch (err: any) {
+      console.log(err);
       res.status(err.statusCode || 500).end(err.message);
     }
   };
