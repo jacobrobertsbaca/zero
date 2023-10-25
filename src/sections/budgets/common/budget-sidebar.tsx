@@ -13,14 +13,17 @@ import { isEqual } from "lodash";
 import { useCallback, useState } from "react";
 import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { DeleteDialog } from "src/components/delete-dialog";
+import { useApi } from "src/hooks/use-api";
 
 type BudgetSidebarProps = {
   budget: Budget;
   open: boolean;
   onClose: () => void;
+  onUpdate: (budget: Budget) => void;
 };
 
-export const BudgetSidebar = ({ budget, open, onClose }: BudgetSidebarProps) => {
+export const BudgetSidebar = ({ budget, open, onClose, onUpdate }: BudgetSidebarProps) => {
+  const { putBudget } = useApi();
   const [deleteModal, setDeleteModal] = useState(false);
   const openModal = useCallback(() => setDeleteModal(true), []);
   const closeModal = useCallback(() => setDeleteModal(false), []);
@@ -44,7 +47,11 @@ export const BudgetSidebar = ({ budget, open, onClose }: BudgetSidebarProps) => 
               .test("before-begin", "Can't be before begin date!", (value, ctx) => value >= ctx.parent.begin),
           }),
         }),
-        async onSubmit(values) {},
+        async onSubmit(budget) {
+          budget = await putBudget(budget);
+          onUpdate(budget);
+          onClose();
+        },
       }}
     >
       {(form) => (

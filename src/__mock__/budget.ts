@@ -6,7 +6,7 @@ import { onRecurrence } from "src/types/category/methods";
 import { sample, random } from "lodash";
 import { randomMoney } from "./money";
 import { asDateString } from "src/types/utils/methods";
-import { budgetStatus } from "src/types/budget/methods";
+import { budgetCompare, budgetStatus } from "src/types/budget/methods";
 
 const CATEGORY_NAMES: Record<CategoryType, string[]> = {
   [CategoryType.Income]: [
@@ -102,21 +102,6 @@ export const budgets = (() => {
   const budgets = [];
   for (let i = 0; i < numBudgets; i++)
     budgets.push(generateBudget());
-
-  // Sort budgets in this order:
-  // (1) Active budgets: Soonest end date comes first
-  // (2) Future budgets: Soonest start date comes first
-  // (3) Past budgets: Most recent end date comes first
-  budgets.sort((a, b) => {
-    const aStatus = budgetStatus(a);
-    const bStatus = budgetStatus(b);
-    if (aStatus !== bStatus) return aStatus - bStatus;
-    switch (aStatus) {
-      case BudgetStatus.Active: return a.dates.end.localeCompare(b.dates.end);
-      case BudgetStatus.Future: return a.dates.begin.localeCompare(b.dates.begin);
-      case BudgetStatus.Past: return b.dates.end.localeCompare(a.dates.end);
-    }
-  });
-
+  budgets.sort(budgetCompare);
   return budgets;
 })();

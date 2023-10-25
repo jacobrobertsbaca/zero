@@ -65,7 +65,12 @@ const Page = () => {
               setSidebarOpen(false);
             }}
           />
-          <BudgetSidebar budget={budget} open={detailsSidebarOpen} onClose={() => setDetailsSidebarOpen(false)} />
+          <BudgetSidebar
+            budget={budget}
+            open={detailsSidebarOpen}
+            onClose={() => setDetailsSidebarOpen(false)}
+            onUpdate={() => refresh()}
+          />
         </>
       )}
     </Loading>
