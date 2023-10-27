@@ -11,6 +11,8 @@ import { useCallback, useState } from "react";
 import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { DeleteDialog } from "src/components/delete-dialog";
 import { useApi } from "src/hooks/use-api";
+import { datesDays } from "src/types/utils/methods";
+import { budgetMaxDays, budgetMaxYears } from "../../../types/budget/methods";
 
 type BudgetSidebarProps = {
   budget: Budget;
@@ -45,7 +47,8 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
             begin: Yup.string().required("Enter a valid date!"),
             end: Yup.string()
               .required("Enter a valid date!")
-              .test("before-begin", "Can't be before begin date!", (value, ctx) => value >= ctx.parent.begin),
+              .test("before-begin", "Can't be before begin date!", (value, ctx) => value >= ctx.parent.begin)
+              .test("max-duration", `Budgets can't be more than ${budgetMaxYears()} years long!`, (value, ctx) => datesDays(ctx.parent) <= budgetMaxDays()),
           }),
         }),
         async onSubmit(budget) {

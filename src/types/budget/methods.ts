@@ -95,3 +95,6 @@ export const budgetCompare = (a: Budget, b: Budget): number => {
       return b.dates.end.localeCompare(a.dates.end);
   }
 };
+
+export const budgetMaxYears = (): number => 10;
+export const budgetMaxDays = (): number => 365 * budgetMaxYears();
