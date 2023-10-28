@@ -19,7 +19,7 @@ type BudgetSidebarProps = {
   open: boolean;
   onClose: () => void;
   onUpdate: (budget: Budget) => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 };
 
 export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: BudgetSidebarProps) => {
@@ -31,7 +31,7 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
 
   const handleDelete = async () => {
     await deleteBudget(budget);
-    onDelete();
+    onDelete?.();
   };
 
   return (
@@ -60,7 +60,7 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
     >
       {(form) => (
         <>
-          <SidebarHeader onClose={onClose}>Edit Budget Details</SidebarHeader>
+          <SidebarHeader onClose={onClose}>{isExisting ? "Edit Budget Details" : "New Budget" }</SidebarHeader>
 
           <DeleteDialog
             open={deleteModal}

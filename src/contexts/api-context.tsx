@@ -2,6 +2,7 @@ import { Draft, Immutable, produce } from "immer";
 import { useSnackbar } from "notistack";
 import { Dispatch, createContext } from "react";
 import { useAuth } from "src/hooks/use-auth";
+import { budgetCompare } from "src/types/budget/methods";
 import { Budget } from "src/types/budget/types";
 import { Category } from "src/types/category/types";
 
@@ -40,7 +41,7 @@ const http = async <T,>(path: string, method: string, options: HTTPOptions = {})
     body: data !== undefined ? JSON.stringify(data) : undefined
   });
   
-  if (response.status != 200) throw new Error(await response.text());
+  if (!response.ok) throw new Error(await response.text());
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.indexOf("application/json") >= 0)
     return await response.json();
@@ -119,6 +120,15 @@ class Cache<T> {
     if (!this.cache) return [];
     return Array.from(this.cache.values());
   }
+
+  /**
+   * Sorts the items in the cache by their values
+   */
+  sortValues(compareFn?: (a: T, b: T) => number) : void {
+    if (!this.cache) return;
+    const compare = compareFn ? (a: [string, T], b: [string, T]) => compareFn(a[1], b[1]) : compareFn; 
+    this.cache = new Map([...this.cache.entries()].sort(compare));
+  }
 };
 
 const budgetCache = new Cache<Budget>();
@@ -156,6 +166,7 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
     async putBudget(budget) {
       budget = await httpPut(`/budgets`, { token, data: { budget }});
       budgetCache.add(budget.id, budget);
+      budgetCache.sortValues(budgetCompare);
       return budget;
     },
 

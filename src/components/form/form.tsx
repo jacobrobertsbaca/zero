@@ -16,6 +16,7 @@ export const Form = <T extends FormikValues>(props: FormProps<T>) => {
     try {
       await onSubmit(values, helpers);
     } catch (err: any) {
+      console.log(err);
       enqueueSnackbar(err.message, { variant: "error" });
       helpers.setStatus({ success: false });
     }
