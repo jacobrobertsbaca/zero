@@ -46,7 +46,12 @@ export function createComponents(config) {
         },
         textSizeLarge: {
           padding: '12px 16px'
-        }
+        },
+        endIcon: {
+          '& > *:first-child': {
+            fontSize: 16,
+          },
+        },
       }
     },
     MuiCard: {
@@ -295,6 +300,24 @@ export function createComponents(config) {
     MuiTextField: {
       defaultProps: {
         variant: 'filled'
+      }
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          borderRadius: '12px',
+          height: '5px'
+        },
+        bar: {
+          borderRadius: '12px'
+        }
+      }
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          // borderRadius: '5px'
+        }
       }
     }
   };

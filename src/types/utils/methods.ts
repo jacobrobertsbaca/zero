@@ -42,6 +42,31 @@ export const asDateString = (date: Date | DateString, dayOffset: number = 0): Da
   return `${years}${months}${days}`;
 };
 
+type DateFormatOptions = {
+  excludeYear?: boolean
+};
+
+/**
+ * Formats a date to look like "MON DAY YEAR".
+ * E.g. "Nov 21 2002".
+ */
+export const dateFormat = (date: Date | DateString, options?: DateFormatOptions): string => {
+  date = asDate(date);
+  const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ] as const;
+
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+
+  return `${month} ${day}` + (!options?.excludeYear ? ` ${year}` : '');
+};
+
+export const dateMin = (): DateString => "00000101";
+export const dateMax = (): DateString => "99991231";
+
 /* ================================================================================================================= *
  * Date Ranges                                                                                                       *
  * ================================================================================================================= */

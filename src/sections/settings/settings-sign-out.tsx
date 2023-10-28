@@ -1,6 +1,7 @@
 import { Button, Card, CardContent, CardHeader } from "@mui/material";
 import { useRouter } from "next/router";
 import { useSnackbar } from "notistack";
+import { useCallback } from "react";
 import { useAuth } from "src/hooks/use-auth";
 
 export const SettingsSignOut = () => {
@@ -8,14 +9,14 @@ export const SettingsSignOut = () => {
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
 
-  const onClick = async (): Promise<void> => {
+  const onClick = useCallback(async (): Promise<void> => {
     try {
       await signOut();
       router.push("/");
     } catch (err: any) {
       enqueueSnackbar(err.message, { variant: "error" });
     }
-  };
+  }, [enqueueSnackbar, router, signOut]);
 
   return <Card sx={{ pb: 2 }}>
     <CardHeader 

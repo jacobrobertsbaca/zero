@@ -4,16 +4,20 @@ import { SettingsNotifications } from 'src/sections/settings/settings-notificati
 import { SettingsPassword } from 'src/sections/settings/settings-password';
 import { Layout as DashboardLayout } from 'src/layouts/dashboard/layout';
 import { SettingsSignOut } from 'src/sections/settings/settings-sign-out';
+import { PageTitle } from 'src/components/page-title';
 
 const Page = () => (
-  <Stack spacing={3} sx={{ mt: 3 }}>
-    <SettingsPassword />
-    <SettingsSignOut />
-  </Stack>
+  <>
+    <PageTitle title="Settings" />
+    <Stack spacing={3}>
+      <SettingsPassword />
+      <SettingsSignOut />
+    </Stack>
+  </>
 );
 
 Page.getLayout = (page: React.ReactNode) => (
-  <DashboardLayout name='Settings'>
+  <DashboardLayout>
     {page}
   </DashboardLayout>
 );

@@ -9,3 +9,27 @@ export type Budget = Immutable<{
   dates: Dates;
   categories: Category[];
 }>;
+
+export type ActualNominal = Immutable<{
+  actual: Money;
+  nominal: Money;
+}>;
+
+export type CategorySummary = ActualNominal & Immutable<{
+  /**
+   * The {@link CategoryType} this summarizes.
+   * If null, represents leftover amounts in the budget (i.e. unassigned income).
+   */
+  type: CategoryType;
+}>;
+
+export type BudgetSummary = Immutable<{
+  leftovers?: ActualNominal,
+  categories: CategorySummary[]
+}>;
+
+export enum BudgetStatus {
+  Active = 0,
+  Future = 1,
+  Past = 2
+};

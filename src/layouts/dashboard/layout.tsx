@@ -1,0 +1,70 @@
+import { useCallback, useEffect, useState } from "react";
+import { Box, Container, Stack, Typography } from "@mui/material";
+import { usePathname } from "next/navigation";
+import { styled } from "@mui/material/styles";
+import { withAuthGuard } from "src/components/with-auth-guard";
+import { SideNav } from "./side-nav";
+import { TopNav } from "./top-nav";
+
+const SIDE_NAV_WIDTH = 280;
+
+const LayoutRoot = styled("div")(({ theme }) => ({
+  display: "flex",
+  flex: "1 1 auto",
+  maxWidth: "100%",
+  [theme.breakpoints.up("lg")]: {
+    paddingLeft: SIDE_NAV_WIDTH,
+  },
+}));
+
+const LayoutContainer = styled("div")({
+  display: "flex",
+  flex: "1 1 auto",
+  flexDirection: "column",
+  width: "100%",
+});
+
+type LayoutProps = {
+  children: React.ReactNode;
+};
+
+export const Layout = withAuthGuard(true, ({ children }: LayoutProps) => {
+  const pathname = usePathname();
+  const [openNav, setOpenNav] = useState(false);
+
+  const handlePathnameChange = useCallback(() => {
+    if (openNav) {
+      setOpenNav(false);
+    }
+  }, [openNav]);
+
+  useEffect(
+    () => {
+      handlePathnameChange();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pathname]
+  );
+
+  return (
+    <>
+      <TopNav onNavOpen={() => setOpenNav(true)} />
+      <SideNav onClose={() => setOpenNav(false)} open={openNav} />
+      <LayoutRoot>
+        <LayoutContainer>
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              py: 8,
+            }}
+          >
+            <Container maxWidth="lg">
+              {children}
+            </Container>
+          </Box>
+        </LayoutContainer>
+      </LayoutRoot>
+    </>
+  );
+});
