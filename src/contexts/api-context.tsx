@@ -5,6 +5,7 @@ import { useAuth } from "src/hooks/use-auth";
 import { budgetCompare } from "src/types/budget/methods";
 import { Budget } from "src/types/budget/types";
 import { Category } from "src/types/category/types";
+import { Transaction } from "src/types/transaction/types";
 
 export type ApiContextType = Immutable<{
   getBudgets(): Promise<readonly Budget[]>;
@@ -13,6 +14,7 @@ export type ApiContextType = Immutable<{
   deleteBudget(budget: Budget): Promise<void>;
   putCategory(budgetID: string, category: Category): Promise<Category>;
   deleteCategory(budgetID: string, categoryID: string): Promise<void>;
+  getTransactions(): Promise<readonly Transaction[]>;
 }>;
 
 /* ================================================================================================================= *
@@ -132,6 +134,7 @@ class Cache<T> {
 };
 
 const budgetCache = new Cache<Budget>();
+const transactionCache = new Cache<Transaction>();
 
 /* ================================================================================================================= *
  * Context Implementation                                                                                            *
@@ -198,6 +201,14 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
           if (index >= 0) draft.categories.splice(index, 1);
         }));
       }
+    },
+
+    async getTransactions() {
+      if (transactionCache.has()) return transactionCache.getAll();
+      const transactions: Transaction[] = await httpGet("/transactions", { token });
+      for (const trx of transactions)
+        transactionCache.add(trx.id, trx);
+      return transactions;
     },
   };
 
