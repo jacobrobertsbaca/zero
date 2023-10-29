@@ -319,6 +319,16 @@ export function createComponents(config) {
           // borderRadius: '5px'
         }
       }
+    },
+    MuiDataGrid: {
+      styleOverrides: {
+        row: {
+          borderBottom: `2px solid ${palette.divider}`,
+        },
+        columnHeaderRow: {
+          borderBottom: `2px solid ${palette.divider}`,
+        }
+      }
     }
   };
 }

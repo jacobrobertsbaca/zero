@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridRenderCellParams, GridValueFormatterParams, GridValueGetterParams } from "@mui/x-data-grid";
 import { useBudgets, useTransactions } from "src/hooks/use-api";
 import { moneyFormat } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
@@ -16,7 +16,7 @@ export const TransactionList = () => {
       headerName: "Date",
       flex: 1,
       maxWidth: 100,
-      valueGetter(params: GridRenderCellParams<any, DateString>) {
+      valueGetter(params: GridValueGetterParams<any, DateString>) {
         if (!params.value) return "";
         return asDate(params.value).toLocaleDateString("en-US");
       },
@@ -26,9 +26,14 @@ export const TransactionList = () => {
       headerName: "Amount",
       flex: 1,
       maxWidth: 100,
-      valueGetter(params: GridRenderCellParams<any, Money>) {
-        if (!params.value) return "";
-        return moneyFormat(params.value);
+      valueGetter(params: GridValueGetterParams<any, Money>) {
+        if (!params.value) return 0;
+        return params.value.amount;
+      },
+
+      renderCell(params: GridRenderCellParams<any, Money>) {
+        if (!params.row.amount) return "";
+        return moneyFormat(params.row.amount);
       },
     },
     {
@@ -41,7 +46,7 @@ export const TransactionList = () => {
       field: "budget",
       headerName: "Budget",
       flex: 1,
-      valueGetter(params: GridRenderCellParams<any, string>) {
+      valueGetter(params: GridValueGetterParams<any, string>) {
         if (!params.value || !budgets) return "";
         return budgets.find((b) => b.id === params.value)?.name ?? "";
       },
@@ -50,7 +55,7 @@ export const TransactionList = () => {
       field: "category",
       headerName: "Category",
       flex: 1,
-      valueGetter(params: GridRenderCellParams<any, string>) {
+      valueGetter(params: GridValueGetterParams<any, string>) {
         if (!params.value || !budgets) return "";
         const budget = budgets.find((b) => b.id === params.row.budget);
         return budget?.categories.find((c) => c.id === params.value)?.name ?? "";
@@ -60,7 +65,11 @@ export const TransactionList = () => {
 
   return (
     <Box>
-      <DataGrid loading={transactionsLoading || budgetsLoading} rows={transactions ?? []} columns={cols} />
+      <DataGrid
+        loading={transactionsLoading || budgetsLoading}
+        rows={transactions ?? []}
+        columns={cols}
+      />
     </Box>
   );
 };
