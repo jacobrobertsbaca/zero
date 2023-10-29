@@ -2,8 +2,10 @@ import { Draft, Immutable, produce } from "immer";
 import { useSnackbar } from "notistack";
 import { Dispatch, createContext } from "react";
 import { useAuth } from "src/hooks/use-auth";
+import { budgetCompare } from "src/types/budget/methods";
 import { Budget } from "src/types/budget/types";
 import { Category } from "src/types/category/types";
+import { Transaction } from "src/types/transaction/types";
 
 export type ApiContextType = Immutable<{
   getBudgets(): Promise<readonly Budget[]>;
@@ -12,6 +14,7 @@ export type ApiContextType = Immutable<{
   deleteBudget(budget: Budget): Promise<void>;
   putCategory(budgetID: string, category: Category): Promise<Category>;
   deleteCategory(budgetID: string, categoryID: string): Promise<void>;
+  getTransactions(): Promise<readonly Transaction[]>;
 }>;
 
 /* ================================================================================================================= *
@@ -40,7 +43,7 @@ const http = async <T,>(path: string, method: string, options: HTTPOptions = {})
     body: data !== undefined ? JSON.stringify(data) : undefined
   });
   
-  if (response.status != 200) throw new Error(await response.text());
+  if (!response.ok) throw new Error(await response.text());
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.indexOf("application/json") >= 0)
     return await response.json();
@@ -119,9 +122,19 @@ class Cache<T> {
     if (!this.cache) return [];
     return Array.from(this.cache.values());
   }
+
+  /**
+   * Sorts the items in the cache by their values
+   */
+  sortValues(compareFn?: (a: T, b: T) => number) : void {
+    if (!this.cache) return;
+    const compare = compareFn ? (a: [string, T], b: [string, T]) => compareFn(a[1], b[1]) : compareFn; 
+    this.cache = new Map([...this.cache.entries()].sort(compare));
+  }
 };
 
 const budgetCache = new Cache<Budget>();
+const transactionCache = new Cache<Transaction>();
 
 /* ================================================================================================================= *
  * Context Implementation                                                                                            *
@@ -156,6 +169,7 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
     async putBudget(budget) {
       budget = await httpPut(`/budgets`, { token, data: { budget }});
       budgetCache.add(budget.id, budget);
+      budgetCache.sortValues(budgetCompare);
       return budget;
     },
 
@@ -187,6 +201,14 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
           if (index >= 0) draft.categories.splice(index, 1);
         }));
       }
+    },
+
+    async getTransactions() {
+      if (transactionCache.has()) return transactionCache.getAll();
+      const transactions: Transaction[] = await httpGet("/transactions", { token });
+      for (const trx of transactions)
+        transactionCache.add(trx.id, trx);
+      return transactions;
     },
   };
 

@@ -4,7 +4,7 @@ import { CategoryType } from "../category/types";
 import { moneySub, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
 import { Budget, BudgetStatus, BudgetSummary, CategorySummary } from "./types";
-import { asDate } from "../utils/methods";
+import { asDate, asDateString } from "../utils/methods";
 
 const computeLeftovers = (
   summaries: Partial<Record<CategoryType, CategorySummary>>,

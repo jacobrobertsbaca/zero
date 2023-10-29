@@ -4,11 +4,12 @@ import { z } from "zod";
 import { BudgetSchema } from "src/types/budget/schema";
 import { Draft, produce } from "immer";
 import { Budget } from "src/types/budget/types";
-import { budgetCompare } from "src/types/budget/methods";
+import { budgetCompare, budgetMaxDays, budgetMaxYears } from "src/types/budget/methods";
 import { NotFound } from "../errors";
 import { isEqual } from "lodash";
 import { categoryNominal, onCategoryNominal, onRecurrence } from "src/types/category/methods";
 import { Category } from "src/types/category/types";
+import { datesDays } from "src/types/utils/methods";
 
 const router = routes();
 
@@ -23,7 +24,10 @@ router.get(
 router.put(
   route({
     bodySchema: z.object({
-      budget: BudgetSchema.omit({ categories: true }),
+      budget: BudgetSchema.omit({ categories: true }).refine(
+        (value) => datesDays(value.dates) <= budgetMaxDays(),
+        `Budget duration cannot exceed ${budgetMaxYears()} years`
+      ),
     }),
     handler(req, res) {
       if (!req.body.budget.id) {
@@ -53,7 +57,7 @@ router.put(
               /* Reset category periods so that they get updated by onRecurrence */
               const category = draft.categories[i];
               category.periods = [];
-              
+
               /* Preserve total category amount */
               const total = categoryNominal(budget.categories[i]);
               draft.categories[i] = onRecurrence(draft, draft.categories[i], category.recurrence) as Draft<Category>;

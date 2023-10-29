@@ -48,3 +48,4 @@ const createApiHook =
 export const useApi = () => useContext(ApiContext);
 export const useBudgets = createApiHook(api => api.getBudgets);
 export const useBudget = createApiHook(api => api.getBudget);
+export const useTransactions = createApiHook(api => api.getTransactions);
