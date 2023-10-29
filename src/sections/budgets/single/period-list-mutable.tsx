@@ -53,7 +53,7 @@ export const PeriodListMutable = () => {
                     variant="standard"
                     name={`periods[${index + 1}].truncate`} // +1 due to slice
                     values={getValues(period)}
-                    onChange={(event) => onPeriodTruncateChanged(index, event)}
+                    onChange={(event) => onPeriodTruncateChanged(index + 1, event)}
                   />
                 </TableCell>
                 <TableCell>
