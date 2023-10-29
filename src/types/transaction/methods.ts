@@ -1,3 +1,3 @@
 import { Transaction } from "./types";
 
-export const transactionCompare = (a: Transaction, b: Transaction) => a.date.localeCompare(b.date);
+export const transactionCompare = (a: Transaction, b: Transaction) => b.date.localeCompare(a.date);
