@@ -14,6 +14,7 @@ import { categoryTitle } from "src/types/category/methods";
 import { Transaction } from "src/types/transaction/types";
 import { dateFormat } from "src/types/utils/methods";
 import * as Yup from "yup";
+import { CategorySelector } from "./category-selector";
 
 type TransactionSidebarProps = {
   transaction: Transaction;
@@ -36,25 +37,6 @@ export const TransactionSidebar = ({ transaction, budgets, open, onClose }: Tran
       </Stack>
     ),
   }));
-
-  const categoryValues = useCallback(
-    (budgetId: string) => {
-      const budget = budgets.find((b) => b.id === budgetId);
-      if (!budget) return [];
-      return budget.categories.map((c) => ({
-        value: c.id,
-        label: (
-          <Stack>
-            <Typography variant="body2">{c.name}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              {categoryTitle(c.type)}
-            </Typography>
-          </Stack>
-        ),
-      }));
-    },
-    [budgets]
-  );
 
   return (
     <Sidebar
@@ -96,9 +78,8 @@ export const TransactionSidebar = ({ transaction, budgets, open, onClose }: Tran
                   form.setFieldValue("budget", evt.target.value);
                 }}
               />
-              <Collapse in={categoryValues(form.values.budget).length > 0}>
-                <SelectField label="Category" name="category" values={categoryValues(form.values.budget)} />
-              </Collapse>
+              <CategorySelector budgets={budgets} />
+
               <MoneyField label="Amount" name="amount" />
               <TextField label="Name" name="name" placeholder="Optional" />
               <EditActions allowDelete={isExisting} dirty={!isEqual(form.values, transaction)} state={EditState.Edit} />
