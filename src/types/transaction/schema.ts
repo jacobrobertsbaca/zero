@@ -10,3 +10,6 @@ export const TransactionSchema = z.object({
   amount: MoneySchema,
   name: z.string()
 });
+
+
+type A = z.infer<typeof TransactionSchema>;

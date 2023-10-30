@@ -1,14 +1,29 @@
-import { Box } from "@mui/material";
-import { DataGrid, GridColDef, GridRenderCellParams, GridValueFormatterParams, GridValueGetterParams } from "@mui/x-data-grid";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
+import {
+  DataGrid,
+  GridColDef,
+  GridRenderCellParams,
+  GridRowParams,
+  GridValueFormatterParams,
+  GridValueGetterParams,
+} from "@mui/x-data-grid";
 import { useBudgets, useTransactions } from "src/hooks/use-api";
+import { Budget } from "src/types/budget/types";
 import { moneyFormat } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
+import { Transaction } from "src/types/transaction/types";
 import { asDate } from "src/types/utils/methods";
 import { DateString } from "src/types/utils/types";
 
-export const TransactionList = () => {
+type TransactionListProps = {
+  budgets: readonly Budget[];
+  onTrxSelected: (trx: Transaction) => void;
+};
+
+export const TransactionList = ({ budgets, onTrxSelected }: TransactionListProps) => {
   const { loading: transactionsLoading, result: transactions } = useTransactions();
-  const { loading: budgetsLoading, result: budgets } = useBudgets();
+  const theme = useTheme();
+  const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
 
   const cols: GridColDef[] = [
     {
@@ -16,7 +31,7 @@ export const TransactionList = () => {
       headerName: "Date",
       flex: 1,
       maxWidth: 100,
-      valueGetter(params: GridValueGetterParams<any, DateString>) {
+      renderCell(params: GridRenderCellParams<any, DateString>) {
         if (!params.value) return "";
         return asDate(params.value).toLocaleDateString("en-US");
       },
@@ -42,33 +57,51 @@ export const TransactionList = () => {
       type: "string",
       flex: 1,
     },
-    {
-      field: "budget",
-      headerName: "Budget",
-      flex: 1,
-      valueGetter(params: GridValueGetterParams<any, string>) {
-        if (!params.value || !budgets) return "";
-        return budgets.find((b) => b.id === params.value)?.name ?? "";
-      },
-    },
-    {
-      field: "category",
-      headerName: "Category",
-      flex: 1,
-      valueGetter(params: GridValueGetterParams<any, string>) {
-        if (!params.value || !budgets) return "";
-        const budget = budgets.find((b) => b.id === params.row.budget);
-        return budget?.categories.find((c) => c.id === params.value)?.name ?? "";
-      },
-    },
+
+    // Only show these columns when not on a mobile display
+    ...(!mobile
+      ? [
+          {
+            field: "budget",
+            headerName: "Budget",
+            flex: 1,
+            valueGetter(params: GridValueGetterParams<any, string>) {
+              if (!params.value || !budgets) return "";
+              return budgets.find((b) => b.id === params.value)?.name ?? "";
+            },
+          },
+          {
+            field: "category",
+            headerName: "Category",
+            flex: 1,
+            valueGetter(params: GridValueGetterParams<any, string>) {
+              if (!params.value || !budgets) return "";
+              const budget = budgets.find((b) => b.id === params.row.budget);
+              return budget?.categories.find((c) => c.id === params.value)?.name ?? "";
+            },
+          },
+        ]
+      : []),
   ];
 
   return (
     <Box>
       <DataGrid
-        loading={transactionsLoading || budgetsLoading}
+        loading={transactionsLoading}
         rows={transactions ?? []}
         columns={cols}
+        disableColumnMenu
+        onRowClick={(params: GridRowParams<Transaction>) => onTrxSelected(params.row)}
+        sx={{
+          // disable cell selection style
+          ".MuiDataGrid-cell:focus": {
+            outline: "none",
+          },
+          // pointer cursor on ALL rows
+          "& .MuiDataGrid-row:hover": {
+            cursor: "pointer",
+          },
+        }}
       />
     </Box>
   );
