@@ -33,7 +33,7 @@ const Page = () => {
       budget: budgets[0].id, // 1st budget should be active, assumes budgets in sorted order
       category: "",
       date: asDateString(new Date()), // Today
-      amount: null as unknown as Money,   // Setting to null default MoneyField to empty value
+      amount: null as unknown as Money, // Setting to null default MoneyField to empty value
       name: "",
     });
     setSidebarOpen(true);
@@ -59,16 +59,18 @@ const Page = () => {
           />
           <Stack direction="row" alignItems="normal" spacing={0.5}>
             <PageTitle title="Transactions" />
-            <Box>
-              <IconButton color="inherit" onClick={() => onAddTrx(budgets)}>
-                <SvgIcon>
-                  <PlusIcon />
-                </SvgIcon>
-              </IconButton>
-            </Box>
+            {budgets.length > 0 && (
+              <Box>
+                <IconButton color="inherit" onClick={() => onAddTrx(budgets)}>
+                  <SvgIcon>
+                    <PlusIcon />
+                  </SvgIcon>
+                </IconButton>
+              </Box>
+            )}
           </Stack>
           <TransactionList
-            transactions={transactions ?? []}
+            transactions={[]}
             budgets={budgets}
             onTrxSelected={(trx) => {
               setSidebarTrx(trx);

@@ -1,17 +1,40 @@
-import { Box, useMediaQuery, useTheme } from "@mui/material";
-import {
-  DataGrid,
-  GridColDef,
-  GridRenderCellParams,
-  GridRowParams,
-  GridValueGetterParams,
-} from "@mui/x-data-grid";
+import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
+import { Box, Stack, SvgIcon, useMediaQuery, useTheme } from "@mui/material";
+import { DataGrid, GridColDef, GridRenderCellParams, GridRowParams, GridValueGetterParams } from "@mui/x-data-grid";
+import Link from "next/link";
 import { Budget } from "src/types/budget/types";
 import { moneyFormat } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
 import { Transaction } from "src/types/transaction/types";
 import { asDate } from "src/types/utils/methods";
 import { DateString } from "src/types/utils/types";
+
+/* ================================================================================================================= *
+ * Overlays                                                                                                          *
+ * ================================================================================================================= */
+
+const NoTransactionsOverlay = ({ allowAdd }: { allowAdd: boolean }) => (
+  <Stack alignItems="center" justifyContent="center" height={1}>
+    {allowAdd && (
+      <Stack alignItems="center" direction="row">
+        Click&nbsp;
+        <SvgIcon sx={{ display: "inline" }}>
+          <PlusIcon />
+        </SvgIcon>
+        &nbsp;to add a transaction
+      </Stack>
+    )}
+    {!allowAdd && (
+      <Stack alignItems="center" direction="row">
+        You must&nbsp;<Link href="/budgets">create a budget</Link>&nbsp;before you can add a transaction!
+      </Stack>
+    )}
+  </Stack>
+);
+
+/* ================================================================================================================= *
+ * Transaction List                                                                                                  *
+ * ================================================================================================================= */
 
 type TransactionListProps = {
   transactions: readonly Transaction[];
@@ -85,10 +108,17 @@ export const TransactionList = ({ transactions, budgets, onTrxSelected }: Transa
   return (
     <Box>
       <DataGrid
+        autoHeight
         rows={transactions}
         columns={cols}
         disableColumnMenu
         onRowClick={(params: GridRowParams<Transaction>) => onTrxSelected(params.row)}
+        slots={{
+          noRowsOverlay: NoTransactionsOverlay,
+        }}
+        slotProps={{
+          noRowsOverlay: { allowAdd: budgets.length > 0 } as any,
+        }}
         sx={{
           // disable cell selection style
           ".MuiDataGrid-cell:focus": {
@@ -98,6 +128,8 @@ export const TransactionList = ({ transactions, budgets, onTrxSelected }: Transa
           "& .MuiDataGrid-row:hover": {
             cursor: "pointer",
           },
+          // overlay height
+          "--DataGrid-overlayHeight": "300px",
         }}
       />
     </Box>
