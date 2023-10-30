@@ -31,15 +31,11 @@ router.put(
         return res.status(201).json(trx);
       }
 
-      for (let i = 0; i < transactions.length; i++) {
-        const trx = transactions[i];
-        if (trx.id !== req.body.transaction.id) continue;
-        transactions[i] = trx;
-        transactions.sort(transactionCompare);
-        return res.status(200).json(trx);
-      }
-
-      throw new NotFound("No such transaction exists");
+      const index = transactions.findIndex(t => t.id === req.body.transaction.id);
+      if (index < 0) throw new NotFound("No such transaction exists");
+      transactions[index] = req.body.transaction;
+      transactions.sort(transactionCompare);
+      return res.status(200).json(req.body.transaction);
     },
   })
 );

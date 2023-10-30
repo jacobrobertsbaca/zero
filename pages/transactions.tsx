@@ -6,7 +6,7 @@ import { TransactionSidebar } from "src/sections/transactions/transaction-sideba
 import { useCallback, useState } from "react";
 import { Transaction } from "src/types/transaction/types";
 import { moneyZero } from "src/types/money/methods";
-import { useBudgets } from "src/hooks/use-api";
+import { useBudgets, useTransactions } from "src/hooks/use-api";
 import { Loading } from "src/components/loading";
 
 import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
@@ -16,6 +16,7 @@ import { Money } from "src/types/money/types";
 
 const Page = () => {
   const { loading, result } = useBudgets();
+  const { loading: transactionsLoading, result: transactions, refresh: refreshTransactions } = useTransactions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTrx, setSidebarTrx] = useState<Transaction>({
     id: "",
@@ -47,6 +48,14 @@ const Page = () => {
             transaction={sidebarTrx}
             open={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
+            onUpdate={(trx) => {
+              refreshTransactions();
+              setSidebarOpen(false);
+            }}
+            onDelete={() => {
+              refreshTransactions();
+              setSidebarOpen(false);
+            }}
           />
           <Stack direction="row" alignItems="normal" spacing={0.5}>
             <PageTitle title="Transactions" />
@@ -59,6 +68,7 @@ const Page = () => {
             </Box>
           </Stack>
           <TransactionList
+            transactions={transactions ?? []}
             budgets={budgets}
             onTrxSelected={(trx) => {
               setSidebarTrx(trx);

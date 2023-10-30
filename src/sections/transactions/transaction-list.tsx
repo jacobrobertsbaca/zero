@@ -6,7 +6,6 @@ import {
   GridRowParams,
   GridValueGetterParams,
 } from "@mui/x-data-grid";
-import { useBudgets, useTransactions } from "src/hooks/use-api";
 import { Budget } from "src/types/budget/types";
 import { moneyFormat } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
@@ -15,12 +14,12 @@ import { asDate } from "src/types/utils/methods";
 import { DateString } from "src/types/utils/types";
 
 type TransactionListProps = {
+  transactions: readonly Transaction[];
   budgets: readonly Budget[];
   onTrxSelected: (trx: Transaction) => void;
 };
 
-export const TransactionList = ({ budgets, onTrxSelected }: TransactionListProps) => {
-  const { loading: transactionsLoading, result: transactions } = useTransactions();
+export const TransactionList = ({ transactions, budgets, onTrxSelected }: TransactionListProps) => {
   const theme = useTheme();
   const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
 
@@ -86,8 +85,7 @@ export const TransactionList = ({ budgets, onTrxSelected }: TransactionListProps
   return (
     <Box>
       <DataGrid
-        loading={transactionsLoading}
-        rows={transactions ?? []}
+        rows={transactions}
         columns={cols}
         disableColumnMenu
         onRowClick={(params: GridRowParams<Transaction>) => onTrxSelected(params.row)}

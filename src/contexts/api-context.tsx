@@ -154,6 +154,7 @@ const transactionCache = new Cache<Transaction>();
 
 const placeTransaction = (trx: Transaction, remove: boolean) => {
   if (remove) transactionCache.invalidate(trx.id);
+  else transactionCache.add(trx.id, trx);
   if (!budgetCache.has(trx.budget)) return;
   const budget = budgetCache.get(trx.budget);
   const categoryIndex = budget.categories.findIndex(c => c.id === trx.category);

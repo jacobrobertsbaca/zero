@@ -10,20 +10,30 @@ import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { Sidebar } from "src/components/sidebar/sidebar";
 import { SidebarHeader } from "src/components/sidebar/sidebar-header";
 import { Budget } from "src/types/budget/types";
-import { categoryTitle } from "src/types/category/methods";
 import { Transaction } from "src/types/transaction/types";
 import { dateFormat } from "src/types/utils/methods";
 import * as Yup from "yup";
 import { CategorySelector } from "./category-selector";
+import { useApi } from "src/hooks/use-api";
 
 type TransactionSidebarProps = {
   transaction: Transaction;
   budgets: readonly Budget[];
   open: boolean;
   onClose: () => void;
+  onUpdate: (trx: Transaction) => void;
+  onDelete: () => void;
 };
 
-export const TransactionSidebar = ({ transaction, budgets, open, onClose }: TransactionSidebarProps) => {
+export const TransactionSidebar = ({
+  transaction,
+  budgets,
+  open,
+  onClose,
+  onUpdate,
+  onDelete,
+}: TransactionSidebarProps) => {
+  const { putTransaction, deleteTransaction } = useApi();
   const isExisting = !!transaction.id;
 
   const budgetValues = budgets.map((b) => ({
@@ -57,8 +67,9 @@ export const TransactionSidebar = ({ transaction, budgets, open, onClose }: Tran
           category: Yup.string().required("You must pick a category!"),
           amount: Yup.mixed().required("You must enter an amount!"),
         }),
-        async onSubmit(values) {
-          console.log(values);
+        async onSubmit(trx) {
+          trx = await putTransaction(trx);
+          onUpdate(trx);
         },
       }}
     >
@@ -79,10 +90,18 @@ export const TransactionSidebar = ({ transaction, budgets, open, onClose }: Tran
                 }}
               />
               <CategorySelector budgets={budgets} />
-
               <MoneyField label="Amount" name="amount" />
               <TextField label="Name" name="name" placeholder="Optional" />
-              <EditActions allowDelete={isExisting} dirty={!isEqual(form.values, transaction)} state={EditState.Edit} />
+
+              <EditActions
+                allowDelete={isExisting}
+                dirty={!isEqual(form.values, transaction)}
+                state={EditState.Edit}
+                onDelete={async () => {
+                  await deleteTransaction(transaction);
+                  onDelete();
+                }}
+              />
             </Stack>
           </Scrollbar>
         </>
