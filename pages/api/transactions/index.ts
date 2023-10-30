@@ -24,7 +24,7 @@ router.put(
     handler(req, res) {
       if (!req.body.transaction.id) {
         const trx = produce(req.body.transaction, (draft) => {
-          trx.id = crypto.randomUUID();
+          draft.id = crypto.randomUUID();
         });
         transactions.push(trx);
         transactions.sort(transactionCompare);
