@@ -95,7 +95,7 @@ class Cache<T> {
    */
   invalidateWhere(pred: (value: T, id: string) => boolean): void {
     if (!this.cache) return;
-    for (const id in [...this.cache.keys()]) {
+    for (const id of [...this.cache.keys()]) {
       if (pred(this.cache.get(id)!, id))
         this.cache.delete(id);
     }
