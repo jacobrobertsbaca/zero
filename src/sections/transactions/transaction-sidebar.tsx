@@ -1,4 +1,4 @@
-import { Stack, Typography } from "@mui/material";
+import { Collapse, Stack, Typography } from "@mui/material";
 import { isEqual } from "lodash";
 import { useCallback } from "react";
 import { DateField } from "src/components/form/date-field";
@@ -68,7 +68,9 @@ export const TransactionSidebar = ({ transaction, budgets, open, onClose }: Tran
           budget: Yup.string()
             .required("You must pick a budget!")
             .test("has-categories", "You must pick a budget with at least one category!", (id, ctx) => {
-              return !!budgets.find((b) => b.id === id);
+              const budget = budgets.find((b) => b.id === id);
+              if (!budget) return true;
+              return budget.categories.length > 0;
             }),
           category: Yup.string().required("You must pick a category!"),
           amount: Yup.mixed().required("You must enter an amount!"),
@@ -94,7 +96,9 @@ export const TransactionSidebar = ({ transaction, budgets, open, onClose }: Tran
                   form.setFieldValue("budget", evt.target.value);
                 }}
               />
-              <SelectField label="Category" name="category" values={categoryValues(form.values.budget)} />
+              <Collapse in={categoryValues(form.values.budget).length > 0}>
+                <SelectField label="Category" name="category" values={categoryValues(form.values.budget)} />
+              </Collapse>
               <MoneyField label="Amount" name="amount" />
               <TextField label="Name" name="name" placeholder="Optional" />
               <EditActions allowDelete={isExisting} dirty={!isEqual(form.values, transaction)} state={EditState.Edit} />
