@@ -4,7 +4,6 @@ import {
   GridColDef,
   GridRenderCellParams,
   GridRowParams,
-  GridValueFormatterParams,
   GridValueGetterParams,
 } from "@mui/x-data-grid";
 import { useBudgets, useTransactions } from "src/hooks/use-api";
