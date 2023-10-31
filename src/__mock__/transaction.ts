@@ -26,6 +26,7 @@ const generateTransaction = (): Transaction => {
  * A random handful of {@link Transaction} objects.
  */
  export const transactions = (() => {
+   if (budgets.length === 0) return [];
   const numTransactions = random(200, 300);
   const transactions = [];
   for (let i = 0; i < numTransactions; i++)

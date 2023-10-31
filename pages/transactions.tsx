@@ -16,7 +16,7 @@ import { Money } from "src/types/money/types";
 
 const Page = () => {
   const { result } = useBudgets();
-  const { result: transactions, refresh: refreshTransactions } = useTransactions();
+  const { loading: transactionsLoading, result: transactions, refresh: refreshTransactions } = useTransactions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTrx, setSidebarTrx] = useState<Transaction>({
     id: "",
@@ -72,7 +72,8 @@ const Page = () => {
             )}
           </Stack>
           <TransactionList
-            transactions={transactions ?? []}
+            loading={transactionsLoading}
+            transactions={transactions}
             budgets={budgets}
             onTrxSelected={(trx) => {
               setSidebarTrx(trx);

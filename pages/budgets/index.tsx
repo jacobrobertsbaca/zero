@@ -1,4 +1,4 @@
-import { Box, IconButton, Stack, SvgIcon, Unstable_Grid2 as Grid } from "@mui/material";
+import { Box, Card, IconButton, Stack, SvgIcon, Unstable_Grid2 as Grid } from "@mui/material";
 import { Loading } from "src/components/loading";
 import { PageTitle } from "src/components/page-title";
 import { useBudgets } from "src/hooks/use-api";
@@ -10,6 +10,22 @@ import { useState } from "react";
 import { BudgetSidebar } from "src/sections/budgets/common/budget-sidebar";
 import { useRouter } from "next/router";
 import { Dates } from "src/types/utils/types";
+
+const NoBudgetsOverlay = () => (
+  <Grid xs={12}>
+    <Card>
+      <Stack alignItems="center" justifyContent="center" height="200px">
+        <Stack alignItems="center" direction="row">
+          Click&nbsp;
+          <SvgIcon sx={{ display: "inline" }}>
+            <PlusIcon />
+          </SvgIcon>
+          &nbsp;to create a budget
+        </Stack>
+      </Stack>
+    </Card>
+  </Grid>
+);
 
 const Page = () => {
   const router = useRouter();
@@ -31,7 +47,8 @@ const Page = () => {
             </Box>
           </Stack>
           <Grid container spacing={4}>
-            {budgets && budgets.map((b) => <BudgetCard key={b.id} budget={b} />)}
+            {budgets.length === 0 && <NoBudgetsOverlay />}
+            {budgets.map((b) => <BudgetCard key={b.id} budget={b} />)}
           </Grid>
           <BudgetSidebar
             budget={{
