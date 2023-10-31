@@ -15,8 +15,8 @@ import { asDateString } from "src/types/utils/methods";
 import { Money } from "src/types/money/types";
 
 const Page = () => {
-  const { loading, result } = useBudgets();
-  const { loading: transactionsLoading, result: transactions, refresh: refreshTransactions } = useTransactions();
+  const { result } = useBudgets();
+  const { result: transactions, refresh: refreshTransactions } = useTransactions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTrx, setSidebarTrx] = useState<Transaction>({
     id: "",
@@ -25,6 +25,7 @@ const Page = () => {
     date: "",
     amount: moneyZero(),
     name: "",
+    lastModified: ""
   });
 
   const onAddTrx = useCallback((budgets: readonly Budget[]) => {
@@ -35,6 +36,7 @@ const Page = () => {
       date: asDateString(new Date()), // Today
       amount: null as unknown as Money, // Setting to null default MoneyField to empty value
       name: "",
+      lastModified: ""
     });
     setSidebarOpen(true);
   }, []);
@@ -70,7 +72,7 @@ const Page = () => {
             )}
           </Stack>
           <TransactionList
-            transactions={[]}
+            transactions={transactions ?? []}
             budgets={budgets}
             onTrxSelected={(trx) => {
               setSidebarTrx(trx);

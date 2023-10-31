@@ -19,4 +19,7 @@ export type Transaction = {
 
   /** The name of this transaction. */
   name: string;
+
+  /** UTC ISO 8601 date string for time of last modification */
+  lastModified: string;
 };
