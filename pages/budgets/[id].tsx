@@ -1,6 +1,6 @@
-import { Typography, Stack, Button, IconButton, SvgIcon, Box } from "@mui/material";
+import { Typography, Stack, IconButton, SvgIcon, Box } from "@mui/material";
 import { useRouter } from "next/router";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Loading } from "src/components/loading";
 import { PageTitle } from "src/components/page-title";
 import { useBudget } from "src/hooks/use-api";
@@ -14,11 +14,15 @@ import { dateFormat } from "src/types/utils/methods";
 
 import PencilSquareIcon from "@heroicons/react/20/solid/PencilSquareIcon";
 import { BudgetSidebar } from "src/sections/budgets/common/budget-sidebar";
-import { produce } from "immer";
 
 const Page = () => {
   const router = useRouter();
-  const { result, refresh } = useBudget(router.query.id as string);
+  const { loading, result, refresh } = useBudget(router.query.id as string);
+
+  /* Render 404 when we fail to load budget */
+  useEffect(() => {
+    if (!loading && !result) router.replace("/404");
+  }, [loading, result, router]);
 
   /* Sidebar state. Use dummy category to ensure non-null */
   const [sidebarOpen, setSidebarOpen] = useState(false);

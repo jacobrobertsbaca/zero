@@ -24,7 +24,6 @@ const createApiHook =
 
     const [refreshCounter, setRefreshCounter] = useState(0);
     const refresh = useCallback(() => {
-      setLoading(true);
       setRefreshCounter(refreshCounter + 1);
     }, [refreshCounter]);
 
