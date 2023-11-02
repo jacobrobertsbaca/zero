@@ -1,5 +1,5 @@
 import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
-import { Box, Stack, SvgIcon, useMediaQuery, useTheme } from "@mui/material";
+import { Box, CircularProgress, Stack, SvgIcon, useMediaQuery, useTheme } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams, GridRowParams, GridValueGetterParams } from "@mui/x-data-grid";
 import Link from "next/link";
 import { Budget } from "src/types/budget/types";
@@ -13,9 +13,9 @@ import { DateString } from "src/types/utils/types";
  * Overlays                                                                                                          *
  * ================================================================================================================= */
 
-const NoTransactionsOverlay = ({ allowAdd }: { allowAdd: boolean }) => (
+const NoTransactionsOverlay = ({ mode }: { mode: "add" | "budgets" | "loading" }) => (
   <Stack alignItems="center" justifyContent="center" height={1}>
-    {allowAdd && (
+    {mode === "add" && (
       <Stack alignItems="center" direction="row">
         Click&nbsp;
         <SvgIcon sx={{ display: "inline" }}>
@@ -24,11 +24,12 @@ const NoTransactionsOverlay = ({ allowAdd }: { allowAdd: boolean }) => (
         &nbsp;to add a transaction
       </Stack>
     )}
-    {!allowAdd && (
+    {mode === "budgets" && (
       <Stack alignItems="center" direction="row">
-        You must&nbsp;<Link href="/budgets">create a budget</Link>&nbsp;before you can add a transaction!
+        <Link href="/budgets">Create a budget</Link>&nbsp;to add a transaction!
       </Stack>
     )}
+    {mode === "loading" && <CircularProgress size={24} />}
   </Stack>
 );
 
@@ -37,12 +38,13 @@ const NoTransactionsOverlay = ({ allowAdd }: { allowAdd: boolean }) => (
  * ================================================================================================================= */
 
 type TransactionListProps = {
-  transactions: readonly Transaction[];
+  transactions?: readonly Transaction[];
   budgets: readonly Budget[];
+  loading: boolean;
   onTrxSelected: (trx: Transaction) => void;
 };
 
-export const TransactionList = ({ transactions, budgets, onTrxSelected }: TransactionListProps) => {
+export const TransactionList = ({ loading, transactions, budgets, onTrxSelected }: TransactionListProps) => {
   const theme = useTheme();
   const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
 
@@ -109,7 +111,7 @@ export const TransactionList = ({ transactions, budgets, onTrxSelected }: Transa
     <Box>
       <DataGrid
         autoHeight
-        rows={transactions}
+        rows={loading ? [] : transactions ?? []}
         columns={cols}
         disableColumnMenu
         onRowClick={(params: GridRowParams<Transaction>) => onTrxSelected(params.row)}
@@ -117,7 +119,7 @@ export const TransactionList = ({ transactions, budgets, onTrxSelected }: Transa
           noRowsOverlay: NoTransactionsOverlay,
         }}
         slotProps={{
-          noRowsOverlay: { allowAdd: budgets.length > 0 } as any,
+          noRowsOverlay: { mode: loading ? "loading" : budgets.length > 0 ? "add" : "budgets" } as any,
         }}
         sx={{
           // disable cell selection style
