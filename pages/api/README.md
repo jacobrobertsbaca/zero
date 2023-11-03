@@ -61,6 +61,49 @@ Column | Type | Description
 
 #### <kbd>GET</kbd> `/budgets`
 
+1. Get all budgets for user in `budgets`.
+2. Get all categories for user in `categories`.
+3. Get all periods for user in `periods`.
+4. Group categories and periods with their budgets.
+
+#### <kbd>GET</kbd> `/budgets/[bid]`
+
+1. Get budget with id `bid`.
+2. Get all categories with matching `bid`.
+3. Get all periods with matching `bid`.
+4. Group categories and periods into budget.
+
+> [!NOTE]  
+> Step 4 can in both `/budgets` and `/budget/[bid]` can be abstracted into shared logic.
+
+#### <kbd>PUT</kbd> `/budgets`
+
+1. Get current budget from `budgets`.
+2. If budget dates have changed or if budget is new:
+    - Get budget categories.
+    - Compute new periods and categories for each category based on their recurrence.
+    - Get all transactions for budget from `transactions`.
+    - Compute new periods' actual amounts based on transactions.
+    - **Transaction:**
+      - Upsert updated budget.
+      - Upsert new categories.
+      - Delete all periods for this budget in `periods`
+      - Add new periods to `periods`
+
+> [!WARNING]  
+> Race condition if a new transaction is added here after all transactions retrieved but before committing to `periods`.
+
+3. Otherwise:
+  - Upsert row in `budgets` with new budget.
+
+#### <kbd>DELETE</kbd> `/budgets/[bid]`
+
+1. **Transaction:**
+    - Delete row in `budgets`
+    - Delete categories in `categories`
+    - Delete periods in `periods`
+    - Delete transactions with this budget
+
 ### Categories
 
 #### <kbd>PUT</kbd> `/budgets/[bid]/categories`
@@ -78,15 +121,18 @@ Column | Type | Description
 > [!WARNING]  
 > Race condition if a new transaction is added here after all transactions retrieved but before committing to `periods`.
 
-3. If recurrence has not changed:
+3. Otherwise:
     - Upsert row in `categories` with new category.
+
+> [!NOTE]  
+> Huge potential for shared logic between `/budgets` and `/budgets/[bid]/categories`.
 
 #### <kbd>DELETE</kbd> `/budgets/[bid]/categories/[cid]`
 
 1. **Transaction:**
     - Delete row in `categories`
     - Delete periods in `periods`
-    - Delete transactions for `transactions` with this category
+    - Delete transactions with this category
 
 > [!NOTE]  
 > Maybe this can be done with a single `delete` by linking primary/foreign keys in the tables?
