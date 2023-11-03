@@ -137,3 +137,21 @@ Column | Type | Description
 > [!NOTE]  
 > Maybe this can be done with a single `delete` by linking primary/foreign keys in the tables?
 
+### Transactions
+
+#### <kbd>GET</kbd> `/transactions`
+
+1. Get all transactions for user from `transactions`
+
+#### <kbd>PUT</kbd> `/transactions`
+
+1. **Transaction:**
+    - Decrement transaction period for old transaction (if exists)
+    - Increment transaction period for new transaction
+    - Upsert transaction to `transactions`
+
+#### <kbd>DELETE</kbd> `/transactions/[tid]`
+
+1. **Transaction:**
+    - Decrement transaction period for current transaction
+    - Delete transaction from `transactions`
