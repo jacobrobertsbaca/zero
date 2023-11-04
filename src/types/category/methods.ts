@@ -294,3 +294,7 @@ export const periodDatesFormat = (period: Period): string => {
   const endDate = dateFormat(period.dates.end, { excludeYear: true });
   return `${beginDate} — ${endDate}`;
 };
+
+export const periodCompare = (a: Period, b: Period): number => {
+  return a.dates.begin.localeCompare(b.dates.begin);
+}

@@ -5,6 +5,7 @@ import { HttpError } from "./errors";
 import { Category, Period, Recurrence, RecurrenceType } from "src/types/category/types";
 import { defaultCurrency } from "src/types/money/methods";
 import { budgetCompare } from "src/types/budget/methods";
+import { periodCompare } from "src/types/category/methods";
 
 /**
  * Wraps a Supabase database query so that it throw {@link HttpError} on failure.
@@ -38,7 +39,6 @@ export const getBudgets = async (owner: string, id?: string): Promise<Budget[]> 
     )
     .eq("owner", owner);
   if (id) query = query.eq("id", id);
-  query = query.order("begin_date", { foreignTable: "periods", ascending: true });
   const result = await wrap(query);
 
   type BudgetRow = typeof result[0];
@@ -74,7 +74,7 @@ export const getBudgets = async (owner: string, id?: string): Promise<Budget[]> 
     name: row.name,
     type: row.type,
     recurrence: parseRecurrence(row),
-    periods: row.periods.map(r => parsePeriod(r)),
+    periods: row.periods.map(r => parsePeriod(r)).sort(periodCompare),
     rollover: {
       loss: row.ro_loss,
       surplus: row.ro_surplus
