@@ -56,9 +56,9 @@ create table periods (
 
 create table transactions (
   id uuid primary key,
-  owner uuid references auth.users,
-  category uuid references public.categories,
-  budget uuid references public.budgets,
+  owner uuid references auth.users on delete cascade,
+  category uuid references public.categories on delete cascade,
+  budget uuid references public.budgets on delete cascade,
   date char(8) not null,
   amount bigint not null,
   name varchar(120) not null,
