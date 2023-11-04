@@ -4,7 +4,7 @@
 
 create table budgets (
   id uuid primary key,
-  owner uuid references auth.users on delete cascade,
+  owner uuid not null references auth.users on delete cascade,
   name varchar(60) not null,
   begin_date char(8) not null,
   end_date char(8) not null
@@ -20,8 +20,8 @@ create type rollover_type as enum ('none', 'average', 'next');
 
 create table categories (
   id uuid primary key,
-  owner uuid references auth.users on delete cascade,
-  budget uuid references public.budgets on delete cascade,
+  owner uuid not null references auth.users on delete cascade,
+  budget uuid not null references public.budgets on delete cascade,
   name varchar(60) not null,
   type category_type not null,
   rec_type recurrence_type not null,
@@ -38,9 +38,9 @@ create table categories (
 create type truncate_type as enum ('omit', 'split', 'keep');
 
 create table periods (
-  owner uuid references auth.users on delete cascade,
-  category uuid references public.categories on delete cascade,
-  budget uuid references public.budgets on delete cascade,
+  owner uuid not null references auth.users on delete cascade,
+  category uuid not null references public.categories on delete cascade,
+  budget uuid not null references public.budgets on delete cascade,
   begin_date char(8) not null,
   end_date char(8) not null,
   days integer not null,
@@ -56,9 +56,9 @@ create table periods (
 
 create table transactions (
   id uuid primary key,
-  owner uuid references auth.users on delete cascade,
-  category uuid references public.categories on delete cascade,
-  budget uuid references public.budgets on delete cascade,
+  owner uuid not null references auth.users on delete cascade,
+  category uuid not null references public.categories on delete cascade,
+  budget uuid not null references public.budgets on delete cascade,
   date char(8) not null,
   amount bigint not null,
   name varchar(120) not null,
