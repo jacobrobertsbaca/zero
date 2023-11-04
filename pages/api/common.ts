@@ -48,7 +48,7 @@ export const getBudgets = async (owner: string, id?: string): Promise<Budget[]> 
   const parsePeriod = (row: PeriodRow): Period => ({
     dates: {
       begin: row.begin_date,
-      end: row.begin_date
+      end: row.end_date
     },
     days: row.days,
     nominal: { amount: row.nominal, currency: defaultCurrency },
