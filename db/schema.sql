@@ -6,8 +6,8 @@ create table budgets (
   id uuid primary key,
   owner uuid references auth.users,
   name varchar(60) not null,
-  begin char(8) not null,
-  end char(8) not null
+  begin_date char(8) not null,
+  end_date char(8) not null
 );
 
 /* ================================================================================================================= *
@@ -41,8 +41,8 @@ create table periods (
   owner uuid references auth.users,
   category uuid references public.categories,
   budget uuid references public.budgets,
-  begin char(8) not null,
-  end char(8) not null,
+  begin_date char(8) not null,
+  end_date char(8) not null,
   days integer not null,
   nominal bigint not null,
   actual bigint not null,
