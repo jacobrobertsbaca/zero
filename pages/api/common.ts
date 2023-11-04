@@ -138,7 +138,7 @@ export const putBudget = async (owner: string, budget: Omit<Budget, "categories"
       id: result.id,
       name: result.name,
       dates: { begin: result.begin_date, end: result.end_date },
-      categories: [],
+      categories: existing?.categories ?? [],
     };
   }
 
