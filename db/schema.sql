@@ -47,7 +47,7 @@ create table periods (
   nominal bigint not null,
   actual bigint not null,
   truncate truncate_type not null,
-  primary key (category, begin, end)
+  primary key (category, begin_date, end_date)
 );
 
 /* ================================================================================================================= *
