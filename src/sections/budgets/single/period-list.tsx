@@ -51,7 +51,7 @@ export const PeriodList = ({ category }: PeriodListProps) => {
                 <Stack>
                   {index === 0 && includeEarlier
                     ? "Earlier"
-                    : index === category.periods.length - 1 && includeLater
+                    : index === rows.length - 1 && includeLater
                     ? "Later"
                     : periodDatesFormat(period)}
                   {isCurrent(index) && (
