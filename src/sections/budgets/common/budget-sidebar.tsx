@@ -42,7 +42,7 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
         enableReinitialize: true,
         initialValues: budget,
         validationSchema: Yup.object({
-          name: Yup.string().required("You must provide a name!"),
+          name: Yup.string().required("You must provide a name!").max(60, "Cannot be more than 60 characters!"),
           dates: Yup.object({
             begin: Yup.string().required("Enter a valid date!"),
             end: Yup.string()

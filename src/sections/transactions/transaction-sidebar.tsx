@@ -66,6 +66,7 @@ export const TransactionSidebar = ({
             }),
           category: Yup.string().required("You must pick a category!"),
           amount: Yup.mixed().required("You must enter an amount!"),
+          name: Yup.string().max(120, "Cannot be more than 120 characters!")
         }),
         async onSubmit(trx) {
           trx = await putTransaction(trx);

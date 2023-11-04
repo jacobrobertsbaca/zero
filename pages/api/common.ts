@@ -6,7 +6,6 @@ import { Category, Period, Recurrence, RecurrenceType } from "src/types/category
 import { defaultCurrency } from "src/types/money/methods";
 import { budgetCompare } from "src/types/budget/methods";
 import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
-import { Dates } from "src/types/utils/types";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
 
