@@ -10,14 +10,14 @@ import { isEqual } from "lodash";
 import { categoryNominal, onCategoryNominal, onRecurrence } from "src/types/category/methods";
 import { Category } from "src/types/category/types";
 import { datesDays } from "src/types/utils/methods";
-import { supabase } from "../supabase";
+import { getBudgets } from "../common";
 
 const router = routes();
 
 router.get(
   route({
-    handler(req, res) {
-      res.json(budgets);
+    async handler(req, res) {
+      res.json(await getBudgets(req.user.id));
     },
   })
 );
