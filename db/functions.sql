@@ -3,16 +3,15 @@
  * ================================================================================================================= */
 
 /* `put_periods` takes in a JSON periods array matching a set of records in the `periods` table,
- * calculates their actual amounts, inserts them into the database, and returns them.
+ * calculates their actual amounts, and inserts them into the database.
  *
  * Will throw an error if any periods with the same primary key already exist.
  */
 
 create or replace function put_periods(
   periods_json json
-) returns setof periods as $$
+) returns void as $$
 begin
-  return query
   insert into periods
   select 
     p.owner,
@@ -29,8 +28,7 @@ begin
       and t.date >= p.begin_date and t.date <= p.end_date
     ) as actual,
     p.truncate
-  from json_populate_recordset(null::periods, periods_json) p
-  returning *;
+  from json_populate_recordset(null::periods, periods_json) p;
 end;
 $$ language plpgsql;
 
@@ -102,13 +100,12 @@ $$ language plpgsql;
  *  2. Upserts the updated category into `categories`.
  *  3. Inserts all period objects into `periods`, re-calculating actual amounts for each period 
  *     using the `transactions` table.
- *  4. Returns the updated periods so that the client knows the computed actual amounts.
  */
 
 create or replace function put_category(
   category_json json,
   periods_json json
-) returns setof periods as $$
+) returns void as $$
 begin
   -- (1) Delete all periods in category
   delete from periods where category = (category_json->>'id')::uuid;
@@ -128,7 +125,7 @@ begin
     ro_loss     = excluded.ro_loss,
     ro_surplus  = excluded.ro_surplus;
 
-  -- (3/4) Insert and return period objects
-  return query select * from put_periods(periods_json);
+  -- (3) Insert period objects
+  perform put_periods(periods_json);
 end;
 $$ language plpgsql;
