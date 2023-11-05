@@ -9,6 +9,10 @@ import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from 
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
 
+/* ================================================================================================================= *
+ * Utility Functions                                                                                                 *
+ * ================================================================================================================= */
+
 /**
  * Wraps a Supabase database query so that it throw {@link HttpError} on failure.
  * @param query The query to wrap
@@ -24,6 +28,10 @@ export const wrap = async <TResult>(
   }
   return data;
 };
+
+/* ================================================================================================================= *
+ * API Endpoints                                                                                                     *
+ * ================================================================================================================= */
 
 /**
  * Retrieves a collection of budgets from the database.
@@ -210,4 +218,18 @@ export const putBudget = async (owner: string, budget: Omit<Budget, "categories"
   const budgets = await getBudgets(owner, newBudget.id);
   if (budgets.length === 0) throw new NotFound("Budget was deleted!");
   return budgets[0];
+};
+
+/**
+ * Upserts a category belonged to a budget with id `bid` owned by user id `owner` into the database.
+ * @param owner The owner of the category.
+ * @param bid The id of the containing budget.
+ * @param category The category to upsert.
+ */
+export const putCategory = async (owner: string, bid: string, category: Category): Promise<Category> => {
+  /* Verify that a budget with this id exists and is owned by owner */
+  const budget = await wrap(supabase.from("budgets").select("id").eq("owner", owner).eq("id", bid));
+  if (budget.length === 0) throw new NotFound("No such budget exists!");
+
+  return category;
 };
