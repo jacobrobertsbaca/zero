@@ -18,7 +18,7 @@ import { Draft, produce } from "immer";
  * @param query The query to wrap
  * @returns A promise that, when awaited, returns the query's data.
  */
-export const wrap = async <TResult>(
+ export const wrap = async <TResult>(
   query: PostgrestFilterBuilder<any, any, TResult, any> | PostgrestTransformBuilder<any, any, TResult, any>
 ): Promise<TResult> => {
   const { data, error } = await query;
@@ -30,6 +30,120 @@ export const wrap = async <TResult>(
 };
 
 /* ================================================================================================================= *
+ * Database Helpers                                                                                                  *
+ * ================================================================================================================= */
+
+const CATEGORY_QUERY = `
+  id, name, type, rec_type, rec_day, rec_amount, ro_loss, ro_surplus,
+  periods (
+    begin_date, end_date, days, nominal, actual, truncate
+  )
+` as const;
+
+const BUDGET_QUERY = `
+  id, name, begin_date, end_date,
+  categories (${CATEGORY_QUERY})
+` as const;
+
+const retrieveBudgets = async (owner: string, id?: string) => {
+  let query = supabase.from("budgets").select(BUDGET_QUERY).eq("owner", owner);
+  if (id) query = query.eq("id", id);
+  return await wrap(query);
+};
+
+const retrieveCategory = async (owner: string, id: string) => {
+  let query = supabase.from("categories").select(CATEGORY_QUERY).eq("owner", owner).eq("id", id);
+  return await wrap(query);
+};
+
+type ReadBudgetRow    = Awaited<ReturnType<typeof retrieveBudgets>>[0];
+type ReadCategoryRow  = ReadBudgetRow["categories"][0];
+type ReadPeriodRow    = ReadCategoryRow["periods"][0];
+type WriteBudgetRow   = Omit<ReadBudgetRow, "categories"> & { owner: any };
+type WriteCategoryRow = Omit<ReadCategoryRow, "periods"> & { owner: any, budget: any };
+type WritePeriodRow   = ReadPeriodRow & { owner: any, budget: any, category: any };
+
+const parsePeriod = (row: ReadPeriodRow): Period => ({
+  dates: {
+    begin: row.begin_date,
+    end: row.end_date,
+  },
+  days: row.days,
+  nominal: { amount: row.nominal, currency: defaultCurrency },
+  actual: { amount: row.actual, currency: defaultCurrency },
+  truncate: row.truncate,
+});
+
+const parseRecurrence = (row: ReadCategoryRow): Recurrence => {
+  const amount = { amount: row.rec_amount, currency: defaultCurrency };
+  switch (row.rec_type) {
+    case RecurrenceType.None:
+      return { type: row.rec_type, amount };
+    case RecurrenceType.Monthly:
+      return { type: row.rec_type, day: row.rec_day, amount };
+    case RecurrenceType.Weekly:
+      return { type: row.rec_type, day: row.rec_day, amount };
+  }
+  throw new HttpError(500, `No such recurrence type: ${row.rec_type}`);
+};
+
+const parseCategory = (row: ReadCategoryRow): Category => ({
+  id: row.id,
+  name: row.name,
+  type: row.type,
+  recurrence: parseRecurrence(row),
+  periods: row.periods.map((r) => parsePeriod(r)).sort(periodCompare),
+  rollover: {
+    loss: row.ro_loss,
+    surplus: row.ro_surplus,
+  },
+});
+
+const parseBudget = (row: ReadBudgetRow): Budget => ({
+  id: row.id,
+  name: row.name,
+  dates: {
+    begin: row.begin_date,
+    end: row.end_date,
+  },
+  categories: row.categories.map((r) => parseCategory(r)),
+});
+
+const formatPeriod = (owner: string, budget: string, category: string, period: Period): WritePeriodRow => ({
+  owner,
+  category: category,
+  budget: budget,
+  begin_date: period.dates.begin,
+  end_date: period.dates.end,
+  days: period.days,
+  nominal: period.nominal.amount,
+  actual: period.actual.amount,
+  truncate: period.truncate
+});
+
+const formatCategory = (owner: string, budget: string, category: Category): WriteCategoryRow => ({
+  owner,
+  id: category.id,
+  budget: budget,
+  name: category.name,
+  type: category.type,
+  rec_type: category.recurrence.type,
+  rec_day: (category.recurrence as any).day,
+  rec_amount: category.recurrence.amount.amount,
+  ro_loss: category.rollover.loss,
+  ro_surplus: category.rollover.surplus
+});
+
+const formatBudget = (owner: string, budget: Budget): WriteBudgetRow => ({
+  owner,
+  id: budget.id,
+  name: budget.name,
+  begin_date: budget.dates.begin,
+  end_date: budget.dates.end
+});
+
+
+/* ================================================================================================================= *
  * API Endpoints                                                                                                     *
  * ================================================================================================================= */
 
@@ -39,74 +153,8 @@ export const wrap = async <TResult>(
  * @param id The id of the bduget to request. If undefined, retrieves all the user's budgets.
  */
 export const getBudgets = async (owner: string, id?: string): Promise<Budget[]> => {
-  let query = supabase
-    .from("budgets")
-    .select(
-      `
-      id, name, begin_date, end_date,
-      categories (
-        id, name, type, rec_type, rec_day, rec_amount, ro_loss, ro_surplus,
-        periods (
-          begin_date, end_date, days, nominal, actual, truncate
-        )
-      )
-    `
-    )
-    .eq("owner", owner);
-  if (id) query = query.eq("id", id);
-  const result = await wrap(query);
-
-  type BudgetRow = (typeof result)[0];
-  type CategoryRow = BudgetRow["categories"][0];
-  type PeriodRow = CategoryRow["periods"][0];
-
-  const parsePeriod = (row: PeriodRow): Period => ({
-    dates: {
-      begin: row.begin_date,
-      end: row.end_date,
-    },
-    days: row.days,
-    nominal: { amount: row.nominal, currency: defaultCurrency },
-    actual: { amount: row.actual, currency: defaultCurrency },
-    truncate: row.truncate,
-  });
-
-  const parseRecurrence = (row: CategoryRow): Recurrence => {
-    const amount = { amount: row.rec_amount, currency: defaultCurrency };
-    switch (row.rec_type) {
-      case RecurrenceType.None:
-        return { type: row.rec_type, amount };
-      case RecurrenceType.Monthly:
-        return { type: row.rec_type, day: row.rec_day, amount };
-      case RecurrenceType.Weekly:
-        return { type: row.rec_type, day: row.rec_day, amount };
-    }
-    throw new HttpError(500, `No such recurrence type: ${row.rec_type}`);
-  };
-
-  const parseCategory = (row: CategoryRow): Category => ({
-    id: row.id,
-    name: row.name,
-    type: row.type,
-    recurrence: parseRecurrence(row),
-    periods: row.periods.map((r) => parsePeriod(r)).sort(periodCompare),
-    rollover: {
-      loss: row.ro_loss,
-      surplus: row.ro_surplus,
-    },
-  });
-
-  const parseBudget = (row: BudgetRow): Budget => ({
-    id: row.id,
-    name: row.name,
-    dates: {
-      begin: row.begin_date,
-      end: row.end_date,
-    },
-    categories: row.categories.map((r) => parseCategory(r)),
-  });
-
-  return result.map((r) => parseBudget(r)).sort(budgetCompare);
+  const rows = await retrieveBudgets(owner, id);
+  return rows.map((r) => parseBudget(r)).sort(budgetCompare);
 };
 
 /**
@@ -173,38 +221,9 @@ export const putBudget = async (owner: string, budget: Omit<Budget, "categories"
     }
   });
 
-  const budgetRow = {
-    id: newBudget.id,
-    owner,
-    name: newBudget.name,
-    begin_date: newBudget.dates.begin,
-    end_date: newBudget.dates.end
-  };
-
-  const categoryRows = newBudget.categories.map(c => ({
-    id: c.id,
-    owner,
-    budget: newBudget.id,
-    name: c.name,
-    type: c.type,
-    rec_type: c.recurrence.type,
-    rec_day: (c.recurrence as any).day,
-    rec_amount: c.recurrence.amount.amount,
-    ro_loss: c.rollover.loss,
-    ro_surplus: c.rollover.surplus
-  }));
-
-  const periodRows = newBudget.categories.flatMap(c => c.periods.map(p => ({
-    owner,
-    category: c.id,
-    budget: newBudget.id,
-    begin_date: p.dates.begin,
-    end_date: p.dates.end,
-    days: p.days,
-    nominal: p.nominal.amount,
-    actual: p.actual.amount,
-    truncate: p.truncate
-  })));
+  const budgetRow = formatBudget(owner, newBudget);
+  const categoryRows = newBudget.categories.map(c => formatCategory(owner, newBudget.id, c));
+  const periodRows = newBudget.categories.flatMap(c => c.periods.map(p => formatPeriod(owner, newBudget.id, c.id, p)));
 
   await wrap(
     supabase.rpc("put_budget", {
@@ -216,7 +235,7 @@ export const putBudget = async (owner: string, budget: Omit<Budget, "categories"
 
   /* Re-fetch the budget and return to retrieve updated actual amounts for each period */
   const budgets = await getBudgets(owner, newBudget.id);
-  if (budgets.length === 0) throw new NotFound("Budget was deleted!");
+  if (budgets.length === 0) throw new NotFound("Budget was deleted during modification!");
   return budgets[0];
 };
 
