@@ -219,9 +219,7 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
     },
 
     async putCategory(budgetID, category) {
-      const path = `/budgets/${budgetID}/categories`;
-      if (category.id === "") category = await httpPost(path, { token, data: { category }});
-      else category = await httpPut(path, { token, data: { category }});
+      category = await httpPut(`/budgets/${budgetID}/categories`, { token, data: { category }});
       if (budgetCache.has(budgetID)) {
         budgetCache.add(budgetID, produce(budgetCache.get(budgetID), (draft) => {
           const index = draft.categories.findIndex(c => c.id === category.id);

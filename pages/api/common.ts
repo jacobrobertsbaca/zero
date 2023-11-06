@@ -250,5 +250,49 @@ export const putCategory = async (owner: string, bid: string, category: Category
   const budget = await wrap(supabase.from("budgets").select("id").eq("owner", owner).eq("id", bid));
   if (budget.length === 0) throw new NotFound("No such budget exists!");
 
-  return category;
+  /* If modifying an existing category, verify that category exists in this budget and is owned by this user.
+   * Otherwise give the category a fresh id */
+  if (category.id) {
+    const existing = await wrap(
+      supabase.from("categories").select("id").eq("owner", owner).eq("budget", bid).eq("id", category.id)
+    );
+    if (existing.length === 0) throw new NotFound("No such category exists!");
+  } else {
+    category = produce(category, (draft) => { draft.id = crypto.randomUUID(); });
+  }
+
+  /* Upload new category to database */
+  const categoryRow = formatCategory(owner, bid, category);
+  const periodRows = category.periods.map(p => formatPeriod(owner, bid, category.id, p));
+
+  await wrap (
+    supabase.rpc("put_category", {
+      category_json: categoryRow,
+      periods_json: periodRows
+    })
+  );
+
+  /* Finally, fetch uploaded category from database to get computed values */
+  const rows = await retrieveCategory(owner, category.id);
+  if (rows.length === 0) throw new NotFound("Category was deleted during modification!");
+  return parseCategory(rows[0]);
+};
+
+/**
+ * Deletes a budget.
+ * @param owner The id of the user owning the budget.
+ * @param bid The id of the budget to delete.
+ */
+export const deleteBudget = async (owner: string, bid: string): Promise<void> => {
+  await wrap(supabase.from("budgets").delete().eq("id", bid).eq("owner", owner));
+};
+
+/**
+ * Deletes a category.
+ * @param owner The id of the user owning the category.
+ * @param bid The id of the budget containing the category.
+ * @param cid The id of the category to delete.
+ */
+export const deleteCategory = async (owner: string, bid: string, cid: string): Promise<void> => {
+  await wrap(supabase.from("categories").delete().eq("id", cid).eq("budget", bid).eq("owner", owner));
 };
