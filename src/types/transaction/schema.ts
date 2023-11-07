@@ -8,9 +8,7 @@ export const TransactionSchema = z.object({
   category: z.string(),
   date: DateStringSchema,
   amount: MoneySchema,
-  name: z.string().min(1).max(120),
-  lastModified: z.string()
+  name: z.string().max(120),
+  lastModified: z.string(),
+  starred: z.boolean()
 });
-
-
-type A = z.infer<typeof TransactionSchema>;

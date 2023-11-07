@@ -6,15 +6,18 @@ import { TransactionSidebar } from "src/sections/transactions/transaction-sideba
 import { useCallback, useState } from "react";
 import { Transaction } from "src/types/transaction/types";
 import { moneyZero } from "src/types/money/methods";
-import { useBudgets, useTransactions } from "src/hooks/use-api";
+import { useApi, useBudgets, useTransactions } from "src/hooks/use-api";
 import { Loading } from "src/components/loading";
 
 import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
 import { Budget } from "src/types/budget/types";
 import { asDateString } from "src/types/utils/methods";
 import { Money } from "src/types/money/types";
+import { useSnackbar } from "notistack";
 
 const Page = () => {
+  const { starTransaction } = useApi();
+  const { enqueueSnackbar } = useSnackbar();
   const { result } = useBudgets();
   const { loading: transactionsLoading, result: transactions, refresh: refreshTransactions } = useTransactions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -25,7 +28,8 @@ const Page = () => {
     date: "",
     amount: moneyZero(),
     name: "",
-    lastModified: ""
+    lastModified: "",
+    starred: false
   });
 
   const onAddTrx = useCallback((budgets: readonly Budget[]) => {
@@ -36,10 +40,20 @@ const Page = () => {
       date: asDateString(new Date()), // Today
       amount: null as unknown as Money, // Setting to null default MoneyField to empty value
       name: "",
-      lastModified: ""
+      lastModified: "",
+      starred: false
     });
     setSidebarOpen(true);
   }, []);
+
+  const onStarTrx = useCallback((trx: Transaction, star: boolean) => {
+    starTransaction(trx, star, (err) => {
+      console.log(err);
+      enqueueSnackbar(`Failed to ${star ? "star" : "unstar"} transaction`);
+      refreshTransactions();
+    });
+    refreshTransactions();
+  }, [enqueueSnackbar, refreshTransactions, starTransaction]);
 
   return (
     <Loading value={result}>
@@ -79,6 +93,7 @@ const Page = () => {
               setSidebarTrx(trx);
               setSidebarOpen(true);
             }}
+            onTrxStarred={onStarTrx}
           />
         </>
       )}

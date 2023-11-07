@@ -1,6 +1,12 @@
-import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
-import { Box, CircularProgress, Stack, SvgIcon, useMediaQuery, useTheme } from "@mui/material";
-import { DataGrid, GridColDef, GridRenderCellParams, GridRowParams, GridValueGetterParams } from "@mui/x-data-grid";
+import { Box, CircularProgress, Stack, SvgIcon, Tooltip, useMediaQuery, useTheme } from "@mui/material";
+import {
+  DataGrid,
+  GridActionsCellItem,
+  GridColDef,
+  GridRenderCellParams,
+  GridRowParams,
+  GridValueGetterParams,
+} from "@mui/x-data-grid";
 import Link from "next/link";
 import { Budget } from "src/types/budget/types";
 import { moneyFormat } from "src/types/money/methods";
@@ -8,6 +14,12 @@ import { Money } from "src/types/money/types";
 import { Transaction } from "src/types/transaction/types";
 import { asDate } from "src/types/utils/methods";
 import { DateString } from "src/types/utils/types";
+
+import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
+import StarIconOutlined from "@heroicons/react/24/outline/StarIcon";
+import StarIconSolid from "@heroicons/react/24/solid/StarIcon";
+import { useSnackbar } from "notistack";
+import { useCallback } from "react";
 
 /* ================================================================================================================= *
  * Overlays                                                                                                          *
@@ -42,13 +54,50 @@ type TransactionListProps = {
   budgets: readonly Budget[];
   loading: boolean;
   onTrxSelected: (trx: Transaction) => void;
+  onTrxStarred: (trx: Transaction, star: boolean) => void;
 };
 
-export const TransactionList = ({ loading, transactions, budgets, onTrxSelected }: TransactionListProps) => {
+export const TransactionList = ({ loading, transactions, budgets, onTrxSelected, onTrxStarred }: TransactionListProps) => {
   const theme = useTheme();
   const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
 
   const cols: GridColDef[] = [
+    {
+      field: "actions",
+      type: "actions",
+      width: 48,
+      getActions(params: GridRowParams<Transaction>) {
+        if (params.row.starred)
+          return [
+            <GridActionsCellItem
+              key="unstar"
+              label="Unstar transaction"
+              icon={
+                <Tooltip title="Unstar transaction">
+                  <SvgIcon>
+                    <StarIconSolid />
+                  </SvgIcon>
+                </Tooltip>
+              }
+              onClick={() => onTrxStarred(params.row, false)}
+            />,
+          ];
+        return [
+          <GridActionsCellItem
+            key="star"
+            label="Star transaction"
+            icon={
+              <Tooltip title="Star transaction">
+                <SvgIcon>
+                  <StarIconOutlined />
+                </SvgIcon>
+              </Tooltip>
+            }
+            onClick={() => onTrxStarred(params.row, true)}
+          />,
+        ];
+      },
+    },
     {
       field: "date",
       headerName: "Date",

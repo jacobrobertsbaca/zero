@@ -12,7 +12,8 @@
     "export": "next export",
     "lint": "next lint",
     "lint-fix": "next lint --fix",
-    "test": "jest"
+    "test": "jest",
+    "type-check": "tsc"
   },
   "jest": {
     "transform": {

@@ -22,4 +22,7 @@ export type Transaction = {
 
   /** UTC ISO 8601 date string for time of last modification */
   lastModified: string;
+
+  /** Starred transactions appear at the top of the transactions list. */
+  starred: boolean;
 };

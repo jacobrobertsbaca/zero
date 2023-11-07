@@ -187,7 +187,8 @@ begin
     date          = excluded.date,
     amount        = excluded.amount,
     name          = excluded.name,
-    last_modified = excluded.last_modified;
+    last_modified = excluded.last_modified,
+    starred       = excluded.starred;
 end;
 $$ language plpgsql;
 
