@@ -5,14 +5,14 @@ import { TransactionSchema } from "src/types/transaction/schema";
 import { produce } from "immer";
 import { transactionCompare } from "src/types/transaction/methods";
 import { NotFound } from "../errors";
-import { putTransaction } from "../common";
+import { getTransactions, putTransaction } from "../common";
 
 const router = routes();
 
 router.get(
   route({
-    handler(req, res) {
-      res.json(transactions);
+    async handler(req, res) {
+      res.json(await getTransactions(req.user.id));
     },
   })
 );

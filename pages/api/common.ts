@@ -9,6 +9,7 @@ import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from 
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
 import { Transaction } from "src/types/transaction/types";
+import { transactionCompare } from "src/types/transaction/methods";
 
 /* ================================================================================================================= *
  * Utility Functions                                                                                                 *
@@ -61,15 +62,15 @@ const retrieveCategory = async (owner: string, id: string) => {
   return await wrap(query);
 };
 
-const retrieveTransaction = async (owner: string, id: string) => {
-  const query = supabase.from("categories").select(TRANSACTION_QUERY).eq("owner", owner).eq("id", id);
+const retrieveTransactions = async (owner: string) => {
+  const query = supabase.from("transactions").select(TRANSACTION_QUERY).eq("owner", owner);
   return await wrap(query);
 };
 
 type ReadBudgetRow        = Awaited<ReturnType<typeof retrieveBudgets>>[0];
 type ReadCategoryRow      = ReadBudgetRow["categories"][0];
 type ReadPeriodRow        = ReadCategoryRow["periods"][0];
-type ReadTransactionRow   = Awaited<ReturnType<typeof retrieveTransaction>>[0];
+type ReadTransactionRow   = Awaited<ReturnType<typeof retrieveTransactions>>[0];
 type WriteBudgetRow       = Omit<ReadBudgetRow, "categories"> & { owner: any };
 type WriteCategoryRow     = Omit<ReadCategoryRow, "periods"> & { owner: any, budget: any };
 type WritePeriodRow       = ReadPeriodRow & { owner: any, budget: any, category: any };
@@ -119,6 +120,16 @@ const parseBudget = (row: ReadBudgetRow): Budget => ({
     end: row.end_date,
   },
   categories: row.categories.map((r) => parseCategory(r)),
+});
+
+const parseTransaction = (row: ReadTransactionRow): Transaction => ({
+  id: row.id,
+  budget: row.budget,
+  category: row.category,
+  date: row.date,
+  amount: { amount: row.amount, currency: defaultCurrency },
+  name: row.name,
+  lastModified: row.last_modified
 });
 
 const formatPeriod = (owner: string, budget: string, category: string, period: Period): WritePeriodRow => ({
@@ -176,7 +187,7 @@ const formatTransaction = (owner: string, trx: Transaction): WriteTransactionRow
  */
 export const getBudgets = async (owner: string, id?: string): Promise<Budget[]> => {
   const rows = await retrieveBudgets(owner, id);
-  return rows.map((r) => parseBudget(r)).sort(budgetCompare);
+  return rows.map(parseBudget).sort(budgetCompare);
 };
 
 /**
@@ -319,6 +330,11 @@ export const deleteCategory = async (owner: string, bid: string, cid: string): P
   await wrap(supabase.from("categories").delete().eq("id", cid).eq("budget", bid).eq("owner", owner));
 };
 
+export const getTransactions = async (owner: string): Promise<Transaction[]> => {
+  const rows = await retrieveTransactions(owner);
+  return rows.map(parseTransaction).sort(transactionCompare);
+};
+
 export const putTransaction = async (owner: string, trx: Transaction): Promise<Transaction> => {
   /* Verify that budget and category exist and are owned by this user */
   const budget = await wrap(supabase.from("budgets").select("id").eq("owner", owner).eq("id", trx.budget));
@@ -340,6 +356,9 @@ export const putTransaction = async (owner: string, trx: Transaction): Promise<T
     trx = produce(trx, (draft) => { draft.id = crypto.randomUUID(); });
   }
 
+  /* Set last modified time */
+  trx = produce(trx, (draft) => { draft.lastModified = (new Date()).toISOString(); });
+
   /* Write transaction to the database using `put_transaction` rpc */
   await wrap(
     supabase.rpc("put_transaction", {
@@ -348,4 +367,13 @@ export const putTransaction = async (owner: string, trx: Transaction): Promise<T
   );
 
   return trx;
+};
+
+export const deleteTransaction = async (owner: string, tid: string): Promise<void> => {
+  await wrap(
+    supabase.rpc("delete_transaction", {
+      transaction_id: tid,
+      owner_id: owner,
+    })
+  );
 };

@@ -151,7 +151,7 @@ begin
   update periods
   set actual = actual + (case when remove then -1 else 1 end) * (transaction_json->>'amount')::bigint
   where category = (transaction_json->>'category')::uuid
-  and transaction_json->>'date' >= begin_date and transaction_json->>'date' <= p.end_date;
+  and transaction_json->>'date' >= begin_date and transaction_json->>'date' <= end_date;
 end;
 $$ language plpgsql;
 
@@ -161,6 +161,7 @@ $$ language plpgsql;
  * 1. Removing the transaction's amount from the period it belongs to, if it already exists.
  * 2. Adding the transaction's amount to its new period.
  * 3. Upserting the transaction to the `transactions` table.
+ *
  */
 
 create or replace function put_transaction(
@@ -170,7 +171,7 @@ begin
   -- (1) Remove existing amount from period
   perform place_transaction(row_to_json(transactions), true)
   from transactions
-  where id = (transaction_json->>'id');
+  where id = (transaction_json->>'id')::uuid;
 
   -- (2) Add new amount to period
   perform place_transaction(transaction_json, false);
@@ -187,5 +188,32 @@ begin
     amount        = excluded.amount,
     name          = excluded.name,
     last_modified = excluded.last_modified;
+end;
+$$ language plpgsql;
+
+/* `delete_transaction` takes in 
+ *
+ *  - a transaction id and deletes it
+ *  - the id of the user owning the transaction
+ *
+ * and deletes the transaction with that id and owner. It does so by
+ * 
+ * 1. Removing the transaction's amount from the period it belongs to.
+ * 2. Deleting the transaction from the `transactions` table.
+ *
+ */
+
+create or replace function delete_transaction(
+  transaction_id uuid,
+  owner_id uuid
+) returns void as $$
+begin
+  -- (1) Remove transaction amount from period
+  perform place_transaction(row_to_json(transactions), true)
+  from transactions
+  where id = transaction_id and owner = owner_id;
+
+  -- (2) Delete transaction from transactions table
+  delete from transactions where id = transaction_id and owner = owner_id;
 end;
 $$ language plpgsql;

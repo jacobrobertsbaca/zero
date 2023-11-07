@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { route, routes } from "../route";
 import { transactions } from "src/__mock__/transaction";
+import { deleteTransaction } from "../common";
 
 const router = routes();
 
@@ -8,9 +9,8 @@ router.delete(route({
   querySchema: z.object({
     id: z.string()
   }),
-  handler(req, res) {
-    const trxIndex = transactions.findIndex(t => t.id === req.query.id);
-    if (trxIndex >= 0) transactions.splice(trxIndex, 1);
+  async handler(req, res) {
+    await deleteTransaction(req.user.id, req.query.id);
     res.status(200).end();
   }
 }));
