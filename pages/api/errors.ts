@@ -1,8 +1,9 @@
 export class HttpError extends Error {
   statusCode: number;
-  constructor(status: number, message?: string) {
+  constructor(status: number | string, message?: string) {
     super(message);
-    this.statusCode = status;
+    this.statusCode = typeof status === "string" ? parseInt(status, 10) : status;
+    if (isNaN(this.statusCode)) this.statusCode = 500;
   }
 };
 

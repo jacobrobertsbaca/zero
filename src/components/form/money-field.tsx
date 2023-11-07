@@ -9,7 +9,7 @@ type MoneyFieldProps = Omit<TextFieldProps, "value" | "onChange"> &
   (
     | {
         name?: undefined;
-        value: Money;
+        value: Money | null;
         onChange: (value: Money) => void;
       }
     | {
@@ -51,8 +51,8 @@ const parseCurrency = (input: string): Money => {
 export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
   const { name, value, onChange, ...rest } = props;
   const formik = useFormikContext<T>();
-  const current = value ?? (get(formik.values, name) as Money);
-  const [raw, setRaw] = useState(moneyFormat(current, { excludeSymbol: true }));
+  const current = value !== undefined ? value : (get(formik.values, name) as Money);
+  const [raw, setRaw] = useState(current ? moneyFormat(current, { excludeSymbol: true }) : "");
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -63,29 +63,33 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
 
   const handleBlur = useCallback(() => {
     const money = parseCurrency(raw);
-    if (isEqual(current, money)) return;
     if (onChange) onChange(money);
     else formik.setFieldValue(name, money);
-  }, [current, formik, name, onChange, raw]);
+  }, [formik, name, onChange, raw]);
 
   useEffect(() => {
-    setRaw(moneyFormat(current, { excludeSymbol: true }));
+    setRaw(current ? moneyFormat(current, { excludeSymbol: true }) : "");
   }, [current]);
+
+  const { InputProps, inputProps, ...textFieldProps } = rest;
+  const error = name ? get(formik.touched, name) && get(formik.errors, name) : "";
 
   return (
     <TextField
       InputProps={{
         startAdornment: <InputAdornment position="start">$</InputAdornment>,
-        ...rest.InputProps,
+        ...InputProps,
       }}
       inputProps={{
         inputMode: "decimal",
-        ...rest.inputProps
+        ...inputProps
       }}
+      error={!!error}
+      helperText={typeof error === "string" ? error : JSON.stringify(error)}
       value={raw}
       onChange={handleChange}
       onBlur={handleBlur}
-      {...rest}
+      {...textFieldProps}
     />
   );
 };

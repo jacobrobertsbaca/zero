@@ -1,10 +1,13 @@
 import { Draft, Immutable, produce } from "immer";
-import { useSnackbar } from "notistack";
-import { Dispatch, createContext } from "react";
+import { createContext } from "react";
 import { useAuth } from "src/hooks/use-auth";
 import { budgetCompare } from "src/types/budget/methods";
 import { Budget } from "src/types/budget/types";
 import { Category } from "src/types/category/types";
+import { moneySub, moneySum } from "src/types/money/methods";
+import { transactionCompare } from "src/types/transaction/methods";
+import { Transaction } from "src/types/transaction/types";
+import { datesContains } from "src/types/utils/methods";
 
 export type ApiContextType = Immutable<{
   getBudgets(): Promise<readonly Budget[]>;
@@ -13,6 +16,9 @@ export type ApiContextType = Immutable<{
   deleteBudget(budget: Budget): Promise<void>;
   putCategory(budgetID: string, category: Category): Promise<Category>;
   deleteCategory(budgetID: string, categoryID: string): Promise<void>;
+  getTransactions(): Promise<readonly Transaction[]>;
+  putTransaction(trx: Transaction): Promise<Transaction>;
+  deleteTransaction(trx: Transaction): Promise<void>;
 }>;
 
 /* ================================================================================================================= *
@@ -84,6 +90,18 @@ class Cache<T> {
   }
 
   /**
+   * Invalidates item in the cache matching a condition.
+   * @param pred A predicate to match items on, accepting both the item and its id.
+   */
+  invalidateWhere(pred: (value: T, id: string) => boolean): void {
+    if (!this.cache) return;
+    for (const id of [...this.cache.keys()]) {
+      if (pred(this.cache.get(id)!, id))
+        this.cache.delete(id);
+    }
+  }
+
+  /**
    * Adds an item to the cache.
    * @param id The id of the item.
    * @param value The value of the item
@@ -132,6 +150,30 @@ class Cache<T> {
 };
 
 const budgetCache = new Cache<Budget>();
+const transactionCache = new Cache<Transaction>();
+
+const placeTransaction = (trx: Transaction, remove: boolean) => {
+  if (remove) transactionCache.invalidate(trx.id);
+  else transactionCache.add(trx.id, trx);
+  if (!budgetCache.has(trx.budget)) return;
+  const budget = budgetCache.get(trx.budget);
+  const categoryIndex = budget.categories.findIndex(c => c.id === trx.category);
+  if (categoryIndex < 0) return;
+  const category = budget.categories[categoryIndex];
+
+  for (let periodIndex = 0; periodIndex < category.periods.length; periodIndex++) {
+    const period = category.periods[periodIndex];
+    if (datesContains(period.dates, trx.date)) {
+      const alteredBudget = produce(budget, (draft) => {
+        draft.categories[categoryIndex].periods[periodIndex].actual = remove
+          ? moneySub(period.actual, trx.amount)
+          : moneySum(period.actual, trx.amount);
+      });
+      budgetCache.add(budget.id, alteredBudget);
+      break;
+    }
+  }
+};
 
 /* ================================================================================================================= *
  * Context Implementation                                                                                            *
@@ -173,12 +215,11 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
     async deleteBudget(budget) {
       await httpDelete(`/budgets/${budget.id}`, { token });
       budgetCache.invalidate(budget.id);
+      transactionCache.invalidateWhere((trx) => trx.budget === budget.id);
     },
 
     async putCategory(budgetID, category) {
-      const path = `/budgets/${budgetID}/categories`;
-      if (category.id === "") category = await httpPost(path, { token, data: { category }});
-      else category = await httpPut(path, { token, data: { category }});
+      category = await httpPut(`/budgets/${budgetID}/categories`, { token, data: { category }});
       if (budgetCache.has(budgetID)) {
         budgetCache.add(budgetID, produce(budgetCache.get(budgetID), (draft) => {
           const index = draft.categories.findIndex(c => c.id === category.id);
@@ -198,6 +239,28 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
           if (index >= 0) draft.categories.splice(index, 1);
         }));
       }
+      transactionCache.invalidateWhere((trx) => trx.category === categoryID);
+    },
+
+    async getTransactions() {
+      if (transactionCache.has()) return transactionCache.getAll();
+      const transactions: Transaction[] = await httpGet("/transactions", { token });
+      for (const trx of transactions)
+        transactionCache.add(trx.id, trx);
+      return transactions;
+    },
+
+    async putTransaction(trx) {
+      trx = await httpPut("/transactions", { token, data: { transaction: trx }});
+      if (transactionCache.has(trx.id)) placeTransaction(transactionCache.get(trx.id), true);
+      placeTransaction(trx, false);
+      transactionCache.sortValues(transactionCompare);
+      return trx;
+    },
+
+    async deleteTransaction(trx) {
+      await httpDelete(`/transactions/${trx.id}`, { token });
+      placeTransaction(trx, true);
     },
   };
 

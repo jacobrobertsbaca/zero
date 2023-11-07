@@ -24,7 +24,6 @@ const createApiHook =
 
     const [refreshCounter, setRefreshCounter] = useState(0);
     const refresh = useCallback(() => {
-      setLoading(true);
       setRefreshCounter(refreshCounter + 1);
     }, [refreshCounter]);
 
@@ -48,3 +47,4 @@ const createApiHook =
 export const useApi = () => useContext(ApiContext);
 export const useBudgets = createApiHook(api => api.getBudgets);
 export const useBudget = createApiHook(api => api.getBudget);
+export const useTransactions = createApiHook(api => api.getTransactions);

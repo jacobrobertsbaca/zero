@@ -31,7 +31,7 @@ export const PeriodList = ({ category }: PeriodListProps) => {
 
   const isCurrent = (index: number) => {
     if (includeEarlier && index === 0) return false;
-    if (includeLater && index === category.periods.length - 1) return false;
+    if (includeLater && index === rows.length - 1) return false;
     return index === activeIndex;
   };
 
@@ -51,7 +51,7 @@ export const PeriodList = ({ category }: PeriodListProps) => {
                 <Stack>
                   {index === 0 && includeEarlier
                     ? "Earlier"
-                    : index === category.periods.length - 1 && includeLater
+                    : index === rows.length - 1 && includeLater
                     ? "Later"
                     : periodDatesFormat(period)}
                   {isCurrent(index) && (
