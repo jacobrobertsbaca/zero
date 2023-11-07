@@ -5,6 +5,7 @@ import { TransactionSchema } from "src/types/transaction/schema";
 import { produce } from "immer";
 import { transactionCompare } from "src/types/transaction/methods";
 import { NotFound } from "../errors";
+import { putTransaction } from "../common";
 
 const router = routes();
 
@@ -21,25 +22,8 @@ router.put(
     bodySchema: z.object({
       transaction: TransactionSchema,
     }),
-    handler(req, res) {
-      if (!req.body.transaction.id) {
-        const trx = produce(req.body.transaction, (draft) => {
-          draft.id = crypto.randomUUID();
-          draft.lastModified = new Date().toISOString();
-        });
-        transactions.push(trx);
-        transactions.sort(transactionCompare);
-        return res.status(201).json(trx);
-      }
-
-      const index = transactions.findIndex(t => t.id === req.body.transaction.id);
-      if (index < 0) throw new NotFound("No such transaction exists");
-      req.body.transaction = produce(req.body.transaction, (draft) => {
-        draft.lastModified = new Date().toISOString();
-      });
-      transactions[index] = req.body.transaction;
-      transactions.sort(transactionCompare);
-      return res.status(200).json(req.body.transaction);
+    async handler(req, res) {
+      res.json(await putTransaction(req.user.id, req.body.transaction));
     },
   })
 );

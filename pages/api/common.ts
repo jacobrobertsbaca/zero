@@ -8,6 +8,7 @@ import { budgetCompare } from "src/types/budget/methods";
 import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
+import { Transaction } from "src/types/transaction/types";
 
 /* ================================================================================================================= *
  * Utility Functions                                                                                                 *
@@ -45,6 +46,10 @@ const BUDGET_QUERY = `
   categories (${CATEGORY_QUERY})
 ` as const;
 
+const TRANSACTION_QUERY = `
+  id, category, budget, date, amount, name, last_modified
+` as const;
+
 const retrieveBudgets = async (owner: string, id?: string) => {
   let query = supabase.from("budgets").select(BUDGET_QUERY).eq("owner", owner);
   if (id) query = query.eq("id", id);
@@ -52,16 +57,23 @@ const retrieveBudgets = async (owner: string, id?: string) => {
 };
 
 const retrieveCategory = async (owner: string, id: string) => {
-  let query = supabase.from("categories").select(CATEGORY_QUERY).eq("owner", owner).eq("id", id);
+  const query = supabase.from("categories").select(CATEGORY_QUERY).eq("owner", owner).eq("id", id);
   return await wrap(query);
 };
 
-type ReadBudgetRow    = Awaited<ReturnType<typeof retrieveBudgets>>[0];
-type ReadCategoryRow  = ReadBudgetRow["categories"][0];
-type ReadPeriodRow    = ReadCategoryRow["periods"][0];
-type WriteBudgetRow   = Omit<ReadBudgetRow, "categories"> & { owner: any };
-type WriteCategoryRow = Omit<ReadCategoryRow, "periods"> & { owner: any, budget: any };
-type WritePeriodRow   = ReadPeriodRow & { owner: any, budget: any, category: any };
+const retrieveTransaction = async (owner: string, id: string) => {
+  const query = supabase.from("categories").select(TRANSACTION_QUERY).eq("owner", owner).eq("id", id);
+  return await wrap(query);
+};
+
+type ReadBudgetRow        = Awaited<ReturnType<typeof retrieveBudgets>>[0];
+type ReadCategoryRow      = ReadBudgetRow["categories"][0];
+type ReadPeriodRow        = ReadCategoryRow["periods"][0];
+type ReadTransactionRow   = Awaited<ReturnType<typeof retrieveTransaction>>[0];
+type WriteBudgetRow       = Omit<ReadBudgetRow, "categories"> & { owner: any };
+type WriteCategoryRow     = Omit<ReadCategoryRow, "periods"> & { owner: any, budget: any };
+type WritePeriodRow       = ReadPeriodRow & { owner: any, budget: any, category: any };
+type WriteTransactionRow  = ReadTransactionRow & { owner: any };
 
 const parsePeriod = (row: ReadPeriodRow): Period => ({
   dates: {
@@ -142,6 +154,16 @@ const formatBudget = (owner: string, budget: Budget): WriteBudgetRow => ({
   end_date: budget.dates.end
 });
 
+const formatTransaction = (owner: string, trx: Transaction): WriteTransactionRow => ({
+  owner,
+  id: trx.id,
+  category: trx.category,
+  budget: trx.budget,
+  date: trx.date,
+  amount: trx.amount.amount,
+  name: trx.name,
+  last_modified: trx.lastModified
+});
 
 /* ================================================================================================================= *
  * API Endpoints                                                                                                     *
@@ -295,4 +317,35 @@ export const deleteBudget = async (owner: string, bid: string): Promise<void> =>
  */
 export const deleteCategory = async (owner: string, bid: string, cid: string): Promise<void> => {
   await wrap(supabase.from("categories").delete().eq("id", cid).eq("budget", bid).eq("owner", owner));
+};
+
+export const putTransaction = async (owner: string, trx: Transaction): Promise<Transaction> => {
+  /* Verify that budget and category exist and are owned by this user */
+  const budget = await wrap(supabase.from("budgets").select("id").eq("owner", owner).eq("id", trx.budget));
+  if (budget.length === 0) throw new NotFound("Budget associated with transaction doesn't exist!");
+
+  const category = await wrap(
+    supabase.from("categories").select("id").eq("owner", owner).eq("budget", trx.budget).eq("id", trx.category)
+  );
+  if (category.length === 0) throw new NotFound("Category associated with transaction doesn't exist!");
+
+  /* If modifying an existing transaction, verify that transaction exists and is owned by this user.
+   * Otherwise give the transaction a fresh id */
+  if (trx.id) {
+    const existing = await wrap(
+      supabase.from("transactions").select("id").eq("owner", owner)
+    );
+    if (existing.length === 0) throw new NotFound("No such transaction exists!");
+  } else {
+    trx = produce(trx, (draft) => { draft.id = crypto.randomUUID(); });
+  }
+
+  /* Write transaction to the database using `put_transaction` rpc */
+  await wrap(
+    supabase.rpc("put_transaction", {
+      transaction_json: formatTransaction(owner, trx)
+    })
+  );
+
+  return trx;
 };
