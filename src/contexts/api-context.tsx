@@ -18,6 +18,7 @@ export type ApiContextType = Immutable<{
   deleteCategory(budgetID: string, categoryID: string): Promise<void>;
   getTransactions(): Promise<readonly Transaction[]>;
   putTransaction(trx: Transaction): Promise<Transaction>;
+  starTransaction(trx: Transaction, starred: boolean, onFailure: (error: any) => void): void;
   deleteTransaction(trx: Transaction): Promise<void>;
 }>;
 
@@ -256,6 +257,26 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
       placeTransaction(trx, false);
       transactionCache.sortValues(transactionCompare);
       return trx;
+    },
+
+    starTransaction(trx, starred, onFailure) {
+      const newTrx = produce(trx, (draft) => {
+        draft.starred = starred;
+        draft.lastModified = new Date().toISOString();
+      });
+      transactionCache.add(trx.id, newTrx);
+      transactionCache.sortValues(transactionCompare);
+
+      /* Asynchronously star transaction on backend, report error if it fails */
+      (async () => {
+        try {
+          await api.putTransaction(newTrx);
+        } catch (err) {
+          transactionCache.add(trx.id, trx);
+          transactionCache.sortValues(transactionCompare);
+          onFailure(err);
+        }
+      })();
     },
 
     async deleteTransaction(trx) {

@@ -1,9 +1,6 @@
-import { NotFound } from "pages/api/errors";
 import { route, routes } from "pages/api/route";
-import { budgets } from "src/__mock__/budget";
 import { CategorySchema } from "src/types/category/schema";
 import { z } from "zod";
-import { produce } from "immer";
 import { putCategory } from "pages/api/common";
 
 const router = routes();
