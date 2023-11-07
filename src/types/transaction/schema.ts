@@ -10,5 +10,6 @@ export const TransactionSchema = z.object({
   amount: MoneySchema,
   name: z.string().max(120),
   lastModified: z.string(),
-  starred: z.boolean()
+  starred: z.boolean(),
+  note: z.string()
 });

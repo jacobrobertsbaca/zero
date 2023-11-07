@@ -25,4 +25,7 @@ export type Transaction = {
 
   /** Starred transactions appear at the top of the transactions list. */
   starred: boolean;
+
+  /** An optional note associated with the transaction. */
+  note: string;
 };

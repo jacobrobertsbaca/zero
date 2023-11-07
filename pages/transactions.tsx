@@ -29,7 +29,8 @@ const Page = () => {
     amount: moneyZero(),
     name: "",
     lastModified: "",
-    starred: false
+    starred: false,
+    note: ""
   });
 
   const onAddTrx = useCallback((budgets: readonly Budget[]) => {
@@ -41,7 +42,8 @@ const Page = () => {
       amount: null as unknown as Money, // Setting to null default MoneyField to empty value
       name: "",
       lastModified: "",
-      starred: false
+      starred: false,
+      note: ""
     });
     setSidebarOpen(true);
   }, []);

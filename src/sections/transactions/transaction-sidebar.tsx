@@ -66,7 +66,7 @@ export const TransactionSidebar = ({
             }),
           category: Yup.string().required("You must pick a category!"),
           amount: Yup.mixed().required("You must enter an amount!"),
-          name: Yup.string().max(120, "Cannot be more than 120 characters!")
+          name: Yup.string().max(120, "Cannot be more than 120 characters!"),
         }),
         async onSubmit(trx) {
           trx = await putTransaction(trx);
@@ -93,6 +93,15 @@ export const TransactionSidebar = ({
               <CategorySelector budgets={budgets} />
               <MoneyField label="Amount" name="amount" />
               <TextField label="Name" name="name" placeholder="Optional" />
+              <TextField
+                label="Note"
+                name="note"
+                placeholder="Optional"
+                multiline
+                rows={5}
+                maxRows={Infinity}
+                inputProps={{ style: { resize: "vertical" } }}
+              />
 
               <EditActions
                 allowDelete={isExisting}

@@ -48,7 +48,7 @@ const BUDGET_QUERY = `
 ` as const;
 
 const TRANSACTION_QUERY = `
-  id, category, budget, date, amount, name, last_modified, starred
+  id, category, budget, date, amount, name, last_modified, starred, note
 ` as const;
 
 const retrieveBudgets = async (owner: string, id?: string) => {
@@ -130,7 +130,8 @@ const parseTransaction = (row: ReadTransactionRow): Transaction => ({
   amount: { amount: row.amount, currency: defaultCurrency },
   name: row.name,
   lastModified: row.last_modified,
-  starred: row.starred
+  starred: row.starred,
+  note: row.note
 });
 
 const formatPeriod = (owner: string, budget: string, category: string, period: Period): WritePeriodRow => ({
@@ -175,7 +176,8 @@ const formatTransaction = (owner: string, trx: Transaction): WriteTransactionRow
   amount: trx.amount.amount,
   name: trx.name,
   last_modified: trx.lastModified,
-  starred: trx.starred
+  starred: trx.starred,
+  note: trx.note
 });
 
 /* ================================================================================================================= *
