@@ -1,10 +1,6 @@
-import { transactions } from "src/__mock__/transaction";
 import { route, routes } from "../route";
 import { z } from "zod";
 import { TransactionSchema } from "src/types/transaction/schema";
-import { produce } from "immer";
-import { transactionCompare } from "src/types/transaction/methods";
-import { NotFound } from "../errors";
 import { getTransactions, putTransaction } from "../common";
 
 const router = routes();
