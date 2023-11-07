@@ -1,5 +1,5 @@
 /* ================================================================================================================= *
- * PUT Budget/Category                                                                                               *
+ * Budget/Category                                                                                                   *
  * ================================================================================================================= */
 
 /* `put_periods` takes in a JSON periods array matching a set of records in the `periods` table,
@@ -127,5 +127,65 @@ begin
 
   -- (3) Insert period objects
   perform put_periods(periods_json);
+end;
+$$ language plpgsql;
+
+/* ================================================================================================================= *
+ * Transactions                                                                                                      *
+ * ================================================================================================================= */
+
+/* `place_transaction` takes in 
+ *
+ * - a JSON transaction object matching a record in the `transactions` table
+ * - a boolean, `remove` indicating whether to remove the transaction or not
+ *
+ * and subtracts the amount of the transaction from its corresponding period if `remove` is true
+ * or otherwise adds it.
+ */
+
+create or replace function place_transaction(
+  transaction_json json,
+  remove boolean
+) returns void as $$
+begin
+  update periods
+  set actual = actual + (case when remove then -1 else 1 end) * (transaction_json->>'amount')::bigint
+  where category = (transaction_json->>'category')::uuid
+  and transaction_json->>'date' >= begin_date and transaction_json->>'date' <= p.end_date;
+end;
+$$ language plpgsql;
+
+/* `put_transaction` takes in a JSON transaction object matching a record in the `transactions` table
+ * and upserts a new transaction. It does so by
+ *
+ * 1. Removing the transaction's amount from the period it belongs to, if it already exists.
+ * 2. Adding the transaction's amount to its new period.
+ * 3. Upserting the transaction to the `transactions` table.
+ */
+
+create or replace function put_transaction(
+  transaction_json json  
+) returns void as $$
+begin
+  -- (1) Remove existing amount from period
+  perform place_transaction(row_to_json(transactions), true)
+  from transactions
+  where id = (transaction_json->>'id');
+
+  -- (2) Add new amount to period
+  perform place_transaction(transaction_json, false);
+
+  -- (3) Upsert transaction to transactions table
+  insert into transactions
+  select * from json_populate_record(null::transactions, transaction_json)
+  on conflict (id) do update
+  set
+    owner         = excluded.owner,
+    category      = excluded.category,
+    budget        = excluded.budget,
+    date          = excluded.date,
+    amount        = excluded.amount,
+    name          = excluded.name,
+    last_modified = excluded.last_modified;
 end;
 $$ language plpgsql;
