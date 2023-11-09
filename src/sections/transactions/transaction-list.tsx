@@ -134,6 +134,13 @@ export const TransactionList = ({
     // Only show these columns when not on a mobile display
     ...(!mobile
       ? [
+          // Have a column for note but hide it in initial state to allow
+          // searching by the note field
+          {
+            field: "note",
+            headerName: "Note",
+            type: "string"
+          },
           {
             field: "budget",
             headerName: "Budget",
@@ -178,6 +185,13 @@ export const TransactionList = ({
           noRowsOverlay: { mode: loading ? "loading" : budgets.length > 0 ? "add" : "budgets" } as any,
           toolbar: {
             showQuickFilter: !mobile
+          }
+        }}
+        initialState={{
+          columns: {
+            columnVisibilityModel: {
+              note: false
+            }
           }
         }}
         sx={{
