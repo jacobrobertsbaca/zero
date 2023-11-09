@@ -29,7 +29,6 @@ export const CategorySelector = ({ budgets }: CategorySelectorProps) => {
 
   const show = !!options && options.length > 0;
 
-  console.log(options);
   return (
     <Collapse in={show} sx={{ mt: show ? undefined : "0 !important" }}>
       <SelectField fullWidth label="Category" name="category" values={options ?? []} />

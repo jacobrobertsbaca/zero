@@ -11,7 +11,7 @@ type SpendingBarProps = ActualNominal & {
 
 export const SpendingBar = ({ actual, nominal, remaining }: SpendingBarProps) => {
   const getValue = useCallback(() => {
-    if (nominal.amount === 0) return actual.amount >= 0 ? 100 : 0;
+    if (nominal.amount === 0) return actual.amount > 0 ? 100 : 0;
     if ((nominal.amount < 0 && actual.amount < 0) || (nominal.amount > 0 && actual.amount > 0))
       return Math.min(100, (100 * actual.amount) / nominal.amount);
     return 0;

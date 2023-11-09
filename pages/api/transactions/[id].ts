@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { route, routes } from "../route";
-import { transactions } from "src/__mock__/transaction";
 import { deleteTransaction } from "../common";
 
 const router = routes();

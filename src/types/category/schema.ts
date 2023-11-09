@@ -65,7 +65,7 @@ const PeriodSchema = z
     truncate: z.nativeEnum(TruncateMode),
   })
   .refine((value) => {
-    if (value.truncate === TruncateMode.Split) return (value.days = datesDays(value.dates));
+    if (value.truncate === TruncateMode.Split) return (value.days !== datesDays(value.dates));
     return true;
   }, "Only truncated periods may be split");
 
