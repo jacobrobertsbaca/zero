@@ -1,7 +1,5 @@
-import PropTypes from "prop-types";
-import NextLink from "next/link";
 import { Box, Stack, Typography } from "@mui/material";
-import { Logo } from "src/components/logo";
+import { LogoLink } from "src/components/logo";
 import Head from "next/head";
 import { withAuthGuard } from "src/components/with-auth-guard";
 
@@ -32,17 +30,7 @@ export const Layout = withAuthGuard(false, ({ children, name }: LayoutProps) => 
           width: "100%",
         }}
       >
-        <Box
-          component={NextLink}
-          href="/"
-          sx={{
-            display: "inline-flex",
-            height: 32,
-            width: 32,
-          }}
-        >
-          <Logo />
-        </Box>
+        <LogoLink />
       </Box>
       <Box
         sx={{
