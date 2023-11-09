@@ -18,8 +18,6 @@ import { DateString } from "src/types/utils/types";
 import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
 import StarIconOutlined from "@heroicons/react/24/outline/StarIcon";
 import StarIconSolid from "@heroicons/react/24/solid/StarIcon";
-import { useSnackbar } from "notistack";
-import { useCallback } from "react";
 
 /* ================================================================================================================= *
  * Overlays                                                                                                          *
@@ -136,6 +134,7 @@ export const TransactionList = ({ loading, transactions, budgets, onTrxSelected,
           {
             field: "budget",
             headerName: "Budget",
+            maxWidth: 200,
             flex: 1,
             valueGetter(params: GridValueGetterParams<any, string>) {
               if (!params.value || !budgets) return "";
@@ -145,6 +144,7 @@ export const TransactionList = ({ loading, transactions, budgets, onTrxSelected,
           {
             field: "category",
             headerName: "Category",
+            maxWidth: 200,
             flex: 1,
             valueGetter(params: GridValueGetterParams<any, string>) {
               if (!params.value || !budgets) return "";

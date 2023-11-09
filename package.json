@@ -1,9 +1,9 @@
 {
-  "name": "material-kit-react",
-  "version": "3.0.0",
-  "author": "Devias",
+  "name": "zero",
+  "version": "1.0.0",
+  "author": "jacobrobertsbaca",
   "licence": "MIT",
-  "homepage": "https://devias.io",
+  "homepage": "https://zerobudget.vercel.app",
   "private": false,
   "scripts": {
     "dev": "next",
