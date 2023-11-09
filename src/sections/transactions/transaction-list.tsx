@@ -5,6 +5,7 @@ import {
   GridColDef,
   GridRenderCellParams,
   GridRowParams,
+  GridToolbar,
   GridValueGetterParams,
 } from "@mui/x-data-grid";
 import Link from "next/link";
@@ -165,12 +166,19 @@ export const TransactionList = ({
         rows={loading ? [] : transactions ?? []}
         columns={cols}
         disableColumnMenu
+        disableColumnFilter
+        disableDensitySelector
+        disableColumnSelector
         onRowClick={(params: GridRowParams<Transaction>) => onTrxSelected(params.row)}
         slots={{
           noRowsOverlay: NoTransactionsOverlay,
+          toolbar: GridToolbar
         }}
         slotProps={{
           noRowsOverlay: { mode: loading ? "loading" : budgets.length > 0 ? "add" : "budgets" } as any,
+          toolbar: {
+            showQuickFilter: !mobile
+          }
         }}
         sx={{
           // disable cell selection style
