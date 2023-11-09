@@ -1,12 +1,13 @@
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import * as Yup from "yup";
-import { Link, Stack, TextField, Typography } from "@mui/material";
+import { Link, Stack, Typography } from "@mui/material";
 import { useAuth } from "src/hooks/use-auth";
 import { Layout as AuthLayout } from "src/layouts/auth/layout";
 import { useSnackbar } from "notistack";
 import { SubmitButton } from "src/components/form/submit-button";
 import { Form } from "src/components/form/form";
+import { TextField } from "src/components/form/text-field";
 
 const Page = () => {
   const { enqueueSnackbar } = useSnackbar();
