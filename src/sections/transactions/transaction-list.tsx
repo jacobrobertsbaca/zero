@@ -55,7 +55,13 @@ type TransactionListProps = {
   onTrxStarred: (trx: Transaction, star: boolean) => void;
 };
 
-export const TransactionList = ({ loading, transactions, budgets, onTrxSelected, onTrxStarred }: TransactionListProps) => {
+export const TransactionList = ({
+  loading,
+  transactions,
+  budgets,
+  onTrxSelected,
+  onTrxStarred,
+}: TransactionListProps) => {
   const theme = useTheme();
   const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
 
@@ -71,11 +77,9 @@ export const TransactionList = ({ loading, transactions, budgets, onTrxSelected,
               key="unstar"
               label="Unstar transaction"
               icon={
-                <Tooltip title="Unstar transaction">
-                  <SvgIcon>
-                    <StarIconSolid />
-                  </SvgIcon>
-                </Tooltip>
+                <SvgIcon color="primary">
+                  <StarIconSolid />
+                </SvgIcon>
               }
               onClick={() => onTrxStarred(params.row, false)}
             />,
@@ -85,11 +89,9 @@ export const TransactionList = ({ loading, transactions, budgets, onTrxSelected,
             key="star"
             label="Star transaction"
             icon={
-              <Tooltip title="Star transaction">
-                <SvgIcon>
-                  <StarIconOutlined />
-                </SvgIcon>
-              </Tooltip>
+              <SvgIcon>
+                <StarIconOutlined />
+              </SvgIcon>
             }
             onClick={() => onTrxStarred(params.row, true)}
           />,
