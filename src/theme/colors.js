@@ -33,6 +33,10 @@ export const indigo = withAlphas({
   contrastText: '#FFFFFF'
 });
 
+export const primary = withAlphas({
+  main: "#82ADAD"
+});
+
 export const success = withAlphas({
   lightest: '#F0FDF9',
   light: '#3FC79A',
