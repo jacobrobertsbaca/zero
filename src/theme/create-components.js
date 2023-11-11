@@ -134,7 +134,7 @@ export function createComponents(config) {
       styleOverrides: {
         input: {
           '&::placeholder': {
-            opacity: 1
+            color: palette.text.secondary
           }
         }
       }
@@ -144,10 +144,7 @@ export function createComponents(config) {
         input: {
           fontSize: 14,
           fontWeight: 500,
-          lineHeight: '24px',
-          '&::placeholder': {
-            color: palette.text.secondary
-          }
+          lineHeight: '24px'
         }
       }
     },
