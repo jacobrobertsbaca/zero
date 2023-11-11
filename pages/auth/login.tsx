@@ -50,6 +50,7 @@ const Page = () => {
           size="large"
           fullWidth
           startIcon={<Image alt="Google Logo" width={20} height={20} src="/assets/google-logo.svg" />}
+          onClick={auth.signInWithGoogle}
         >
           Continue with Google
         </Button>
