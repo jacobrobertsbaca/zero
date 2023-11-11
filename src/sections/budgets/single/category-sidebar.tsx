@@ -160,7 +160,7 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
         enableReinitialize: true,
         initialValues: category,
         validationSchema: Yup.object({
-          name: Yup.string().required("You must provide a name!").max(60, "Cannot be more than 60 characters!"),
+          name: Yup.string().trim().required("You must provide a name!").max(60, "Cannot be more than 60 characters!"),
         }),
         async onSubmit(category) {
           category = await putCategory(budget.id, category);

@@ -8,7 +8,7 @@ export const TransactionSchema = z.object({
   category: z.string(),
   date: DateStringSchema,
   amount: MoneySchema,
-  name: z.string().max(120),
+  name: z.string().trim().max(120),
   lastModified: z.string(),
   starred: z.boolean(),
   note: z.string()
