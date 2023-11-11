@@ -72,7 +72,7 @@ const PeriodSchema = z
 export const CategorySchema = z
   .object({
     id: z.string(),
-    name: z.string().min(1).max(60),
+    name: z.string().trim().min(1).max(60),
     type: z.nativeEnum(CategoryType),
     recurrence: RecurrenceSchema,
     periods: PeriodSchema.array().min(3),

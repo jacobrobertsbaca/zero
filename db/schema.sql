@@ -62,5 +62,7 @@ create table transactions (
   date char(8) not null,
   amount bigint not null,
   name varchar(120) not null,
-  last_modified varchar(27) not null
+  last_modified varchar(27) not null,
+  starred boolean not null,
+  note text not null check (length(note) <= 1000)
 );

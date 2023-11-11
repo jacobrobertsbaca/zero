@@ -134,7 +134,7 @@ export function createComponents(config) {
       styleOverrides: {
         input: {
           '&::placeholder': {
-            opacity: 1
+            color: palette.text.secondary
           }
         }
       }
@@ -144,10 +144,7 @@ export function createComponents(config) {
         input: {
           fontSize: 14,
           fontWeight: 500,
-          lineHeight: '24px',
-          '&::placeholder': {
-            color: palette.text.secondary
-          }
+          lineHeight: '24px'
         }
       }
     },
@@ -327,6 +324,16 @@ export function createComponents(config) {
         },
         columnHeaderRow: {
           borderBottom: `2px solid ${palette.divider}`,
+        },
+        columnHeader: {
+          "&:focus": {
+            outline: "none"
+          }
+        },
+        cell: {
+          "&:focus-within": {
+            outline: "none"
+          }
         }
       }
     }

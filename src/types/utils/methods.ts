@@ -19,7 +19,9 @@ export const asDate = (date: Date | DateString, dayOffset: number = 0): Date => 
     const years = parseInt(date.substring(0, 4), 10);
     const months = parseInt(date.substring(4, 6), 10) - 1;
     const days = parseInt(date.substring(6, 8), 10) + dayOffset;
-    return new Date(years, months, days);
+    const result = new Date();
+    result.setFullYear(years, months, days);
+    return result;
   }
 
   date = new Date(date);

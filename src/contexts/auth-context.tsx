@@ -57,6 +57,7 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
       if (evt === "SIGNED_IN") fromSession(session!);
       else if (evt === "SIGNED_OUT") setState(produce(state, draft => {
         draft.user = undefined;
+        draft.loading = false;
       }));
     });
 

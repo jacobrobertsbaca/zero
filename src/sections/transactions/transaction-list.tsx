@@ -176,6 +176,7 @@ export const TransactionList = ({
         disableColumnFilter
         disableDensitySelector
         disableColumnSelector
+        hideFooterSelectedRowCount
         onRowClick={(params: GridRowParams<Transaction>) => onTrxSelected(params.row)}
         slots={{
           noRowsOverlay: NoTransactionsOverlay,
