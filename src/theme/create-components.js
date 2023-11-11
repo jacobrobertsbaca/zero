@@ -324,6 +324,16 @@ export function createComponents(config) {
         },
         columnHeaderRow: {
           borderBottom: `2px solid ${palette.divider}`,
+        },
+        columnHeader: {
+          "&:focus": {
+            outline: "none"
+          }
+        },
+        cell: {
+          "&:focus-within": {
+            outline: "none"
+          }
         }
       }
     }
