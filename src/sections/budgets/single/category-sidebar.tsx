@@ -83,7 +83,7 @@ const CategoryEditView = ({ budget }: { budget: Budget }) => {
 
   return (
     <>
-      <TextField fullWidth label="Name" name="name" type="text" />
+      <TextField fullWidth label="Name" name="name" type="text" max={60} />
       <SelectField fullWidth label="Type" name="type" values={TYPE_OPTIONS} />
       <MoneyField
         fullWidth
@@ -160,7 +160,7 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
         enableReinitialize: true,
         initialValues: category,
         validationSchema: Yup.object({
-          name: Yup.string().trim().required("You must provide a name!").max(60, "Cannot be more than 60 characters!"),
+          name: Yup.string().trim().required("You must provide a name!"),
         }),
         async onSubmit(category) {
           category = await putCategory(budget.id, category);

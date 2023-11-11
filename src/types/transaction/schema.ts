@@ -11,5 +11,5 @@ export const TransactionSchema = z.object({
   name: z.string().trim().max(120),
   lastModified: z.string(),
   starred: z.boolean(),
-  note: z.string()
+  note: z.string().trim().max(1000)
 });

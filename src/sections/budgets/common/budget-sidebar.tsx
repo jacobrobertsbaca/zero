@@ -42,7 +42,7 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
         enableReinitialize: true,
         initialValues: budget,
         validationSchema: Yup.object({
-          name: Yup.string().trim().required("You must provide a name!").max(60, "Cannot be more than 60 characters!"),
+          name: Yup.string().trim().required("You must provide a name!"),
           dates: Yup.object({
             begin: Yup.string().required("Enter a valid date!"),
             end: Yup.string()
@@ -73,7 +73,7 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
 
           <Scrollbar sx={{ flexGrow: 1 }}>
             <Stack spacing={3} sx={{ p: 3 }}>
-              <TextField fullWidth label="Name" name="name" type="text" />
+              <TextField fullWidth label="Name" name="name" type="text" max={60} />
               <DateField label="Begin" name="dates.begin" />
               <DateField label="End" name="dates.end" />
               {isExisting && !isEqual(form.values.dates, budget.dates) && (
