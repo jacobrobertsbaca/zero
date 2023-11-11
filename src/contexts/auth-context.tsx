@@ -1,4 +1,4 @@
-import { Session } from "@supabase/supabase-js";
+import { Provider, Session } from "@supabase/supabase-js";
 import { Immutable, produce } from "immer";
 import { useSnackbar } from "notistack";
 import { createContext, useState } from "react";
@@ -21,6 +21,7 @@ type AuthState = Immutable<{
 
 type AuthContextType = AuthState & Immutable<{
   signIn(email: string, password: string): Promise<void>;
+  signInWithGoogle(): Promise<void>;
   signUp(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
   updatePassword(newPassword: string): Promise<void>;
@@ -75,6 +76,11 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     fromSession(data.session);
   };
 
+  const signInWithGoogle = async (): Promise<void> => {
+    const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google" });
+    if (error) throw new Error(error.message);
+  }
+
   const signUp = async (email: string, password: string): Promise<void> => {
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) throw new Error(error.message);
@@ -100,6 +106,7 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     value={{
       ...state,
       signIn,
+      signInWithGoogle,
       signUp,
       signOut,
       updatePassword
