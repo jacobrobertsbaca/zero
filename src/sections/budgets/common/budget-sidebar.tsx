@@ -53,6 +53,7 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
         }),
         async onSubmit(budget) {
           budget = await putBudget(budget);
+          setDeleteModal(false);
           onUpdate(budget);
           onClose();
         },

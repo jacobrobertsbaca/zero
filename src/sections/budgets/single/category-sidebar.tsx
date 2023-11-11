@@ -165,6 +165,7 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
         async onSubmit(category) {
           category = await putCategory(budget.id, category);
           setEditState(EditState.View);
+          setDeleteModal(false);
           onUpdate(category);
         },
       }}
