@@ -11,7 +11,6 @@ type PropTypes = {
 export const AuthGuard: React.FC<PropTypes> = ({ protect, children }: PropTypes) => {
   const router = useRouter();
   const { user } = useAuth();
-  const ignore = useRef(false);
   const [checked, setChecked] = useState(false);
 
   // Only do authentication check on component mount.
@@ -22,13 +21,6 @@ export const AuthGuard: React.FC<PropTypes> = ({ protect, children }: PropTypes)
     if (!router.isReady) {
       return;
     }
-
-    // Prevent from calling twice in development mode with React.StrictMode enabled
-    if (ignore.current) {
-      return;
-    }
-
-    ignore.current = true;
 
     if (!user && protect) {
       console.log("Not authenticated, redirecting");

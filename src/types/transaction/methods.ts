@@ -1,7 +1,7 @@
 import { Transaction } from "./types";
 
 const dateCompare = (a: Transaction, b: Transaction) => {
-  return b.date.localeCompare(a.date) || b.lastModified.localeCompare(a.lastModified);
+  return b.date.localeCompare(a.date) || a.name.localeCompare(b.name) || b.amount.amount - a.amount.amount;
 };
 
 export const transactionCompare = (a: Transaction, b: Transaction) => {

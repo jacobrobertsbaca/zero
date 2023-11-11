@@ -6,7 +6,7 @@ import { budgetMaxDays, budgetMaxYears } from "./methods";
 
 export const BudgetSchema = z.object({
   id: z.string(),
-  name: z.string().min(1).max(60),
+  name: z.string().trim().min(1).max(60),
   dates: DatesSchema,
   categories: CategorySchema.array(),
 });
