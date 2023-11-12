@@ -1,4 +1,4 @@
-import { Collapse, Stack, Typography } from "@mui/material";
+import { Collapse, InputAdornment, Stack, Switch, Typography } from "@mui/material";
 import { isEqual } from "lodash";
 import { useCallback } from "react";
 import { DateField } from "src/components/form/date-field";
@@ -65,7 +65,7 @@ export const TransactionSidebar = ({
               return budget.categories.length > 0;
             }),
           category: Yup.string().required("You must pick a category!"),
-          amount: Yup.mixed().required("You must enter an amount!")
+          amount: Yup.mixed().required("You must enter an amount!"),
         }),
         async onSubmit(trx) {
           trx = await putTransaction(trx);
@@ -90,7 +90,22 @@ export const TransactionSidebar = ({
                 }}
               />
               <CategorySelector budgets={budgets} />
-              <MoneyField label="Amount" name="amount" />
+              <MoneyField
+                label="Amount"
+                name="amount"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Stack spacing={1} direction="row" alignItems="center">
+                        <Typography variant="caption" color="text.secondary">
+                          Split
+                        </Typography>
+                        <Switch />
+                      </Stack>
+                    </InputAdornment>
+                  ),
+                }}
+              />
               <TextField label="Name" name="name" placeholder="Optional" max={120} />
               <TextField
                 label="Note"
