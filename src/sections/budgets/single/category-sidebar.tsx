@@ -85,16 +85,8 @@ const CategoryEditView = ({ budget }: { budget: Budget }) => {
     <>
       <TextField fullWidth label="Name" name="name" type="text" max={60} />
       <SelectField fullWidth label="Type" name="type" values={TYPE_OPTIONS} />
-      <MoneyField
-        fullWidth
-        label="Total"
-        value={categoryNominal(form.values)}
-        onChange={(total) => form.setValues(onCategoryNominal(form.values, total))}
-      />
       <RecurrencePicker budget={budget} />
-
       <PeriodListMutable />
-
       <RolloverPicker />
     </>
   );
