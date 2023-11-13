@@ -13,11 +13,10 @@ import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
 import { Budget } from "src/types/budget/types";
 import { asDateString } from "src/types/utils/methods";
 import { Money } from "src/types/money/types";
-import { useSnackbar } from "notistack";
+import { enqueueSnackbar } from "notistack";
 
 const Page = () => {
   const { starTransaction } = useApi();
-  const { enqueueSnackbar } = useSnackbar();
   const { result } = useBudgets();
   const { loading: transactionsLoading, result: transactions, refresh: refreshTransactions } = useTransactions();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -55,7 +54,7 @@ const Page = () => {
       refreshTransactions();
     });
     refreshTransactions();
-  }, [enqueueSnackbar, refreshTransactions, starTransaction]);
+  }, [refreshTransactions, starTransaction]);
 
   return (
     <Loading value={result}>
@@ -66,7 +65,7 @@ const Page = () => {
             transaction={sidebarTrx}
             open={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
-            onUpdate={(trx) => {
+            onUpdate={() => {
               refreshTransactions();
               setSidebarOpen(false);
             }}

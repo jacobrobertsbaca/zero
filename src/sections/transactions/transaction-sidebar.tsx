@@ -1,6 +1,6 @@
-import { Collapse, Stack, Typography } from "@mui/material";
+import { Stack, styled, Typography } from "@mui/material";
 import { isEqual } from "lodash";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { DateField } from "src/components/form/date-field";
 import { MoneyField } from "src/components/form/money-field";
 import { SelectField } from "src/components/form/select-field";
@@ -15,6 +15,48 @@ import { dateFormat } from "src/types/utils/methods";
 import * as Yup from "yup";
 import { CategorySelector } from "./category-selector";
 import { useApi } from "src/hooks/use-api";
+import { closeSnackbar, enqueueSnackbar, SnackbarKey } from "notistack";
+import { produce } from "immer";
+import { LoadingButton, loadingButtonClasses } from "@mui/lab";
+import { wrapAsync } from "src/utils/wrap-errors";
+
+type UndoDeleteButtonProps = {
+  snackbar: SnackbarKey;
+  transaction: Transaction;
+  update: (trx: Transaction) => Promise<void>;
+};
+
+const StyledLoadingButton = styled(LoadingButton)(({ theme }) => ({
+  [`.${loadingButtonClasses.loadingIndicator}`]: {
+    color: theme.palette.primary.main,
+  },
+}));
+
+const UndoDeleteButton = ({ snackbar, transaction, update }: UndoDeleteButtonProps) => {
+  const [loading, setLoading] = useState(false);
+
+  return (
+    <StyledLoadingButton
+      loading={loading}
+      onClick={async () => {
+        // Must set id to empty to re-create new transaction
+        setLoading(true);
+        await wrapAsync(async () => {
+          await update(
+            produce(transaction, (draft) => {
+              draft.id = "";
+            })
+          );
+          closeSnackbar(snackbar);
+          enqueueSnackbar({ message: "Restored transaction", variant: "success" });
+        });
+        setLoading(false);
+      }}
+    >
+      <span>Undo</span>
+    </StyledLoadingButton>
+  );
+};
 
 type TransactionSidebarProps = {
   transaction: Transaction;
@@ -22,7 +64,7 @@ type TransactionSidebarProps = {
   open: boolean;
   onClose: () => void;
   onUpdate: (trx: Transaction) => void;
-  onDelete: () => void;
+  onDelete: (trx: Transaction) => void;
 };
 
 export const TransactionSidebar = ({
@@ -48,6 +90,14 @@ export const TransactionSidebar = ({
     ),
   }));
 
+  const updateTransaction = useCallback(
+    async (trx: Transaction) => {
+      trx = await putTransaction(trx);
+      onUpdate(trx);
+    },
+    [putTransaction, onUpdate]
+  );
+
   return (
     <Sidebar
       open={open}
@@ -65,12 +115,9 @@ export const TransactionSidebar = ({
               return budget.categories.length > 0;
             }),
           category: Yup.string().required("You must pick a category!"),
-          amount: Yup.mixed().required("You must enter an amount!")
+          amount: Yup.mixed().required("You must enter an amount!"),
         }),
-        async onSubmit(trx) {
-          trx = await putTransaction(trx);
-          onUpdate(trx);
-        },
+        onSubmit: updateTransaction,
       }}
     >
       {(form) => (
@@ -99,7 +146,6 @@ export const TransactionSidebar = ({
                 max={1000}
                 multiline
                 rows={5}
-                maxRows={Infinity}
                 inputProps={{ style: { resize: "vertical" } }}
               />
 
@@ -109,7 +155,14 @@ export const TransactionSidebar = ({
                 state={EditState.Edit}
                 onDelete={async () => {
                   await deleteTransaction(transaction);
-                  onDelete();
+                  onDelete(transaction);
+                  enqueueSnackbar({
+                    message: "Transaction deleted",
+                    autoHideDuration: 10000,
+                    action: (key) => (
+                      <UndoDeleteButton snackbar={key} transaction={transaction} update={updateTransaction} />
+                    ),
+                  });
                 }}
               />
             </Stack>

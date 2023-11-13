@@ -3,25 +3,25 @@ import { Formik, FormikConfig, FormikHelpers, FormikProps, FormikValues } from "
 import { produce } from "immer";
 import { useSnackbar } from "notistack";
 import { ComponentProps, useCallback } from "react";
+import { wrapAsync } from "src/utils/wrap-errors";
 
 const StyledForm = styled("form")``;
 
 export type FormProps<T> = FormikConfig<T> & Omit<ComponentProps<typeof StyledForm>, "children" | "onSubmit">;
 
 export const Form = <T extends FormikValues>(props: FormProps<T>) => {
-  const { enqueueSnackbar } = useSnackbar();
   const { onSubmit, children, ...rest } = props; 
 
-  const handleSubmit = useCallback(async (values: T, helpers: FormikHelpers<T>) => {
-    try {
-      await onSubmit(values, helpers);
-    } catch (err: any) {
-      console.log(err);
-      enqueueSnackbar(err.message, { variant: "error" });
-      helpers.setStatus({ success: false });
-    }
-    helpers.setSubmitting(false);
-  }, [onSubmit, enqueueSnackbar]);
+  const handleSubmit = useCallback(
+    async (values: T, helpers: FormikHelpers<T>) => {
+      await wrapAsync(
+        async () => await onSubmit(values, helpers),
+        () => helpers.setStatus({ success: false })
+      );
+      helpers.setSubmitting(false);
+    },
+    [onSubmit]
+  );
 
   return (
     <Formik onSubmit={handleSubmit} {...rest}>

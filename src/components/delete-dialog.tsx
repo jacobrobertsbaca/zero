@@ -1,8 +1,7 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
-import { useSnackbar } from "notistack";
 import React, { useCallback, useState } from "react";
-import { SubmitButton } from "./form/submit-button";
 import { LoadingButton } from "@mui/lab";
+import { wrapAsync } from "src/utils/wrap-errors";
 
 type DeleteDialogProps = {
   open: boolean;
@@ -13,29 +12,26 @@ type DeleteDialogProps = {
 };
 
 export const DeleteDialog = ({ open, title, desc, onClose, onDelete }: DeleteDialogProps) => {
-  const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
   const handleDelete = useCallback(async () => {
     setLoading(true);
-    try {
+    await wrapAsync(async () => {
       await onDelete();
       onClose();
-    } catch (err: any) {
-      enqueueSnackbar(err.message, { variant: "error" });
-    }
+    });
     setLoading(false);
-  }, [onDelete, onClose, enqueueSnackbar]);
+  }, [onDelete, onClose]);
 
   const handleClose = useCallback(() => {
     if (loading) return;
     onClose();
-  }, [onClose]);
+  }, [loading, onClose]);
 
   return (
     <Dialog
       open={open}
       onClose={handleClose}
-      aria-aria-labelledby="delete-dialog-title"
+      aria-labelledby="delete-dialog-title"
       aria-describedby="delete-dialog-description"
     >
       <DialogTitle id="delete-dialog-title">{title}</DialogTitle>

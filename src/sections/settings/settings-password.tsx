@@ -1,8 +1,7 @@
-import { useCallback, useState } from "react";
-import { Button, Card, CardContent, CardHeader, Divider, Stack } from "@mui/material";
+import { Card, CardContent, CardHeader, Divider, Stack } from "@mui/material";
 import * as Yup from "yup";
 import { useAuth } from "src/hooks/use-auth";
-import { useSnackbar } from "notistack";
+import { enqueueSnackbar } from "notistack";
 import { TextField } from "src/components/form/text-field";
 import { SubmitButton } from "src/components/form/submit-button";
 import { Form } from "src/components/form/form";
@@ -10,7 +9,6 @@ import { AuthProviders } from "src/contexts/auth-context";
 
 export const SettingsPassword = () => {
   const auth = useAuth();
-  const { enqueueSnackbar } = useSnackbar();
 
   /* Can only reset password for email provider */
   if (auth.user?.provider !== AuthProviders.Email) return null;

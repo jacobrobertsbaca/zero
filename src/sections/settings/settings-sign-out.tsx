@@ -1,29 +1,30 @@
-import { Button, Card, CardContent, CardHeader } from "@mui/material";
+import { Button, Card, CardHeader } from "@mui/material";
 import { useRouter } from "next/router";
-import { useSnackbar } from "notistack";
 import { useCallback } from "react";
 import { useAuth } from "src/hooks/use-auth";
+import { wrapAsync } from "src/utils/wrap-errors";
 
 export const SettingsSignOut = () => {
   const { signOut } = useAuth();
-  const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
 
   const onClick = useCallback(async (): Promise<void> => {
-    try {
+    await wrapAsync(async () => {
       await signOut();
       router.push("/");
-    } catch (err: any) {
-      enqueueSnackbar(err.message, { variant: "error" });
-    }
-  }, [enqueueSnackbar, router, signOut]);
+    });
+  }, [router, signOut]);
 
-  return <Card sx={{ pb: 2 }}>
-    <CardHeader 
-      title="Sign Out"
-      action={
-        <Button variant="contained" onClick={onClick}>Sign Out</Button>
-      }
-    />
-  </Card>
+  return (
+    <Card sx={{ pb: 2 }}>
+      <CardHeader
+        title="Sign Out"
+        action={
+          <Button variant="contained" onClick={onClick}>
+            Sign Out
+          </Button>
+        }
+      />
+    </Card>
+  );
 };

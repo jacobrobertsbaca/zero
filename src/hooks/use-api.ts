@@ -1,6 +1,7 @@
 import { useSnackbar } from "notistack";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useReducer, useState } from "react";
 import { ApiContext, ApiContextType } from "src/contexts/api-context";
+import { wrapAsync } from "src/utils/wrap-errors";
 import useAsyncEffect from "use-async-effect";
 
 /* ================================================================================================================= *
@@ -19,23 +20,13 @@ const createApiHook =
     const api = useApi();
     const [loading, setLoading] = useState(true);
     const [result, setResult] = useState<TResult | undefined>(undefined);
-    const { enqueueSnackbar } = useSnackbar();
     const request = selector(api);
-
-    const [refreshCounter, setRefreshCounter] = useState(0);
-    const refresh = useCallback(() => {
-      setRefreshCounter(refreshCounter + 1);
-    }, [refreshCounter]);
+    const [refreshCounter, refresh] = useReducer((s) => s + 1, 0);
 
     useAsyncEffect(async () => {
-      try {
-        setResult(await request(...args));
-      } catch (err: any) {
-        console.log(err);
-        enqueueSnackbar(err.message, { variant: "error" });
-      }
+      await wrapAsync(async () => setResult(await request(...args)));
       setLoading(false);
-    }, [...args, refreshCounter]);
+    }, [refreshCounter, ...args]);
 
     return { loading, result, refresh };
   };
