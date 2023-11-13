@@ -21,6 +21,7 @@ export const asDate = (date: Date | DateString, dayOffset: number = 0): Date => 
     const days = parseInt(date.substring(6, 8), 10) + dayOffset;
     const result = new Date();
     result.setFullYear(years, months, days);
+    result.setHours(0, 0, 0, 0);
     return result;
   }
 
