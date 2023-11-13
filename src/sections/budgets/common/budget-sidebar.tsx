@@ -79,7 +79,7 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
               {isExisting && !isEqual(form.values.dates, budget.dates) && (
                 <Alert severity="warning">
                   Changing budget dates will preserve the total planned amount of existing categories, but their
-                  recurring amounts may change.
+                  recurring amounts may change as a result.
                 </Alert>
               )}
               <EditActions
