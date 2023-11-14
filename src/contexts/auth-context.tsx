@@ -1,26 +1,39 @@
 import { Session } from "@supabase/supabase-js";
 import { Immutable, produce } from "immer";
-import { useSnackbar } from "notistack";
 import { createContext, useState } from "react";
 import { supabase } from "src/utils/supabase";
 import useAsyncEffect from "use-async-effect";
 
+export enum AuthProviders {
+  Unknown = "unknown",
+  Email = "email",
+  Google = "google"
+};
+
 type AuthUser = Immutable<{
   name: string;
   token: string;
+
+  /** The auth provider for this user */
+  provider: AuthProviders;
 }>;
 
 type AuthState = Immutable<{
-  /* Whether or not the auth system is loading. 
-   * During loading, default auth may be retrieved. */
+  /**
+   * Whether or not the auth system is loading. 
+   * During loading, default auth may be retrieved. 
+   */
   loading: boolean;
 
-  /* The current user. If undefined, the user is not authenticated */
+  /**
+   * The current user. If undefined, the user is not authenticated 
+   */
   user?: AuthUser;
 }>;
 
 type AuthContextType = AuthState & Immutable<{
   signIn(email: string, password: string): Promise<void>;
+  signInWithGoogle(): Promise<void>;
   signUp(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
   updatePassword(newPassword: string): Promise<void>;
@@ -39,11 +52,13 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
   });
 
   const fromSession = (session: Session): void => {
+    session.user.app_metadata
     setState(produce(state, draft => {
       draft.loading = false;
       draft.user = {
         name: session.user.email!,
-        token: session.access_token
+        token: session.access_token,
+        provider: (session.user.app_metadata.provider ?? "unknown") as AuthProviders
       };
     }));
   };
@@ -75,6 +90,11 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     fromSession(data.session);
   };
 
+  const signInWithGoogle = async (): Promise<void> => {
+    const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google" });
+    if (error) throw new Error(error.message);
+  }
+
   const signUp = async (email: string, password: string): Promise<void> => {
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) throw new Error(error.message);
@@ -100,6 +120,7 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     value={{
       ...state,
       signIn,
+      signInWithGoogle,
       signUp,
       signOut,
       updatePassword

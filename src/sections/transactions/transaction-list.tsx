@@ -7,6 +7,7 @@ import {
   GridRowParams,
   GridToolbar,
   GridValueGetterParams,
+  useGridApiRef,
 } from "@mui/x-data-grid";
 import Link from "next/link";
 import { Budget } from "src/types/budget/types";
@@ -65,6 +66,7 @@ export const TransactionList = ({
 }: TransactionListProps) => {
   const theme = useTheme();
   const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
+  const apiRef = useGridApiRef();
 
   const cols: GridColDef[] = [
     {
@@ -72,29 +74,19 @@ export const TransactionList = ({
       type: "actions",
       width: 48,
       getActions(params: GridRowParams<Transaction>) {
-        if (params.row.starred)
-          return [
-            <GridActionsCellItem
-              key="unstar"
-              label="Unstar transaction"
-              icon={
-                <SvgIcon color="primary">
-                  <StarIconSolid />
-                </SvgIcon>
-              }
-              onClick={() => onTrxStarred(params.row, false)}
-            />,
-          ];
         return [
           <GridActionsCellItem
-            key="star"
-            label="Star transaction"
+            key={params.row.starred ? "unstar" : "star"}
+            label={`${params.row.starred ? "Unstar" : "Star"} transaction`}
             icon={
-              <SvgIcon>
-                <StarIconOutlined />
+              <SvgIcon color={params.row.starred ? "primary" : "inherit"}>
+                {params.row.starred ? <StarIconSolid /> : <StarIconOutlined />}
               </SvgIcon>
             }
-            onClick={() => onTrxStarred(params.row, true)}
+            onClick={() => {
+              onTrxStarred(params.row, !params.row.starred);
+              apiRef.current.selectRow(params.id, true, true);
+            }}
           />,
         ];
       },
@@ -139,7 +131,7 @@ export const TransactionList = ({
           {
             field: "note",
             headerName: "Note",
-            type: "string"
+            type: "string",
           },
           {
             field: "budget",
@@ -170,6 +162,7 @@ export const TransactionList = ({
     <Box>
       <DataGrid
         autoHeight
+        apiRef={apiRef}
         rows={loading ? [] : transactions ?? []}
         columns={cols}
         disableColumnMenu
@@ -180,20 +173,20 @@ export const TransactionList = ({
         onRowClick={(params: GridRowParams<Transaction>) => onTrxSelected(params.row)}
         slots={{
           noRowsOverlay: NoTransactionsOverlay,
-          toolbar: GridToolbar
+          toolbar: GridToolbar,
         }}
         slotProps={{
           noRowsOverlay: { mode: loading ? "loading" : budgets.length > 0 ? "add" : "budgets" } as any,
           toolbar: {
-            showQuickFilter: !mobile
-          }
+            showQuickFilter: !mobile,
+          },
         }}
         initialState={{
           columns: {
             columnVisibilityModel: {
-              note: false
-            }
-          }
+              note: false,
+            },
+          },
         }}
         sx={{
           // disable cell selection style

@@ -1,7 +1,8 @@
 import { Stack } from "@mui/material";
 import { FormikProps, useFormikContext } from "formik";
 import { produce } from "immer";
-import { ChangeEvent, useCallback } from "react";
+import { isEqual } from "lodash";
+import { ChangeEvent, useCallback, useState } from "react";
 import { MoneyField } from "src/components/form/money-field";
 import { SelectField } from "src/components/form/select-field";
 import { Budget } from "src/types/budget/types";
@@ -69,6 +70,10 @@ const onRecurrenceChanged = (budget: Budget, category: Category, changes: Partia
 export const RecurrencePicker = ({ budget }: { budget: Budget }) => {
   const form = useFormikContext<Category>();
 
+  const now = new Date();
+  const [totalModified, setTotalModified] = useState<Date>(now);
+  const [recurringModified, setRecurringModified] = useState<Date>(now);
+
   const onChange = useCallback(
     (changes: Partial<Recurrence>) => {
       form.setValues(onRecurrenceChanged(budget, form.values, changes));
@@ -78,6 +83,15 @@ export const RecurrencePicker = ({ budget }: { budget: Budget }) => {
 
   return (
     <>
+      <MoneyField
+        fullWidth
+        label="Total"
+        value={categoryNominal(form.values)}
+        onChange={(total) => {
+          setTotalModified(new Date());
+          form.setValues(onCategoryNominal(form.values, total));
+        }}
+      />
       <SelectField
         label="Recurrence"
         name="recurrence.type"
@@ -89,11 +103,14 @@ export const RecurrencePicker = ({ budget }: { budget: Budget }) => {
           <MoneyField
             fullWidth
             sx={{ flex: 1.5 }}
-            inputProps={{ sx: { height: 1 }}}
-            InputProps={{ sx: { height: 1 }}}
+            inputProps={{ sx: { height: 1 } }}
+            InputProps={{ sx: { height: 1 } }}
             label="Amount"
             value={form.values.recurrence.amount}
-            onChange={(a) => onChange({ amount: a })}
+            onChange={(a) => {
+              setRecurringModified(new Date());
+              onChange({ amount: a });
+            }}
           />
           <SelectField
             fullWidth
@@ -101,9 +118,13 @@ export const RecurrencePicker = ({ budget }: { budget: Budget }) => {
             label="Every"
             name="recurrence.day"
             values={form.values.recurrence.type === RecurrenceType.Weekly ? WEEKLY_OPTIONS : MONTHLY_OPTIONS}
-
-            // Passing `amount` for changes here so that when changing day, recurring amount remains the same. 
-            onChange={(e) => onChange({ amount: form.values.recurrence.amount, day: parseInt(e.target.value) })}
+            onChange={(e) => {
+              /* Preserve most recently changed on recurring vs. total amount,
+               * defaulting to total amount if neither have changed. */
+              const day = parseInt(e.target.value);
+              if (recurringModified > totalModified) onChange({ amount: form.values.recurrence.amount, day });
+              else onChange({ day });
+            }}
           />
         </Stack>
       )}

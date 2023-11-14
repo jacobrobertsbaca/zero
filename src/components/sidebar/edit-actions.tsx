@@ -66,7 +66,7 @@ export const EditActions = (props: EditActionsProps) => {
                 }
                 onClick={handleDelete}
               >
-                Delete
+                <span>Delete</span>
               </LoadingButton>
             )}
           </>
