@@ -1,5 +1,5 @@
 import { Stack, Table, TableBody, TableCell, TableFooter, TableHead, TableRow, Typography } from "@mui/material";
-import { Category, Period } from "src/types/category/types";
+import { Category, Period, RecurrenceType } from "src/types/category/types";
 import { SpendingBar } from "../common/spending-bar";
 import { categoryActiveIndex, categoryRollover, periodDatesFormat } from "src/types/category/methods";
 import { MoneyText } from "src/components/money-text";
@@ -13,8 +13,13 @@ type PeriodListProps = {
 };
 
 export const PeriodList = ({ category }: PeriodListProps) => {
+  
   const includeEarlier = category.periods[0].actual.amount !== 0;
   const includeLater = category.periods[category.periods.length - 1].actual.amount !== 0;
+
+  /* Hide period list if recurrence is none and no earlier/later periods */
+  if (category.recurrence.type === RecurrenceType.None && !includeEarlier && !includeLater)
+    return null;
 
   const activeIndex = categoryActiveIndex(category) - (includeEarlier ? 0 : 1);
   const rollovers = categoryRollover(category).filter((p, i) => {
