@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { InfoTooltip } from "src/components/info-tooltip";
 import { MoneyText } from "src/components/money-text";
 import { ActualNominal } from "src/types/budget/types";
-import { moneyFactor, moneySub, RoundingMode } from "src/types/money/methods";
+import { moneyAbs, moneyFactor, moneySub, RoundingMode } from "src/types/money/methods";
 
 type SpendingBarProps = ActualNominal & {
   remaining?: boolean | React.ReactNode;
@@ -17,7 +17,24 @@ export const SpendingBar = ({ actual, nominal, remaining }: SpendingBarProps) =>
     return 0;
   }, [actual, nominal]);
 
-  const delta = moneySub(nominal, actual);
+  const getRemaining = useCallback(() => {
+    const delta = moneySub(actual, nominal);
+    const suffix = (() => {
+      if (delta.amount >= 0) {
+        return nominal.amount >= 0 ? "over" : "left";
+      } else {
+        return nominal.amount >= 0 ? "left" : "over";
+      }
+    })();
+
+    return (
+      <Typography variant="caption">
+        <MoneyText variant="inherit" amount={moneyAbs(delta)} round={RoundingMode.RoundZero} fontWeight={700} />
+        &nbsp;
+        {suffix}
+      </Typography>
+    );
+  }, [actual, nominal]);
 
   return (
     <Box>
@@ -33,21 +50,7 @@ export const SpendingBar = ({ actual, nominal, remaining }: SpendingBarProps) =>
           <MoneyText variant="inherit" fontWeight={700} amount={actual} round={RoundingMode.RoundZero} /> of&nbsp;
           <MoneyText variant="inherit" amount={nominal} round={RoundingMode.RoundZero} />
         </Typography>
-        {remaining &&
-          (typeof remaining === "boolean" ? (
-            <Typography variant="caption">
-              <MoneyText
-                variant="inherit"
-                amount={delta.amount >= 0 ? delta : moneyFactor(delta, -1)}
-                round={RoundingMode.RoundZero}
-                fontWeight={700}
-              />
-              &nbsp;
-              {delta.amount >= 0 ? "left" : "over"}
-            </Typography>
-          ) : (
-            remaining
-          ))}
+        {remaining && (typeof remaining === "boolean" ? getRemaining() : remaining)}
       </Box>
     </Box>
   );
