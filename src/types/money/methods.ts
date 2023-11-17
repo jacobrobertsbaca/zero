@@ -35,6 +35,13 @@ export const moneyFactor = (money: Money, factor: number): Money => {
   return { amount: Math.round(money.amount * factor), currency: money.currency };
 }
 
+/**
+ * Returns the absolute value of the given amount.
+ */
+export const moneyAbs = (money: Money): Money => {
+  return money.amount >= 0 ? money : moneyFactor(money, -1);
+}
+
 export const moneyAllocate = (money: Money, weights: number[]): Money[] => {
   if (weights.length === 0) return [];
 
