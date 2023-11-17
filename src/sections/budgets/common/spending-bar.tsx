@@ -20,16 +20,24 @@ export const SpendingBar = ({ actual, nominal, remaining }: SpendingBarProps) =>
   const getRemaining = useCallback(() => {
     const delta = moneySub(nominal, actual);
     const suffix = (() => {
-      if (delta.amount >= 0) {
-        return nominal.amount >= 0 ? "left" : "over";
+      if (nominal.amount >= 0) {
+        return delta.amount >= 0 ? "left" : "over";
       } else {
-        return nominal.amount >= 0 ? "over" : "left";
+        return delta.amount >= 0 ? "over" : "left";
+      }
+    })();
+
+    const amount = (() => {
+      if (nominal.amount >= 0) {
+        return moneyAbs(delta);
+      } else {
+        return moneyFactor(moneyAbs(delta), -1);
       }
     })();
 
     return (
       <Typography variant="caption">
-        <MoneyText variant="inherit" amount={delta} round={RoundingMode.RoundZero} fontWeight={700} />
+        <MoneyText variant="inherit" amount={amount} round={RoundingMode.RoundZero} fontWeight={700} />
         &nbsp;
         {suffix}
       </Typography>
