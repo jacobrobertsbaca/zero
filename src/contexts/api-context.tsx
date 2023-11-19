@@ -20,6 +20,7 @@ export type ApiContextType = Immutable<{
   putTransaction(trx: Transaction): Promise<Transaction>;
   starTransaction(trx: Transaction, starred: boolean, onFailure: (error: any) => void): void;
   deleteTransaction(trx: Transaction): Promise<void>;
+  deleteAccount(): Promise<void>;
 }>;
 
 /* ================================================================================================================= *
@@ -282,6 +283,10 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
     async deleteTransaction(trx) {
       await httpDelete(`/transactions/${trx.id}`, { token });
       placeTransaction(trx, true);
+    },
+
+    async deleteAccount() {
+      await httpDelete(`/account`, { token });
     },
   };
 

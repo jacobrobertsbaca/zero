@@ -5,6 +5,7 @@ import { SettingsPassword } from 'src/sections/settings/settings-password';
 import { Layout as DashboardLayout } from 'src/layouts/dashboard/layout';
 import { SettingsSignOut } from 'src/sections/settings/settings-sign-out';
 import { PageTitle } from 'src/components/page-title';
+import { SettingsDeleteAccount } from 'src/sections/settings/settings-delete-account';
 
 const Page = () => (
   <>
@@ -12,6 +13,7 @@ const Page = () => (
     <Stack spacing={3}>
       <SettingsPassword />
       <SettingsSignOut />
+      <SettingsDeleteAccount />
     </Stack>
   </>
 );
