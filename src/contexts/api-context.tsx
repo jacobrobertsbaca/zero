@@ -188,7 +188,7 @@ type ApiProviderProps = {
 }
 
 export const ApiProvider = ({ children }: ApiProviderProps) => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const token = user?.token;
 
   const api: ApiContextType = {
@@ -287,6 +287,7 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
 
     async deleteAccount() {
       await httpDelete(`/account`, { token });
+      await signOut();
     },
   };
 

@@ -1,5 +1,4 @@
 import { Button, Card, CardHeader } from "@mui/material";
-import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
 import { DeleteDialog } from "src/components/delete-dialog";
 import { useApi } from "src/hooks/use-api";
@@ -8,16 +7,9 @@ import { wrapAsync } from "src/utils/wrap-errors";
 export const SettingsDeleteAccount = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const openModal = useCallback(() => setDeleteModal(true), []);
-  const closeModal = useCallback(() => setDeleteModal(false), []);
+  const closeModal = useCallback(() => setDeleteModal(false), []); 
   const { deleteAccount } = useApi();
-  const router = useRouter();
-
-  const onDelete = useCallback(async () => {
-    await wrapAsync(async () => {
-      await deleteAccount();
-      router.push("/");
-    });
-  }, [router]);
+  const onDelete = async () => await wrapAsync(deleteAccount);
 
   return (
     <Card sx={{ pb: 2 }}>
