@@ -50,7 +50,7 @@ const Page = () => {
   const onStarTrx = useCallback((trx: Transaction, star: boolean) => {
     starTransaction(trx, star, (err) => {
       console.log(err);
-      enqueueSnackbar(`Failed to ${star ? "star" : "unstar"} transaction`);
+      enqueueSnackbar(`Failed to ${star ? "star" : "unstar"} transaction`, { variant: "error" });
       refreshTransactions();
     });
     refreshTransactions();
