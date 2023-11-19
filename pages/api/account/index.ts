@@ -8,6 +8,7 @@ router.delete(route({
   async handler(req, res) {
     const { error } = await supabase.auth.admin.deleteUser(req.user.id);
     if (error) throw new HttpError(error.status ?? 500, error.message);
+    res.status(204).end();
   }
 }));
 
