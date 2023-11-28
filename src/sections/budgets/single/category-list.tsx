@@ -1,25 +1,19 @@
 import {
-  Box,
-  Card,
-  CardHeader,
   Stack,
   SvgIcon,
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableRow,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { Scrollbar } from "src/components/scrollbar";
 import { Budget, BudgetStatus } from "src/types/budget/types";
 import { BudgetViewSelector, BudgetView } from "./budget-view-selector";
 import { useCallback, useState } from "react";
 import {
-  categoryActive,
   categoryActiveIndex,
   categoryActual,
   categoryDefault,
@@ -31,7 +25,6 @@ import { SpendingBar } from "../common/spending-bar";
 import { Category } from "src/types/category/types";
 import { budgetStatus } from "src/types/budget/methods";
 import { PeriodTooltip } from "../common/period-tooltip";
-import { BudgetSummaryList } from "./budget-summary-list";
 import { moneySum } from "src/types/money/methods";
 
 import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
@@ -44,9 +37,6 @@ type CategoryRowProps = {
 };
 
 const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
-  const theme = useTheme();
-  const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
-
   const activeIndex = categoryActiveIndex(category);
   const activePeriod = category.periods[activeIndex];
   const rollovers = categoryRollover(category);
@@ -70,7 +60,7 @@ const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
         </TableCell>
       )}
       <TableCell>
-        <SpendingBar actual={actual} nominal={nominal} remaining stacked={mobile && state === BudgetView.Current} />
+        <SpendingBar actual={actual} nominal={nominal} remaining />
       </TableCell>
     </TableRow>
   );
