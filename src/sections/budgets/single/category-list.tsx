@@ -11,6 +11,8 @@ import {
   TableHead,
   TableRow,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { Scrollbar } from "src/components/scrollbar";
 import { Budget, BudgetStatus } from "src/types/budget/types";
@@ -42,6 +44,9 @@ type CategoryRowProps = {
 };
 
 const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
+  const theme = useTheme();
+  const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
+
   const activeIndex = categoryActiveIndex(category);
   const activePeriod = category.periods[activeIndex];
   const rollovers = categoryRollover(category);
@@ -65,7 +70,7 @@ const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
         </TableCell>
       )}
       <TableCell>
-        <SpendingBar actual={actual} nominal={nominal} remaining />
+        <SpendingBar actual={actual} nominal={nominal} remaining stacked={mobile && state === BudgetView.Current} />
       </TableCell>
     </TableRow>
   );
@@ -109,12 +114,7 @@ export const CategoryList = ({ budget, onCategoryClicked }: CategoryListProps) =
         </TableHead>
         <TableBody>
           {budget.categories.map((category) => (
-            <CategoryRow 
-              key={category.id} 
-              state={state} 
-              category={category} 
-              onClick={onCategoryClicked} 
-              />
+            <CategoryRow key={category.id} state={state} category={category} onClick={onCategoryClicked} />
           ))}
           <TableRow hover sx={{ cursor: "pointer" }} onClick={onAddCategory}>
             <TableCell colSpan={3} align="center">
