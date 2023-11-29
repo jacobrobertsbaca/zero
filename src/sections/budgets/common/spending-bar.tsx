@@ -1,4 +1,4 @@
-import { Box, LinearProgress, Stack, Typography } from "@mui/material";
+import { Box, LinearProgress, Stack, Typography, linearProgressClasses } from "@mui/material";
 import { useCallback } from "react";
 import { InfoTooltip } from "src/components/info-tooltip";
 import { MoneyText } from "src/components/money-text";
@@ -7,9 +7,10 @@ import { moneyAbs, moneyFactor, moneySub, RoundingMode } from "src/types/money/m
 
 type SpendingBarProps = ActualNominal & {
   remaining?: boolean | React.ReactNode;
+  warn?: boolean;
 };
 
-export const SpendingBar = ({ actual, nominal, remaining }: SpendingBarProps) => {
+export const SpendingBar = ({ actual, nominal, remaining, warn }: SpendingBarProps) => {
   const getValue = useCallback(() => {
     if (nominal.amount === 0) return actual.amount > 0 ? 100 : 0;
     if ((nominal.amount < 0 && actual.amount < 0) || (nominal.amount > 0 && actual.amount > 0))
@@ -44,10 +45,23 @@ export const SpendingBar = ({ actual, nominal, remaining }: SpendingBarProps) =>
     );
   }, [actual, nominal]);
 
+  const shouldWarn = (() => {
+    if (nominal.amount >= 0) return actual.amount - nominal.amount > 0;
+    return actual.amount - nominal.amount < 0;
+  })();
+
   return (
     <Box>
-      <LinearProgress variant="determinate" value={getValue()} />
-      <Stack direction="row" flexWrap="wrap" mt={0.5}  justifyContent="space-between">
+      <LinearProgress
+        variant="determinate"
+        value={getValue()}
+        sx={{
+          [`& .${linearProgressClasses.barColorPrimary}`]: {
+            backgroundColor: warn && shouldWarn ? (theme) => theme.palette.error.main : undefined,
+          },
+        }}
+      />
+      <Stack direction="row" flexWrap="wrap" mt={0.5} justifyContent="space-between">
         <Typography variant="caption">
           <MoneyText variant="inherit" fontWeight={700} amount={actual} round={RoundingMode.RoundZero} /> of&nbsp;
           <MoneyText variant="inherit" amount={nominal} round={RoundingMode.RoundZero} />

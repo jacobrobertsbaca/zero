@@ -22,7 +22,7 @@ import {
   categoryTitle,
 } from "src/types/category/methods";
 import { SpendingBar } from "../common/spending-bar";
-import { Category } from "src/types/category/types";
+import { Category, CategoryType } from "src/types/category/types";
 import { budgetStatus } from "src/types/budget/methods";
 import { PeriodTooltip } from "../common/period-tooltip";
 import { moneySum } from "src/types/money/methods";
@@ -60,7 +60,7 @@ const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
         </TableCell>
       )}
       <TableCell>
-        <SpendingBar actual={actual} nominal={nominal} remaining />
+        <SpendingBar actual={actual} nominal={nominal} remaining warn={category.type !== CategoryType.Income} />
       </TableCell>
     </TableRow>
   );
