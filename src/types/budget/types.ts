@@ -15,18 +15,20 @@ export type ActualNominal = Immutable<{
   nominal: Money;
 }>;
 
-export type CategorySummary = ActualNominal & Immutable<{
+export type CategorySummary = Immutable<ActualNominal & {
   /**
    * The {@link CategoryType} this summarizes.
-   * If null, represents leftover amounts in the budget (i.e. unassigned income).
+   * If `undefined`, represents leftover amounts in the budget (i.e. unassigned income).
    */
-  type: CategoryType;
+  type?: CategoryType;
+
+  /**
+   * A human readable title for this category.
+   */
+  title: string;
 }>;
 
-export type BudgetSummary = Immutable<{
-  leftovers?: ActualNominal,
-  categories: CategorySummary[]
-}>;
+export type BudgetSummary = Immutable<CategorySummary[]>;
 
 export enum BudgetStatus {
   Active = 0,

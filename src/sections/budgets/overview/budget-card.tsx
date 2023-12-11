@@ -2,10 +2,8 @@ import { Card, CardActionArea, CardContent, Chip, Unstable_Grid2 as Grid, Stack,
 
 import { Budget, BudgetStatus } from "src/types/budget/types";
 import { dateFormat } from "src/types/utils/methods";
-import { budgetStatus, budgetSummaryMerged } from "src/types/budget/methods";
-import { CategoryType } from "src/types/category/types";
-import { useCallback, useState } from "react";
-import { BudgetViewSelector, BudgetView } from "../single/budget-view-selector";
+import { budgetStatus } from "src/types/budget/methods";
+import { useCallback } from "react";
 import { BudgetCardDetails } from "./budget-card-details";
 import { useRouter } from "next/router";
 
@@ -16,7 +14,6 @@ type BudgetCardProps = {
 export default function BudgetCard({ budget }: BudgetCardProps) {
   const router = useRouter();
   const status = budgetStatus(budget);
-  const summary = budgetSummaryMerged(budget, CategoryType.Savings);
   
   const onCardClicked = useCallback((event: React.MouseEvent<HTMLElement>) => {
     router.push(`/budgets/${budget.id}`);
@@ -42,7 +39,7 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
             <Typography variant="subtitle2" color="text.secondary">
               {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
             </Typography>
-            <BudgetCardDetails budget={budget} summary={summary} />
+            <BudgetCardDetails budget={budget} />
           </CardContent>
         </CardActionArea>
       </Card>

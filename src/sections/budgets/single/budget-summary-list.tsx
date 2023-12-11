@@ -13,17 +13,13 @@ type BudgetSummaryListProps = {
 type SummaryItem = ActualNominal & { title: string };
 
 export const BudgetSummaryList = ({ budget }: BudgetSummaryListProps) => {
-  const { categories, leftovers } = budgetSummary(budget);
-  const items: SummaryItem[] = [];
-  categories.forEach((c) => items.push({ title: categoryTitle(c.type), actual: c.actual, nominal: c.nominal }));
-  if (leftovers) items.push({ title: "Leftovers", actual: leftovers.actual, nominal: leftovers.nominal });
-
+  const summary = budgetSummary(budget);
   const theme = useTheme();
   const mobile = !useMediaQuery(theme.breakpoints.up('sm'));
 
   return (
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} >
-      {items.map((item, index) => (
+      {summary.map((item, index) => (
         <Fragment key={item.title}>
           <Stack justifyItems="center">
             <Typography variant="caption" color="text.secondary">
@@ -35,7 +31,7 @@ export const BudgetSummaryList = ({ budget }: BudgetSummaryListProps) => {
               <MoneyText variant="inherit" amount={item.nominal} round={RoundingMode.RoundZero} />
             </Typography>
           </Stack>
-          {index < items.length - 1 && <Divider orientation={mobile ? "horizontal" : "vertical"} flexItem />}
+          {index < summary.length - 1 && <Divider orientation={mobile ? "horizontal" : "vertical"} flexItem />}
         </Fragment>
       ))}
     </Stack>
