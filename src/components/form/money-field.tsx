@@ -56,7 +56,7 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setRaw(maskCurrency(raw, event.currentTarget.value));
+      setRaw(maskCurrency(raw, event.target.value));
     },
     [raw]
   );

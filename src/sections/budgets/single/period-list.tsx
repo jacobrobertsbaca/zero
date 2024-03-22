@@ -40,8 +40,11 @@ export const PeriodList = ({ category }: PeriodListProps) => {
     return index === activeIndex;
   };
 
+  let defaultPage = activeIndex < rows.length ? Math.floor(activeIndex / 10) : 0;
+  if (includeLater && activeIndex === rows.length - 1) defaultPage = 0;
+
   return (
-    <PaginatedTable rows={rows} rowsPerPageOptions={[10]} defaultPage={Math.floor(activeIndex / 10)}>
+    <PaginatedTable rows={rows} rowsPerPageOptions={[10]} defaultPage={defaultPage}>
       <TableHead>
         <TableRow>
           <TableCell>Period</TableCell>

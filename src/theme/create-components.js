@@ -190,6 +190,15 @@ export function createComponents(config) {
         }
       }
     },
+    MuiSelect: {
+      styleOverrides: {
+        select: {
+          "&:focus": {
+            backgroundColor: "transparent"
+          },
+        }
+      }
+    },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
