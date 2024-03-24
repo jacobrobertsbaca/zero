@@ -75,109 +75,6 @@ const httpGet     = <T,>(path: string, options: HTTPGetOptions = {}) => {
 }
 
 /* ================================================================================================================= *
- * Cache Implementations                                                                                             *
- * ================================================================================================================= */
-
-class Cache<T> {
-  private cache: Map<string, T> | undefined = undefined;
-
-  /**
-   * Invalidates the cache.
-   * @param id If specified, invalidates only the given id, not the entire cache.
-   */
-  invalidate(id?: string): void {
-    if (!this.cache) return;
-    if (id) this.cache.delete(id);
-    else this.cache = undefined;
-  }
-
-  /**
-   * Invalidates item in the cache matching a condition.
-   * @param pred A predicate to match items on, accepting both the item and its id.
-   */
-  invalidateWhere(pred: (value: T, id: string) => boolean): void {
-    if (!this.cache) return;
-    for (const id of [...this.cache.keys()]) {
-      if (pred(this.cache.get(id)!, id))
-        this.cache.delete(id);
-    }
-  }
-
-  /**
-   * Adds an item to the cache.
-   * @param id The id of the item.
-   * @param value The value of the item
-   */
-  add(id: string, value: T): void {
-    if (!this.cache) this.cache = new Map();
-    this.cache.set(id, value);
-  }
-
-  /**
-   * Checks if an item is in the cache.
-   * @param id The id of the item to check. If undefined, checks if the cache itself has any items.
-   */
-  has(id?: string): boolean {
-    if (!this.cache) return false;
-    if (id) return this.cache.has(id);
-    return true;
-  }
-
-  /**
-   * Gets an item by id from the cache, or undefined it doesn't exist.
-   * @param id The id of the item to retrieve
-   */
-  get(id: string): T {
-    if (!this.cache) throw Error("No items in cache!");
-    if (!this.has(id)) throw Error(`No item in cache with id ${id}`);
-    return this.cache.get(id)!;
-  }
-  
-  /**
-   * Gets all items in the cache.
-   */
-  getAll() : T[] {
-    if (!this.cache) return [];
-    return Array.from(this.cache.values());
-  }
-
-  /**
-   * Sorts the items in the cache by their values
-   */
-  sortValues(compareFn?: (a: T, b: T) => number) : void {
-    if (!this.cache) return;
-    const compare = compareFn ? (a: [string, T], b: [string, T]) => compareFn(a[1], b[1]) : compareFn; 
-    this.cache = new Map([...this.cache.entries()].sort(compare));
-  }
-};
-
-const budgetCache = new Cache<Budget>();
-const transactionCache = new Cache<Transaction>();
-
-const placeTransaction = (trx: Transaction, remove: boolean) => {
-  if (remove) transactionCache.invalidate(trx.id);
-  else transactionCache.add(trx.id, trx);
-  if (!budgetCache.has(trx.budget)) return;
-  const budget = budgetCache.get(trx.budget);
-  const categoryIndex = budget.categories.findIndex(c => c.id === trx.category);
-  if (categoryIndex < 0) return;
-  const category = budget.categories[categoryIndex];
-
-  for (let periodIndex = 0; periodIndex < category.periods.length; periodIndex++) {
-    const period = category.periods[periodIndex];
-    if (datesContains(period.dates, trx.date)) {
-      const alteredBudget = produce(budget, (draft) => {
-        draft.categories[categoryIndex].periods[periodIndex].actual = remove
-          ? moneySub(period.actual, trx.amount)
-          : moneySum(period.actual, trx.amount);
-      });
-      budgetCache.add(budget.id, alteredBudget);
-      break;
-    }
-  }
-};
-
-/* ================================================================================================================= *
  * Context Implementation                                                                                            *
  * ================================================================================================================= */
 
@@ -193,71 +90,35 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
 
   const api: ApiContextType = {
     async getBudgets() {
-      if (budgetCache.has()) return budgetCache.getAll();
-      const budgets: Budget[] = await httpGet("/budgets", { token });
-      for (const budget of budgets)
-        budgetCache.add(budget.id, budget);
-      return budgets;
+      return await httpGet("/budgets", { token });
     },
 
     async getBudget(id) {
-      if (budgetCache.has(id)) return budgetCache.get(id);
-      const budget: Budget = await httpGet(`/budgets/${id}`, { token });
-      budgetCache.add(budget.id, budget);
-      return budget;
+      return await httpGet(`/budgets/${id}`, { token });
     },
 
     async putBudget(budget) {
-      budget = await httpPut(`/budgets`, { token, data: { budget }});
-      budgetCache.add(budget.id, budget);
-      budgetCache.sortValues(budgetCompare);
-      return budget;
+      return await httpPut(`/budgets`, { token, data: { budget }});
     },
 
     async deleteBudget(budget) {
       await httpDelete(`/budgets/${budget.id}`, { token });
-      budgetCache.invalidate(budget.id);
-      transactionCache.invalidateWhere((trx) => trx.budget === budget.id);
     },
 
     async putCategory(budgetID, category) {
-      category = await httpPut(`/budgets/${budgetID}/categories`, { token, data: { category }});
-      if (budgetCache.has(budgetID)) {
-        budgetCache.add(budgetID, produce(budgetCache.get(budgetID), (draft) => {
-          const index = draft.categories.findIndex(c => c.id === category.id);
-          if (index >= 0)
-            draft.categories[index] = category as Draft<Category>;
-          else draft.categories.push(category as Draft<Category>);
-        }));
-      }
-      return category;
+      return await httpPut(`/budgets/${budgetID}/categories`, { token, data: { category }});
     },
 
     async deleteCategory(budgetID, categoryID) {
       await httpDelete(`/budgets/${budgetID}/categories/${categoryID}`, { token });
-      if (budgetCache.has(budgetID)) {
-        budgetCache.add(budgetID, produce(budgetCache.get(budgetID), (draft) => {
-          const index = draft.categories.findIndex(c => c.id === categoryID);
-          if (index >= 0) draft.categories.splice(index, 1);
-        }));
-      }
-      transactionCache.invalidateWhere((trx) => trx.category === categoryID);
     },
 
     async getTransactions() {
-      if (transactionCache.has()) return transactionCache.getAll();
-      const transactions: Transaction[] = await httpGet("/transactions", { token });
-      for (const trx of transactions)
-        transactionCache.add(trx.id, trx);
-      return transactions;
+      return await httpGet("/transactions", { token });
     },
 
     async putTransaction(trx) {
-      trx = await httpPut("/transactions", { token, data: { transaction: trx }});
-      if (transactionCache.has(trx.id)) placeTransaction(transactionCache.get(trx.id), true);
-      placeTransaction(trx, false);
-      transactionCache.sortValues(transactionCompare);
-      return trx;
+      return await httpPut("/transactions", { token, data: { transaction: trx }});
     },
 
     starTransaction(trx, starred, onFailure) {
@@ -265,16 +126,12 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
         draft.starred = starred;
         draft.lastModified = new Date().toISOString();
       });
-      transactionCache.add(trx.id, newTrx);
-      transactionCache.sortValues(transactionCompare);
 
       /* Asynchronously star transaction on backend, report error if it fails */
       (async () => {
         try {
           await api.putTransaction(newTrx);
         } catch (err) {
-          transactionCache.add(trx.id, trx);
-          transactionCache.sortValues(transactionCompare);
           onFailure(err);
         }
       })();
@@ -282,7 +139,6 @@ export const ApiProvider = ({ children }: ApiProviderProps) => {
 
     async deleteTransaction(trx) {
       await httpDelete(`/transactions/${trx.id}`, { token });
-      placeTransaction(trx, true);
     },
 
     async deleteAccount() {
