@@ -7,6 +7,7 @@ import { Category } from "src/types/category/types";
 import { Transaction } from "src/types/transaction/types";
 import { http } from "src/utils/http";
 import { transactionCompare } from "src/types/transaction/methods";
+import { wrapAsync } from "src/utils/wrap-errors";
 
 const fetcher = (token?: string) => (path: string) => http(path, "GET", { token }) as any;
 
@@ -174,13 +175,17 @@ export const useTransactions = () => {
   const putTransaction = useCallback(
     async (trx: Transaction) =>
       mutate(
-        async (cache) => {
-          trx = await http("/transactions", "PUT", { token, data: { transaction: trx } });
+        (cache) => {
+          /* Asynchronously update transaction, rolling back on failure */
+          wrapAsync(
+            () => http("/transactions", "PUT", { token, data: { transaction: trx } }),
+            () => mutate(cache)
+          );
           return placeTransaction(cache, trx);
         },
         {
-          optimisticData: (cache) => placeTransaction(cache, trx) ?? [],
-          revalidate: false
+          optimisticData: (cache, display) => placeTransaction(display, trx) ?? [],
+          revalidate: false,
         }
       ),
     [mutate]
@@ -189,13 +194,17 @@ export const useTransactions = () => {
   const deleteTransaction = useCallback(
     async (trx: Transaction) =>
       mutate(
-        async (cache) => {
-          await http(`/transactions/${trx.id}`, "DELETE", { token });
+        (cache) => {
+          /* Asynchronously update transaction, rolling back on failure */
+          wrapAsync(
+            () => http(`/transactions/${trx.id}`, "DELETE", { token }),
+            () => mutate(cache)
+          );
           return placeTransaction(cache, trx.id);
         },
         {
-          optimisticData: (cache) => placeTransaction(cache, trx.id) ?? [],
-          revalidate: false
+          optimisticData: (cache, display) => placeTransaction(display, trx.id) ?? [],
+          revalidate: false,
         }
       ),
     [mutate]

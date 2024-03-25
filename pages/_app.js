@@ -9,8 +9,9 @@ import { useNProgress } from "src/hooks/use-nprogress";
 import { createTheme } from "src/theme";
 import { createEmotionCache } from "src/utils/create-emotion-cache";
 import "simplebar-react/dist/simplebar.min.css";
-import { SnackbarProvider } from "notistack";
+import { SnackbarProvider, enqueueSnackbar } from "notistack";
 import { Grid } from "@mui/material";
+import { SWRConfig } from "swr";
 
 const clientSideEmotionCache = createEmotionCache();
 
@@ -49,9 +50,17 @@ const App = (props) => {
           <ThemeProvider theme={theme}>
             <CssBaseline />
             <SnackbarProvider>
-              <AuthConsumer>
-                {(auth) => (auth.loading ? <SplashScreen /> : getLayout(<Component {...pageProps} />))}
-              </AuthConsumer>
+              <SWRConfig
+                value={{
+                  onError(err) {
+                    enqueueSnackbar(err?.message ?? "An error occurred", { variant: "error" });
+                  },
+                }}
+              >
+                <AuthConsumer>
+                  {(auth) => (auth.loading ? <SplashScreen /> : getLayout(<Component {...pageProps} />))}
+                </AuthConsumer>
+              </SWRConfig>
             </SnackbarProvider>
           </ThemeProvider>
         </AuthProvider>
