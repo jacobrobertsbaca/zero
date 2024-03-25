@@ -1,26 +1,45 @@
-import { Box, CircularProgress, Divider, Stack } from "@mui/material";
+import { Box, CircularProgress, Divider, Stack, Typography } from "@mui/material";
 
-type LoadingProps<T> = {
-  value: T;
-  children: React.ReactNode | ((value: NonNullable<T>) => React.ReactNode);
+type LoadingPropsBase = {
+  error?: any;
 };
 
-export const Loading = <T,>({ value, children }: LoadingProps<T>) => {
-  if (!value)
-    return (
-      <Box>
-        <Divider />
-        <Stack
-          direction="column"
-          alignItems="center"
-          justifyContent="center"
-          sx={{ height: 50, my: 5 }}
-        >
-          <CircularProgress size={24} />
-        </Stack>
-        <Divider />
-      </Box>
-    );
+type LoadingPropsWithoutValue = {
+  loading?: boolean;
+  children?: React.ReactNode;
+};
 
-  return <>{typeof children === "function" ? children(value) : children}</>;
+type LoadingPropsWithValue<T> = {
+  value: T;
+  children: (value: NonNullable<T>) => React.ReactNode;
+};
+
+export type LoadingProps<T = unknown> = LoadingPropsBase & (LoadingPropsWithoutValue | LoadingPropsWithValue<T>);
+
+export const Loading = <T,>(props: LoadingProps<T>) => {
+  const { error } = props;
+  if (typeof props.children === "function") {
+    const { value } = props as LoadingPropsWithValue<T>;
+    if (value) return <>{props.children(value)}</>;
+  } else {
+    const { loading } = props as LoadingPropsWithoutValue;
+    if (loading !== undefined && !loading) return <>{props.children}</>;
+  }
+
+  return (
+    <Box>
+      <Divider />
+      <Stack direction="column" alignItems="center" justifyContent="center" sx={{ height: 50, my: 5 }}>
+        {error ? (
+          <Stack alignItems="center">
+            <Typography variant="inherit">😱 Oops. An error occurred.</Typography>
+            {error.message && <Typography variant="caption" color="text.secondary">{error.message}</Typography>}
+          </Stack>
+        ) : (
+          <CircularProgress size={24} />
+        )}
+      </Stack>
+      <Divider />
+    </Box>
+  );
 };

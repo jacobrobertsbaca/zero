@@ -1,4 +1,4 @@
-import { Box, Card, IconButton, Stack, SvgIcon, Unstable_Grid2 as Grid } from "@mui/material";
+import { Box, Card, IconButton, Stack, SvgIcon, Unstable_Grid2 as Grid, Skeleton } from "@mui/material";
 import { Loading } from "src/components/loading";
 import { PageTitle } from "src/components/page-title";
 import { useBudgets } from "src/hooks/use-api";
@@ -29,41 +29,46 @@ const NoBudgetsOverlay = () => (
 
 const Page = () => {
   const router = useRouter();
-  const { result } = useBudgets();
+  const { budgets, error } = useBudgets();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <Loading value={result}>
-      {(budgets) => (
-        <>
-          <Stack direction="row" alignItems="normal" spacing={0.5}>
-            <PageTitle title="Budgets" />
-            <Box>
-              <IconButton color="inherit" onClick={() => setSidebarOpen(true)}>
-                <SvgIcon>
-                  <PlusIcon />
-                </SvgIcon>
-              </IconButton>
-            </Box>
-          </Stack>
+    <>
+      <Stack direction="row" alignItems="normal" spacing={0.5}>
+        <PageTitle title="Budgets" />
+        <Box>
+          <IconButton color="inherit" onClick={() => setSidebarOpen(true)}>
+            <SvgIcon>
+              <PlusIcon />
+            </SvgIcon>
+          </IconButton>
+        </Box>
+      </Stack>
+      <Loading value={budgets} error={error}>
+        {(budgets) => (
           <Grid container spacing={4}>
             {budgets.length === 0 && <NoBudgetsOverlay />}
-            {budgets.map((b) => <BudgetCard key={b.id} budget={b} />)}
+            {budgets.map((b) => (
+              <BudgetCard key={b.id} budget={b} />
+            ))}
           </Grid>
-          <BudgetSidebar
-            budget={{
-              id: "",
-              name: "",
-              dates: { begin: null, end: null } as unknown as Dates,
-              categories: [],
-            }}
-            open={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-            onUpdate={(budget) => router.push(`/budgets/${budget.id}`)}
-          />
-        </>
-      )}
-    </Loading>
+        )}
+      </Loading>
+      <BudgetSidebar
+        budget={{
+          id: "",
+          name: "",
+          dates: { begin: null, end: null } as unknown as Dates,
+          categories: [],
+        }}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onUpdate={(budget) => {
+          router.push(`/budgets/${budget.id}`);
+          return false;
+        }}
+      />
+    </>
   );
 };
 

@@ -2,14 +2,14 @@ import { Button, Card, CardHeader } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { useCallback, useState } from "react";
 import { DeleteDialog } from "src/components/delete-dialog";
-import { useApi } from "src/hooks/use-api";
+import { useAuth } from "src/hooks/use-auth";
 import { wrapAsync } from "src/utils/wrap-errors";
 
 export const SettingsDeleteAccount = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const openModal = useCallback(() => setDeleteModal(true), []);
   const closeModal = useCallback(() => setDeleteModal(false), []);
-  const { deleteAccount } = useApi();
+  const { deleteAccount, user } = useAuth();
   const onDelete = async () => {
     await wrapAsync(async () => {
       await deleteAccount();

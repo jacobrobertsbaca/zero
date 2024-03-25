@@ -26,7 +26,7 @@ import { RecurrencePicker } from "./recurrence-picker";
 import { Budget } from "src/types/budget/types";
 import { RolloverPicker } from "./rollover-picker";
 import * as Yup from "yup";
-import { useApi } from "src/hooks/use-api";
+import { useCategoryChanges } from "src/hooks/use-api";
 import { Sidebar } from "src/components/sidebar/sidebar";
 import { SidebarHeader } from "src/components/sidebar/sidebar-header";
 import { DeleteDialog } from "src/components/delete-dialog";
@@ -126,7 +126,7 @@ type CategorySidebarProps = {
 
 export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onDelete }: CategorySidebarProps) => {
   const [editState, setEditState] = useState(EditState.View);
-  const { putCategory, deleteCategory } = useApi();
+  const { putCategory, deleteCategory } = useCategoryChanges();
 
   const [deleteModal, setDeleteModal] = useState(false);
   const openModal = useCallback(() => setDeleteModal(true), []);

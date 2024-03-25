@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useCallback, useState, useEffect } from "react";
 import { Loading } from "src/components/loading";
 import { PageTitle } from "src/components/page-title";
-import { useBudget } from "src/hooks/use-api";
+import { useBudget, useBudgetChanges } from "src/hooks/use-api";
 import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
 import { BudgetSummaryList } from "src/sections/budgets/single/budget-summary-list";
 import { CategoryList } from "src/sections/budgets/single/category-list";
@@ -17,12 +17,12 @@ import { BudgetSidebar } from "src/sections/budgets/common/budget-sidebar";
 
 const Page = () => {
   const router = useRouter();
-  const { loading, result, refresh } = useBudget(router.query.id as string);
+  const { budget, error } = useBudget(router.query.id as string);
 
   /* Render 404 when we fail to load budget */
-  useEffect(() => {
-    if (!loading && !result) router.replace("/404");
-  }, [loading, result, router]);
+  // useEffect(() => {
+  //   if (error) router.replace("/404");
+  // }, [error]);
 
   /* Sidebar state. Use dummy category to ensure non-null */
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -34,51 +34,46 @@ const Page = () => {
     setSidebarOpen(true);
   }, []);
 
+  if (!budget) return <Loading error={error} />;
+
   return (
-    <Loading value={result}>
-      {(budget) => (
-        <>
-          <Stack direction="row" alignItems="normal" spacing={0.5}>
-            <PageTitle title={budget.name} />
-            <Box>
-              <IconButton color="inherit" onClick={() => setDetailsSidebarOpen(true)}>
-                <SvgIcon>
-                  <PencilSquareIcon />
-                </SvgIcon>
-              </IconButton>
-            </Box>
-          </Stack>
-          <Stack spacing={3}>
-            <Typography variant="subtitle1" color="text.secondary">
-              {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
-            </Typography>
-            <BudgetSummaryList budget={budget} />
-            <CategoryList budget={budget} onCategoryClicked={onCategoryClicked} />
-          </Stack>
-          <CategorySidebar
-            open={sidebarOpen}
-            budget={budget}
-            category={sidebarCategory}
-            onClose={() => setSidebarOpen(false)}
-            onUpdate={(category) => {
-              refresh();
-              setSidebarCategory(category);
-            }}
-            onDelete={() => {
-              refresh();
-              setSidebarOpen(false);
-            }}
-          />
-          <BudgetSidebar
-            budget={budget}
-            open={detailsSidebarOpen}
-            onClose={() => setDetailsSidebarOpen(false)}
-            onUpdate={() => refresh()}
-            onDelete={() => router.replace("/budgets") }
-          />
-        </>
-      )}
-    </Loading>
+    <>
+      <Stack direction="row" alignItems="normal" spacing={0.5}>
+        <PageTitle title={budget.name} />
+        <Box>
+          <IconButton color="inherit" onClick={() => setDetailsSidebarOpen(true)}>
+            <SvgIcon>
+              <PencilSquareIcon />
+            </SvgIcon>
+          </IconButton>
+        </Box>
+      </Stack>
+      <Stack spacing={3}>
+        <Typography variant="subtitle1" color="text.secondary">
+          {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
+        </Typography>
+        <BudgetSummaryList budget={budget} />
+        <CategoryList budget={budget} onCategoryClicked={onCategoryClicked} />
+      </Stack>
+      <CategorySidebar
+        open={sidebarOpen}
+        budget={budget}
+        category={sidebarCategory}
+        onClose={() => setSidebarOpen(false)}
+        onUpdate={(category) => {
+          setSidebarCategory(category);
+        }}
+        onDelete={() => {
+          setSidebarOpen(false);
+        }}
+      />
+      <BudgetSidebar
+        budget={budget}
+        open={detailsSidebarOpen}
+        onClose={() => setDetailsSidebarOpen(false)}
+        onDelete={() => router.replace("/budgets")}
+      />
+    </>
   );
 };
 
