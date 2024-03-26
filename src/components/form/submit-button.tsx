@@ -1,13 +1,14 @@
 import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import { useFormikContext } from "formik";
 
-export const SubmitButton = (props: LoadingButtonProps) => {
-  const { children } = props;
-  const { isSubmitting } = useFormikContext();
+export const SubmitButton = (props: { disableIfInvalid?: boolean } & LoadingButtonProps) => {
+  const { disableIfInvalid, children } = props;
+  const { isSubmitting, isValid } = useFormikContext();
   return <LoadingButton 
     variant="contained"
     type="submit"
     loading={isSubmitting}
+    disabled={disableIfInvalid && !isValid}
     {...props}
   >
     {

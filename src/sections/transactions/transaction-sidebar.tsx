@@ -14,7 +14,6 @@ import { Transaction } from "src/types/transaction/types";
 import { dateFormat } from "src/types/utils/methods";
 import * as Yup from "yup";
 import { CategorySelector } from "./category-selector";
-import { useApi } from "src/hooks/use-api";
 import { closeSnackbar, enqueueSnackbar, SnackbarKey } from "notistack";
 import { produce } from "immer";
 import { LoadingButton, loadingButtonClasses } from "@mui/lab";
@@ -23,7 +22,7 @@ import { wrapAsync } from "src/utils/wrap-errors";
 type UndoDeleteButtonProps = {
   snackbar: SnackbarKey;
   transaction: Transaction;
-  update: (trx: Transaction) => Promise<void>;
+  update: (trx: Transaction) => void | Promise<void>;
 };
 
 const StyledLoadingButton = styled(LoadingButton)(({ theme }) => ({
@@ -63,8 +62,8 @@ type TransactionSidebarProps = {
   budgets: readonly Budget[];
   open: boolean;
   onClose: () => void;
-  onUpdate: (trx: Transaction) => void;
-  onDelete: (trx: Transaction) => void;
+  onUpdate: (trx: Transaction) => void | Promise<void>;
+  onDelete: (trx: Transaction) => void | Promise<void>;
 };
 
 export const TransactionSidebar = ({
@@ -75,7 +74,6 @@ export const TransactionSidebar = ({
   onUpdate,
   onDelete,
 }: TransactionSidebarProps) => {
-  const { putTransaction, deleteTransaction } = useApi();
   const isExisting = !!transaction.id;
 
   const budgetValues = budgets.map((b) => ({
@@ -89,14 +87,6 @@ export const TransactionSidebar = ({
       </Stack>
     ),
   }));
-
-  const updateTransaction = useCallback(
-    async (trx: Transaction) => {
-      trx = await putTransaction(trx);
-      onUpdate(trx);
-    },
-    [putTransaction, onUpdate]
-  );
 
   return (
     <Sidebar
@@ -117,7 +107,7 @@ export const TransactionSidebar = ({
           category: Yup.string().required("You must pick a category!"),
           amount: Yup.mixed().required("You must enter an amount!"),
         }),
-        onSubmit: updateTransaction,
+        onSubmit: onUpdate,
       }}
     >
       {(form) => (
@@ -154,13 +144,12 @@ export const TransactionSidebar = ({
                 dirty={!isEqual(form.values, transaction)}
                 state={EditState.Edit}
                 onDelete={async () => {
-                  await deleteTransaction(transaction);
-                  onDelete(transaction);
+                  await onDelete(transaction);
                   enqueueSnackbar({
                     message: "Transaction deleted",
                     autoHideDuration: 10000,
                     action: (key) => (
-                      <UndoDeleteButton snackbar={key} transaction={transaction} update={updateTransaction} />
+                      <UndoDeleteButton snackbar={key} transaction={transaction} update={onUpdate} />
                     ),
                   });
                 }}

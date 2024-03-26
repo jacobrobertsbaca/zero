@@ -1,8 +1,8 @@
 import { Session } from "@supabase/supabase-js";
 import { Immutable, produce } from "immer";
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
+import { http } from "src/utils/http";
 import { supabase } from "src/utils/supabase";
-import useAsyncEffect from "use-async-effect";
 
 export enum AuthProviders {
   Unknown = "unknown",
@@ -29,6 +29,11 @@ type AuthState = Immutable<{
    * The current user. If undefined, the user is not authenticated 
    */
   user?: AuthUser;
+
+  /**
+   * The user's token. If undefined, the user is not authenticated.
+   */
+  token?: string;
 }>;
 
 type AuthContextType = AuthState & Immutable<{
@@ -37,6 +42,7 @@ type AuthContextType = AuthState & Immutable<{
   signUp(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
   updatePassword(newPassword: string): Promise<void>;
+  deleteAccount(): Promise<void>;
 }>;
 
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -52,7 +58,6 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
   });
 
   const fromSession = (session: Session): void => {
-    session.user.app_metadata
     setState(produce(state, draft => {
       draft.loading = false;
       draft.user = {
@@ -60,19 +65,22 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
         token: session.access_token,
         provider: (session.user.app_metadata.provider ?? "unknown") as AuthProviders
       };
+      draft.token = session.access_token;
     }));
   };
 
-  const onInitialize = async (mounted: () => boolean): Promise<void> => {
-    if (initialized || !mounted()) return;
+  const onInitialize = async (): Promise<void> => {
+    if (initialized) return;
     setInitialized(true);
 
     /* Subscribe to auth events */
     supabase.auth.onAuthStateChange((evt, session) => {
       if (evt === "SIGNED_IN") fromSession(session!);
+      else if (evt === "TOKEN_REFRESHED") fromSession(session!);
       else if (evt === "SIGNED_OUT") setState(produce(state, draft => {
         draft.user = undefined;
         draft.loading = false;
+        draft.token = undefined;
       }));
     });
 
@@ -105,6 +113,7 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     if (error) throw new Error(error.message);
     setState(produce(state, draft => {
       draft.user = undefined;
+      draft.token = undefined;
     }));
   };
 
@@ -114,7 +123,12 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     if (error) throw new Error(error.message);
   };
 
-  useAsyncEffect(onInitialize, []);
+  const deleteAccount = async (): Promise<void> => {
+    await http("/account", "DELETE", { token: state.token });
+    await signOut();
+  };
+
+  useEffect(() => void onInitialize(), []);
 
   return <AuthContext.Provider
     value={{
@@ -123,7 +137,8 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
       signInWithGoogle,
       signUp,
       signOut,
-      updatePassword
+      updatePassword,
+      deleteAccount
     }}>
       {children}
   </AuthContext.Provider>

@@ -50,15 +50,13 @@ const NoTransactionsOverlay = ({ mode }: { mode: "add" | "budgets" | "loading" }
  * ================================================================================================================= */
 
 type TransactionListProps = {
-  transactions?: readonly Transaction[];
+  transactions: readonly Transaction[];
   budgets: readonly Budget[];
-  loading: boolean;
   onTrxSelected: (trx: Transaction) => void;
   onTrxStarred: (trx: Transaction, star: boolean) => void;
 };
 
 export const TransactionList = ({
-  loading,
   transactions,
   budgets,
   onTrxSelected,
@@ -163,7 +161,7 @@ export const TransactionList = ({
       <DataGrid
         autoHeight
         apiRef={apiRef}
-        rows={loading ? [] : transactions ?? []}
+        rows={transactions}
         columns={cols}
         disableColumnMenu
         disableColumnFilter
@@ -176,7 +174,7 @@ export const TransactionList = ({
           toolbar: GridToolbar,
         }}
         slotProps={{
-          noRowsOverlay: { mode: loading ? "loading" : budgets.length > 0 ? "add" : "budgets" } as any,
+          noRowsOverlay: { mode: budgets.length > 0 ? "add" : "budgets" } as any,
           toolbar: {
             showQuickFilter: !mobile,
           },
