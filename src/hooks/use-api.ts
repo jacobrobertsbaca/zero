@@ -7,9 +7,19 @@ import { Category } from "src/types/category/types";
 import { Transaction } from "src/types/transaction/types";
 import { http } from "src/utils/http";
 import { transactionCompare } from "src/types/transaction/methods";
-import { wrapAsync } from "src/utils/wrap-errors";
 
 const fetcher = (token?: string) => (path: string) => http(path, "GET", { token }) as any;
+
+/* ================================================================================================================= *
+ * API Paths & Cache Keys                                                                                            *
+ * ================================================================================================================= */
+
+const ApiBudgets = "/budgets";
+const ApiBudgetsId = (budget: string) => `${ApiBudgets}/${budget}`;
+const ApiBudgetsCategory = (budget: string) => `${ApiBudgetsId(budget)}/categories`;
+const ApiBudgetsCategoryId = (budget: string, category: string) => `${ApiBudgetsCategory(budget)}/${category}`;
+const ApiTransactions = "/transactions";
+const ApiTransactionsId = (trx: string) => `${ApiTransactions}/${trx}`;
 
 /* ================================================================================================================= *
  * API Methods                                                                                                       *
@@ -17,7 +27,12 @@ const fetcher = (token?: string) => (path: string) => http(path, "GET", { token 
 
 export const useBudgets = () => {
   const { token } = useAuth();
-  const { data, error, isLoading } = useSWR<readonly Budget[]>(token ? `/budgets` : null, fetcher(token));
+  const { mutate } = useSWRConfig();
+  const { data, error, isLoading } = useSWR<readonly Budget[]>(token ? ApiBudgets : null, async (path: string) => {
+    const result: readonly Budget[] = await fetcher(token)(path);
+    result.forEach((b) => mutate(ApiBudgetsId(b.id), b, { revalidate: false }));
+    return result;
+  });
   return {
     budgets: data,
     error,
@@ -27,7 +42,7 @@ export const useBudgets = () => {
 
 export const useBudget = (id: string) => {
   const { token } = useAuth();
-  const { data, error, isLoading } = useSWR<Budget>(token ? `/budgets/${id}` : null, fetcher(token));
+  const { data, error, isLoading } = useSWR<Budget>(token ? ApiBudgetsId(id) : null, fetcher(token));
   return {
     budget: data,
     error,
@@ -42,10 +57,10 @@ export const useBudgetChanges = () => {
   const putBudget = useCallback(
     async (budget: Budget) => {
       await mutate(
-        `/budgets/${budget.id}`,
+        ApiBudgetsId(budget.id),
         async () => {
-          budget = await http("/budgets", "PUT", { token, data: { budget } });
-          await mutate(`/budgets`);
+          budget = await http(ApiBudgets, "PUT", { token, data: { budget } });
+          await mutate(ApiBudgets);
           return budget;
         },
         { revalidate: false }
@@ -57,13 +72,12 @@ export const useBudgetChanges = () => {
 
   const deleteBudget = useCallback(
     async (budget: Budget) => {
-      const path = `/budgets/${budget.id}`;
       await mutate(
-        path,
+        ApiBudgetsId(budget.id),
         async () => {
-          await http(path, "DELETE", { token });
-          await mutate(`/budgets`);
-          // TODO: Invalidate transactions
+          await http(ApiBudgetsId(budget.id), "DELETE", { token });
+          await mutate(ApiBudgets);
+          await mutate(ApiTransactions);
           return undefined;
         },
         { revalidate: false }
@@ -82,20 +96,15 @@ export const useCategoryChanges = () => {
   const putCategory = useCallback(
     async (budget: string, category: Category) => {
       await mutate(
-        `/budgets/${budget}`,
+        ApiBudgetsId(budget),
         async (existing?: Budget) => {
-          category = await http(`/budgets/${budget}/categories`, "PUT", { token, data: { category } });
-          await mutate(`/budgets`);
+          category = await http(ApiBudgetsCategory(budget), "PUT", { token, data: { category } });
+          await mutate(ApiBudgets);
           if (!existing) return undefined;
           return produce(existing, (draft) => {
-            for (let i = 0; i < draft.categories.length; i++) {
-              if (draft.categories[i].id === category.id) {
-                draft.categories[i] = category as Draft<Category>;
-                return;
-              }
-            }
-
-            draft.categories.push(category as Draft<Category>);
+            const index = draft.categories.findIndex(c => c.id === category.id);
+            if (index >= 0) draft.categories[index] = category as Draft<Category>;
+            else draft.categories.push(category as Draft<Category>);
           });
         },
         { revalidate: false }
@@ -107,21 +116,16 @@ export const useCategoryChanges = () => {
 
   const deleteCategory = useCallback(
     async (budget: string, category: string) => {
-      const path = `/budgets/${budget}`;
       await mutate(
-        path,
+        ApiBudgetsId(budget),
         async (existing?: Budget) => {
-          await http(`/budgets/${budget}/categories/${category}`, "DELETE", { token });
-          await mutate(`/budgets`);
-          // TODO: Invalidate transactions
+          await http(ApiBudgetsCategoryId(budget, category), "DELETE", { token });
+          await mutate(ApiBudgets);
+          await mutate(ApiTransactions);
           if (!existing) return undefined;
           return produce(existing, (draft) => {
-            for (let i = 0; i < draft.categories.length; i++) {
-              if (draft.categories[i].id === category) {
-                draft.categories.splice(i, 1);
-                return;
-              }
-            }
+            const index = draft.categories.findIndex(c => c.id === category);
+            if (index >= 0) draft.categories.splice(index, 1);
           });
         },
         { revalidate: false }
@@ -136,85 +140,76 @@ export const useCategoryChanges = () => {
 /**
  * Updates the transaction cache with a transaction, returning a new copy of the cache.
  * @param cache The transaction cache.
- * @param trx The transaction to update. If a string is given, deletes the transaction with that id.
+ * @param trx The transaction to update.
+ * @param remove Whether or not to remove the given transaction
  * @returns A copy of the cache.
  */
 const placeTransaction = (
   cache: readonly Transaction[] | undefined,
-  trx: string | Transaction
+  trx: Transaction,
+  remove: boolean
 ): readonly Transaction[] | undefined => {
   if (!cache) return cache;
+  if (!trx.id) return cache;
   return produce(cache, (draft) => {
-    const remove = typeof trx === "string";
-    const id = remove ? trx : trx.id;
-    for (let i = 0; i < draft.length; i++) {
-      if (draft[i].id === id) {
-        if (remove) draft.splice(i, 1);
-        else {
-          draft[i] = trx;
-          draft.sort(transactionCompare);
-        }
-        return;
-      }
+    const index = draft.findIndex(t => t.id === trx.id);
+    if (remove) {
+      if (index >= 0) draft.splice(index, 1);
+      return;
     }
 
-    if (!remove) {
-      draft.push(trx);
-      draft.sort(transactionCompare);
-    }
+    if (index >= 0) draft[index] = trx;
+    else draft.push(trx);
+    draft.sort(transactionCompare);
   });
 };
 
 export const useTransactions = () => {
   const { token } = useAuth();
+  const { mutate: globalMutate } = useSWRConfig();
   const { data, error, isLoading, mutate } = useSWR<readonly Transaction[]>(
-    token ? `/transactions` : null,
+    token ? ApiTransactions : null,
     fetcher(token)
   );
 
-  const putTransaction = useCallback(
-    async (trx: Transaction) =>
-      mutate(
-        (cache) => {
-          /* Asynchronously update transaction, rolling back on failure */
-          wrapAsync(
-            () => http("/transactions", "PUT", { token, data: { transaction: trx } }),
-            () => mutate(cache)
-          );
-          return placeTransaction(cache, trx);
+  const modifyTransaction = useCallback(
+    async (trx: Transaction, remove: boolean) => {
+      await mutate(
+        async (cache) => {
+          if (remove) await http(ApiTransactionsId(trx.id), "DELETE", { token });
+          else {
+            trx = await http(ApiTransactions, "PUT", { token, data: { transaction: trx } });
+            await mutate((cache) => placeTransaction(cache, trx, false), { revalidate: false });
+          }
+          await globalMutate(ApiBudgets);
+          await globalMutate(ApiBudgetsId(trx.budget));
+          return placeTransaction(cache, trx, remove);
         },
-        {
-          optimisticData: (cache, display) => placeTransaction(display, trx) ?? [],
-          revalidate: false,
-        }
-      ),
-    [mutate]
+        { revalidate: false }
+      );
+    },
+    [mutate, globalMutate]
   );
 
-  const deleteTransaction = useCallback(
-    async (trx: Transaction) =>
-      mutate(
-        (cache) => {
-          /* Asynchronously update transaction, rolling back on failure */
-          wrapAsync(
-            () => http(`/transactions/${trx.id}`, "DELETE", { token }),
-            () => mutate(cache)
-          );
-          return placeTransaction(cache, trx.id);
-        },
-        {
-          optimisticData: (cache, display) => placeTransaction(display, trx.id) ?? [],
-          revalidate: false,
-        }
-      ),
-    [mutate]
-  );
+  const starTransaction = useCallback((trx: Transaction, star: boolean) => {
+    mutate(
+      (cache) => {
+        trx = produce(trx, (draft) => {
+          draft.starred = star;
+        });
+        modifyTransaction(trx, false);
+        return placeTransaction(cache, trx, false);
+      },
+      { revalidate: false }
+    );
+  }, []);
 
   return {
     transactions: data,
     error,
     isLoading,
-    putTransaction,
-    deleteTransaction,
+    putTransaction: (trx: Transaction) => modifyTransaction(trx, false),
+    deleteTransaction: (trx: Transaction) => modifyTransaction(trx, true),
+    starTransaction,
   };
 };

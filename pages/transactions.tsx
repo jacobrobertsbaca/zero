@@ -17,7 +17,7 @@ import { produce } from "immer";
 
 const Page = () => {
   const { budgets, error: budgetsError } = useBudgets();
-  const { transactions, error: trxError, putTransaction, deleteTransaction } = useTransactions();
+  const { transactions, error: trxError, putTransaction, deleteTransaction, starTransaction } = useTransactions();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTrx, setSidebarTrx] = useState<Transaction>({
@@ -46,16 +46,6 @@ const Page = () => {
     });
     setSidebarOpen(true);
   }, []);
-
-  const starTrx = useCallback(
-    async (trx: Transaction, star: boolean) =>
-      putTransaction(
-        produce(trx, (draft) => {
-          draft.starred = star;
-        })
-      ),
-    [putTransaction]
-  );
 
   return (
     <>
@@ -94,7 +84,7 @@ const Page = () => {
               setSidebarTrx(trx);
               setSidebarOpen(true);
             }}
-            onTrxStarred={starTrx}
+            onTrxStarred={starTransaction}
           />
         )}
       </Loading>
