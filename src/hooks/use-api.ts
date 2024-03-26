@@ -202,7 +202,7 @@ export const useTransactions = () => {
       },
       { revalidate: false }
     );
-  }, []);
+  }, [mutate, modifyTransaction]);
 
   return {
     transactions: data,
