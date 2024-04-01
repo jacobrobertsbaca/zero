@@ -11,5 +11,7 @@ export const TransactionSchema = z.object({
   name: z.string().trim().max(120),
   lastModified: z.string(),
   starred: z.boolean(),
-  note: z.string().trim().max(1000)
+  note: z.string().trim().max(1000),
 });
+
+export const TransactionCursorSchema = TransactionSchema.partial().merge(TransactionSchema.pick({ id: true }));

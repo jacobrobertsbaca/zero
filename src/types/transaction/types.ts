@@ -29,3 +29,5 @@ export type Transaction = {
   /** An optional note associated with the transaction. */
   note: string;
 };
+
+export type TransactionCursor = Partial<Transaction> & Pick<Transaction, "id">;
