@@ -1,5 +1,7 @@
+import z from "zod";
 import { Money } from "../money/types";
 import { DateString } from "../utils/types";
+import { BaseTransactionFilterSchema } from "./schema";
 
 export type Transaction = {
   /** The unique ID of this transaction. */
@@ -31,3 +33,10 @@ export type Transaction = {
 };
 
 export type TransactionCursor = Partial<Transaction> & Pick<Transaction, "id">;
+
+export type TransactionFilter =
+  | z.infer<typeof BaseTransactionFilterSchema>
+  | {
+      type: "or" | "and";
+      filters: TransactionFilter[];
+    };
