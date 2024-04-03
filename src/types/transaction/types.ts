@@ -40,3 +40,8 @@ export type TransactionFilter =
       type: "or" | "and";
       filters: TransactionFilter[];
     };
+
+export type TransactionSort = {
+  column: keyof Transaction;
+  ascending: boolean;
+}

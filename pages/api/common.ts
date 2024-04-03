@@ -8,7 +8,7 @@ import { budgetCompare } from "src/types/budget/methods";
 import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
-import { Transaction } from "src/types/transaction/types";
+import type { Transaction, TransactionFilter, TransactionSort } from "src/types/transaction/types";
 import { transactionCompare } from "src/types/transaction/methods";
 
 /* ================================================================================================================= *
@@ -381,3 +381,45 @@ export const deleteTransaction = async (owner: string, tid: string): Promise<voi
     })
   );
 };
+
+/* ================================================================================================================= *
+ * Transaction Search                                                                                                *
+ * ================================================================================================================= */
+
+/**
+ * Converts a transaction object key to its associated database column.
+ * @param column The transaction column name
+ */
+const getTrxDbColumn = (column: keyof Transaction): string => {
+  if (column === "lastModified") return "last_modified";
+  return column;
+}
+
+const getTrxFilter = (filter: TransactionFilter): string => {
+  if (filter.type === "text") {
+    const column = getTrxDbColumn(filter.column);
+    return `${column}.${filter.filter}.${JSON.stringify(filter.value)}`;
+  }
+
+  if (filter.type === "number") {
+    const column = getTrxDbColumn(filter.column);
+    return `${column}.${filter.filter}.${filter.value}`;
+  }
+
+  if (filter.type === "and" || filter.type === "or") {
+    return `${filter.type}(${filter.filters.map(getTrxFilter).join(",")})`;
+  }
+
+  throw new Error(`No such filter type: ${filter.type}`);
+}
+
+const filterTrxQuery = <TResult, T extends PostgrestFilterBuilder<any, any, TResult, any>>(query: T, filter: TransactionFilter): void => {
+  query.or(getTrxFilter(filter));
+};
+
+const sortTrxQuery = <TResult, T extends PostgrestFilterBuilder<any, any, TResult, any>>(query: T, sort: TransactionSort[]) => {
+  for (const columnSort of sort) {
+    query.order(columnSort.column, { ascending: columnSort.ascending });
+  }
+};
+

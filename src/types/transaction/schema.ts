@@ -47,3 +47,8 @@ export const TransactionFilterSchema: z.ZodType<TransactionFilter> = z.union([
     filters: z.lazy(() => TransactionFilterSchema.array()),
   }),
 ]);
+
+export const TransactionSortSchema = z.object({
+  column: TransactionSchema.keyof(),
+  ascending: z.boolean()
+});
