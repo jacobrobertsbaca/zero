@@ -8,7 +8,7 @@ import { budgetCompare } from "src/types/budget/methods";
 import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
-import type { Transaction, TransactionFilter, TransactionSort } from "src/types/transaction/types";
+import type { Transaction, TransactionCursor, TransactionFilter, TransactionSort } from "src/types/transaction/types";
 import { transactionCompare } from "src/types/transaction/methods";
 
 /* ================================================================================================================= *
@@ -410,16 +410,39 @@ const getTrxFilter = (filter: TransactionFilter): string => {
     return `${filter.type}(${filter.filters.map(getTrxFilter).join(",")})`;
   }
 
+  // If we add new filter types, the following lines should verify that
+  // we checked all possible values for `filter.type` and if not, throw a
+  // compile time error for TypeScript
+  type assert<T extends true> = never;
+  type check = assert<typeof filter.type extends never ? true : false>;
   throw new Error(`No such filter type: ${filter.type}`);
 }
 
-const filterTrxQuery = <TResult, T extends PostgrestFilterBuilder<any, any, TResult, any>>(query: T, filter: TransactionFilter): void => {
-  query.or(getTrxFilter(filter));
-};
+export const searchTransactions = (
+  owner: string,
+  filter: TransactionFilter | undefined,
+  sort: TransactionSort[] | undefined,
+  cursor: TransactionCursor | undefined
+): Promise<[Transaction[], TransactionCursor]> => {
+  const query = supabase.from("transactions").select(TRANSACTION_QUERY).eq("owner", owner);
 
-const sortTrxQuery = <TResult, T extends PostgrestFilterBuilder<any, any, TResult, any>>(query: T, sort: TransactionSort[]) => {
-  for (const columnSort of sort) {
-    query.order(columnSort.column, { ascending: columnSort.ascending });
+  /* Apply filters to query */ 
+  if (filter) query.or(getTrxFilter(filter));
+  
+  /* Sort query. If sorting unspecified, apply default sorting */
+  if (!sort)
+    sort = [
+      { column: "starred", ascending: false },
+      { column: "date", ascending: false },
+    ];
+
+  for (const column of sort) {
+    query.order(column.column, { ascending: column.ascending });
   }
+
+  /* Limit query to entries past cursor */
+  // TODO: Implement this
+
+  throw new Error("not implemented");
 };
 
