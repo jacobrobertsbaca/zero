@@ -1,7 +1,7 @@
 import z from "zod";
 import { Money } from "../money/types";
 import { DateString } from "../utils/types";
-import { BaseTransactionFilterSchema } from "./schema";
+import { BaseTransactionFilterSchema, TransactionSortSchema } from "./schema";
 
 export type Transaction = {
   /** The unique ID of this transaction. */
@@ -32,8 +32,6 @@ export type Transaction = {
   note: string;
 };
 
-export type TransactionCursor = Partial<Transaction> & Pick<Transaction, "id">;
-
 export type TransactionFilter =
   | z.infer<typeof BaseTransactionFilterSchema>
   | {
@@ -41,7 +39,4 @@ export type TransactionFilter =
       filters: TransactionFilter[];
     };
 
-export type TransactionSort = {
-  column: keyof Transaction;
-  ascending: boolean;
-}
+export type TransactionSort = z.infer<typeof TransactionSortSchema>;

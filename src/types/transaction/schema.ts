@@ -15,30 +15,12 @@ export const TransactionSchema = z.object({
   note: z.string().trim().max(1000),
 });
 
-export const TransactionCursorSchema = TransactionSchema.partial().merge(TransactionSchema.pick({ id: true }));
-
-export const BaseTransactionFilterSchema = z
-  .object({ column: TransactionSchema.keyof() })
-  .and(
-    z.union([
-      z
-        .object({ type: z.literal("text") })
-        .and(
-          z.discriminatedUnion("filter", [
-            z.object({ filter: z.literal("gte"), value: z.string() }),
-            z.object({ filter: z.literal("lte"), value: z.string() }),
-          ])
-        ),
-      z
-        .object({ type: z.literal("number") })
-        .and(
-          z.discriminatedUnion("filter", [
-            z.object({ filter: z.literal("gte"), value: z.number() }),
-            z.object({ filter: z.literal("lte"), value: z.number() }),
-          ])
-        ),
-    ])
-  );
+export const BaseTransactionFilterSchema = z.object({
+  type: z.literal("column"),
+  column: TransactionSchema.keyof(),
+  filter: z.enum(["gte", "lte", "eq", "gt", "lt"]),
+  value: z.union([z.boolean(), z.string(), z.number()]),
+});
 
 export const TransactionFilterSchema: z.ZodType<TransactionFilter> = z.union([
   BaseTransactionFilterSchema,
@@ -49,6 +31,6 @@ export const TransactionFilterSchema: z.ZodType<TransactionFilter> = z.union([
 ]);
 
 export const TransactionSortSchema = z.object({
-  column: TransactionSchema.keyof(),
-  ascending: z.boolean()
+  column: TransactionSchema.keyof().exclude(["id"]),
+  ascending: z.boolean(),
 });
