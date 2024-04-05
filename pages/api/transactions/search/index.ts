@@ -6,7 +6,13 @@ import { searchTransactions } from "../../common";
 const router = routes();
 
 const s = z.object({
-  sort: TransactionSortSchema.array().optional(),
+  sort: TransactionSortSchema.array()
+    .optional()
+    .refine((a) => {
+      if (!a) return true;
+      const columns = a.map((s) => s.column);
+      return new Set(columns).size === a.length;
+    }, "sort cannot have duplicate columns"),
   filter: TransactionFilterSchema.optional(),
   cursor: TransactionSchema.optional(),
   limit: z.number().min(10).max(100).default(50),

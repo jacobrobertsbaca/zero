@@ -15,12 +15,24 @@ export const TransactionSchema = z.object({
   note: z.string().trim().max(1000),
 });
 
-export const BaseTransactionFilterSchema = z.object({
-  type: z.literal("column"),
-  column: TransactionSchema.keyof(),
-  filter: z.enum(["gte", "lte", "eq", "gt", "lt"]),
-  value: z.union([z.boolean(), z.string(), z.number()]),
-});
+const textColumns   = z.enum(["id", "budget", "category", "date", "name", "lastModified", "note"]);
+const boolColumns   = z.enum(["starred"]);
+const numberColumns = z.enum(["amount"]);
+
+export const SearchColumnSchema = z.enum([...textColumns.options, ...boolColumns.options, ...numberColumns.options] as const);
+
+export const BaseTransactionFilterSchema = z
+  .object({
+    type: z.literal("column"),
+    filter: z.enum(["gte", "lte", "eq", "gt", "lt"]),
+  })
+  .and(
+    z.discriminatedUnion("column", [
+      z.object({ column: textColumns, value: z.string() }),
+      z.object({ column: boolColumns, value: z.boolean() }),
+      z.object({ column: numberColumns, value: z.number() }),
+    ])
+  );
 
 export const TransactionFilterSchema: z.ZodType<TransactionFilter> = z.union([
   BaseTransactionFilterSchema,
@@ -31,6 +43,6 @@ export const TransactionFilterSchema: z.ZodType<TransactionFilter> = z.union([
 ]);
 
 export const TransactionSortSchema = z.object({
-  column: TransactionSchema.keyof().exclude(["id"]),
+  column: SearchColumnSchema.exclude(["id"]),
   ascending: z.boolean(),
 });

@@ -8,7 +8,7 @@ import { budgetCompare } from "src/types/budget/methods";
 import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
-import type { Transaction, TransactionFilter, TransactionSort } from "src/types/transaction/types";
+import type { Transaction, TransactionFilter, TransactionSearchColumn, TransactionSort } from "src/types/transaction/types";
 import { transactionCompare } from "src/types/transaction/methods";
 import { assert } from "console";
 
@@ -397,7 +397,7 @@ export const deleteTransaction = async (owner: string, tid: string): Promise<voi
  * Converts a transaction object key to its associated database column.
  * @param column The transaction column name
  */
-const getTrxDbColumn = (column: keyof Transaction): string => {
+const getTrxDbColumn = (column: TransactionSearchColumn): string => {
   if (column === "lastModified") return "last_modified";
   return column;
 };
@@ -430,14 +430,16 @@ const getTrxCursorFilter = (sort: TransactionSort[], cursor: Transaction): Trans
 
   function filterFor(equal: boolean, order?: TransactionSort): TransactionFilter {
     const column = order?.column || "id";
+
+    /* Need to select correct value when column is amount */
     let value;
     if (column === "amount") value = cursor.amount!.amount;
     else value = cursor[column]!;
 
     return {
       type: "column",
-      column,
       filter: equal ? "eq" : order ? (order.ascending ? "gt" : "lt") : "gt",
+      column: column as any,
       value,
     };
   }
@@ -473,14 +475,14 @@ export const searchTransactions = async (
   const query = supabase.from("transactions").select(TRANSACTION_QUERY).eq("owner", owner);
 
   /* Sort query. If sorting unspecified, apply default sorting */
-  if (!sort)
+  if (!sort || sort.length === 0)
     sort = [
       { column: "starred", ascending: false },
       { column: "date", ascending: false },
     ];
 
   for (const column of sort) {
-    query.order(column.column, { ascending: column.ascending });
+    query.order(getTrxDbColumn(column.column), { ascending: column.ascending });
   }
 
   query.order("id");
