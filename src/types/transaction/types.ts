@@ -1,5 +1,7 @@
+import z from "zod";
 import { Money } from "../money/types";
 import { DateString } from "../utils/types";
+import { BaseTransactionFilterSchema, SearchColumnSchema, TransactionSortSchema } from "./schema";
 
 export type Transaction = {
   /** The unique ID of this transaction. */
@@ -29,3 +31,13 @@ export type Transaction = {
   /** An optional note associated with the transaction. */
   note: string;
 };
+
+export type TransactionFilter =
+  | z.infer<typeof BaseTransactionFilterSchema>
+  | {
+      type: "or" | "and";
+      filters: TransactionFilter[];
+    };
+
+export type TransactionSort = z.infer<typeof TransactionSortSchema>;
+export type TransactionSearchColumn = z.infer<typeof SearchColumnSchema>;
