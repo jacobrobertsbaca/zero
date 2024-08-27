@@ -1,7 +1,12 @@
 import z from "zod";
 import { Money } from "../money/types";
 import { DateString } from "../utils/types";
-import { BaseTransactionFilterSchema, SearchColumnSchema, TransactionSortSchema } from "./schema";
+import {
+  BaseTransactionFilterSchema,
+  SearchColumnSchema,
+  TransactionQuerySchema,
+  TransactionSortSchema,
+} from "./schema";
 
 export type Transaction = {
   /** The unique ID of this transaction. */
@@ -41,3 +46,4 @@ export type TransactionFilter =
 
 export type TransactionSort = z.infer<typeof TransactionSortSchema>;
 export type TransactionSearchColumn = z.infer<typeof SearchColumnSchema>;
+export type TransactionQuery = z.infer<typeof TransactionQuerySchema>;

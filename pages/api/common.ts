@@ -8,9 +8,14 @@ import { budgetCompare } from "src/types/budget/methods";
 import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
-import type { Transaction, TransactionFilter, TransactionSearchColumn, TransactionSort } from "src/types/transaction/types";
+import type {
+  Transaction,
+  TransactionFilter,
+  TransactionQuery,
+  TransactionSearchColumn,
+  TransactionSort,
+} from "src/types/transaction/types";
 import { transactionCompare } from "src/types/transaction/methods";
-import { assert } from "console";
 
 /* ================================================================================================================= *
  * Utility Functions                                                                                                 *
@@ -467,14 +472,14 @@ const getTrxCursorFilter = (sort: TransactionSort[], cursor: Transaction): Trans
 
 export const searchTransactions = async (
   owner: string,
-  filter: TransactionFilter | undefined,
-  sort: TransactionSort[] | undefined,
+  model: TransactionQuery,
   cursor: Transaction | undefined,
   limit: number
 ): Promise<Transaction[]> => {
   const query = supabase.from("transactions").select(TRANSACTION_QUERY).eq("owner", owner);
 
   /* Sort query. If sorting unspecified, apply default sorting */
+  let sort = model.sort;
   if (!sort || sort.length === 0)
     sort = [
       { column: "starred", ascending: false },
@@ -488,18 +493,22 @@ export const searchTransactions = async (
   query.order("id");
 
   /* Apply filters to query, including those for the cursor */
+  let filter = model.filter;
   if (cursor) {
     const cursorFilter = getTrxCursorFilter(sort, cursor);
-    if (filter) filter = { type: "and", filters: [filter, cursorFilter ] };
+    if (filter) filter = { type: "and", filters: [filter, cursorFilter] };
     else filter = cursorFilter;
   }
 
   if (filter) query.or(resolvePostgrestFilter(filter));
+
+  /* TODO: Perform FTS on search query */
+  // model.search
 
   /* Limit query results */
   query.limit(limit);
 
   /* Execute query */
   const rows = await wrap(query);
-  return rows.map(parseTransaction)
+  return rows.map(parseTransaction);
 };

@@ -40,7 +40,7 @@ export const useInfinite = <Data = any, Error = any>(
       },
       { revalidate: false }
     );
-  }, [swr.isLoading, swr.isValidating]);
+  }, [swr.isLoading, swr.isValidating, swr.mutate, fetcher]);
 
   return { ...swr, fetchNext };
 };
