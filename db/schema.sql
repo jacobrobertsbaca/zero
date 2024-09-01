@@ -60,6 +60,7 @@ create table transactions (
   category uuid not null references public.categories on delete cascade,
   budget uuid not null references public.budgets on delete cascade,
   category_name varchar(60) not null default '',
+  budget_name varchar(60) not null default '',
   date char(8) not null,
   amount bigint not null,
   name varchar(120) not null,
