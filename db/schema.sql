@@ -66,5 +66,7 @@ create table transactions (
   name varchar(120) not null,
   last_modified varchar(27) not null,
   starred boolean not null,
-  note text not null check (length(note) <= 1000)
+  note text not null check (length(note) <= 1000),
+  search tsvector generated always as 
+    (to_tsvector('english', name || ' ' || note || ' ' ||  budget_name || ' ' || category_name)) stored 
 );
