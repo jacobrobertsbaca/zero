@@ -15,8 +15,14 @@ export type Transaction = {
   /** The ID of the budget this transaction is associated with. */
   budget: string;
 
+  /** The name of the budget this transaction is associated with. */
+  budgetName: string;
+
   /** The ID of the category this transaction is associated with. */
   category: string;
+
+  /** The name of the category this transaction is associated with. */
+  categoryName: string;
 
   /** The date of this transaction. */
   date: DateString;

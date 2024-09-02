@@ -54,7 +54,7 @@ const BUDGET_QUERY = `
 ` as const;
 
 const TRANSACTION_QUERY = `
-  id, category, budget, date, amount, name, last_modified, starred, note
+  id, category, category_name, budget, budget_name, date, amount, name, last_modified, starred, note
 ` as const;
 
 const retrieveBudgets = async (owner: string, id?: string) => {
@@ -80,7 +80,7 @@ type ReadTransactionRow = Awaited<ReturnType<typeof retrieveTransactions>>[0];
 type WriteBudgetRow = Omit<ReadBudgetRow, "categories"> & { owner: any };
 type WriteCategoryRow = Omit<ReadCategoryRow, "periods"> & { owner: any; budget: any };
 type WritePeriodRow = ReadPeriodRow & { owner: any; budget: any; category: any };
-type WriteTransactionRow = ReadTransactionRow & { owner: any };
+type WriteTransactionRow = Omit<ReadTransactionRow, "category_name" | "budget_name"> & { owner: any };
 
 const parsePeriod = (row: ReadPeriodRow): Period => ({
   dates: {
@@ -131,7 +131,9 @@ const parseBudget = (row: ReadBudgetRow): Budget => ({
 const parseTransaction = (row: ReadTransactionRow): Transaction => ({
   id: row.id,
   budget: row.budget,
+  budgetName: row.budget_name,
   category: row.category,
+  categoryName: row.category_name,
   date: row.date,
   amount: { amount: row.amount, currency: defaultCurrency },
   name: row.name,
@@ -404,6 +406,8 @@ export const deleteTransaction = async (owner: string, tid: string): Promise<voi
  */
 const getTrxDbColumn = (column: TransactionSearchColumn): string => {
   if (column === "lastModified") return "last_modified";
+  if (column === "categoryName") return "category_name";
+  if (column === "budgetName") return "budget_name";
   return column;
 };
 
