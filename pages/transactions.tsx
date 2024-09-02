@@ -13,7 +13,6 @@ import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
 import { Budget } from "src/types/budget/types";
 import { asDateString } from "src/types/utils/methods";
 import { Money } from "src/types/money/types";
-import { produce } from "immer";
 
 const Page = () => {
   const { budgets, error: budgetsError } = useBudgets();
@@ -23,7 +22,9 @@ const Page = () => {
   const [sidebarTrx, setSidebarTrx] = useState<Transaction>({
     id: "",
     budget: "",
+    budgetName: "",
     category: "",
+    categoryName: "",
     date: "",
     amount: moneyZero(),
     name: "",
@@ -36,7 +37,9 @@ const Page = () => {
     setSidebarTrx({
       id: "",
       budget: budgets[0].id, // 1st budget should be active, assumes budgets in sorted order
+      budgetName: "",
       category: "",
+      categoryName: "",
       date: asDateString(new Date()), // Today
       amount: null as unknown as Money, // Setting to null default MoneyField to empty value
       name: "",
