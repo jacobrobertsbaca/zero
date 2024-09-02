@@ -506,8 +506,10 @@ export const searchTransactions = async (
 
   if (filter) query.or(resolvePostgrestFilter(filter));
 
-  /* TODO: Perform FTS on search query */
-  // model.search
+  /* Perform FTS on search query */
+  if (model.search) {
+    query.textSearch("search", model.search, { type: "plain" });
+  }
 
   /* Limit query results */
   query.limit(limit);
