@@ -177,8 +177,9 @@ begin
   perform place_transaction(transaction_json, false);
 
   -- (3) Upsert transaction to transactions table
-  insert into transactions
-  select * from json_populate_record(null::transactions, transaction_json)
+  insert into transactions (id, owner, category, budget, date, amount, name, last_modified, starred, note) 
+  select id, owner, category, budget, date, amount, name, last_modified, starred, note
+  from json_populate_record(null::transactions, transaction_json)
   on conflict (id) do update
   set
     owner         = excluded.owner,
