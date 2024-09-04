@@ -10,7 +10,9 @@ import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
 import type {
   Transaction,
+  TransactionCursor,
   TransactionFilter,
+  TransactionPage,
   TransactionQuery,
   TransactionSearchColumn,
   TransactionSort,
@@ -131,9 +133,7 @@ const parseBudget = (row: ReadBudgetRow): Budget => ({
 const parseTransaction = (row: ReadTransactionRow): Transaction => ({
   id: row.id,
   budget: row.budget,
-  budgetName: row.budget_name,
   category: row.category,
-  categoryName: row.category_name,
   date: row.date,
   amount: { amount: row.amount, currency: defaultCurrency },
   name: row.name,
@@ -434,7 +434,7 @@ const resolvePostgrestFilter = (filter: TransactionFilter): string => {
  * @param sort   How results should be ordered
  * @param cursor A transaction cursor
  */
-const getTrxCursorFilter = (sort: TransactionSort[], cursor: Transaction): TransactionFilter => {
+const getTrxCursorFilter = (sort: TransactionSort[], cursor: TransactionCursor): TransactionFilter => {
   const filters: TransactionFilter[] = [];
 
   function filterFor(equal: boolean, order?: TransactionSort): TransactionFilter {
@@ -474,12 +474,22 @@ const getTrxCursorFilter = (sort: TransactionSort[], cursor: Transaction): Trans
   return { type: "or", filters };
 };
 
+const getTrxCursor = (rows: ReadTransactionRow[]): TransactionCursor | undefined => {
+  if (rows.length === 0) return undefined;
+  const last = rows[rows.length - 1];
+  return {
+    ...parseTransaction(last),
+    budgetName: last.budget_name,
+    categoryName: last.category_name,
+  };
+};
+
 export const searchTransactions = async (
   owner: string,
   model: TransactionQuery,
-  cursor: Transaction | undefined,
+  cursor: TransactionCursor | undefined,
   limit: number
-): Promise<Transaction[]> => {
+): Promise<TransactionPage> => {
   const query = supabase.from("transactions").select(TRANSACTION_QUERY).eq("owner", owner);
 
   /* Sort query. If sorting unspecified, apply default sorting */
@@ -516,5 +526,8 @@ export const searchTransactions = async (
 
   /* Execute query */
   const rows = await wrap(query);
-  return rows.map(parseTransaction);
+  return {
+    transactions: rows.map(parseTransaction),
+    cursor: getTrxCursor(rows),
+  };
 };

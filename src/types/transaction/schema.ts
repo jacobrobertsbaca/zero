@@ -6,15 +6,18 @@ import { TransactionFilter } from "./types";
 export const TransactionSchema = z.object({
   id: z.string(),
   budget: z.string(),
-  budgetName: z.string(),
   category: z.string(),
-  categoryName: z.string(),
   date: DateStringSchema,
   amount: MoneySchema,
   name: z.string().trim().max(120),
   lastModified: z.string(),
   starred: z.boolean(),
   note: z.string().trim().max(1000),
+});
+
+export const TransactionCursorSchema = TransactionSchema.extend({
+  budgetName: z.string(),
+  categoryName: z.string(),
 });
 
 const textColumns = z.enum([

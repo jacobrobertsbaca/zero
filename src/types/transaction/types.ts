@@ -15,14 +15,8 @@ export type Transaction = {
   /** The ID of the budget this transaction is associated with. */
   budget: string;
 
-  /** The name of the budget this transaction is associated with. */
-  budgetName: string;
-
   /** The ID of the category this transaction is associated with. */
   category: string;
-
-  /** The name of the category this transaction is associated with. */
-  categoryName: string;
 
   /** The date of this transaction. */
   date: DateString;
@@ -41,6 +35,19 @@ export type Transaction = {
 
   /** An optional note associated with the transaction. */
   note: string;
+};
+
+export type TransactionCursor = Transaction & {
+  /** The name of the budget this transaction is associated with. */
+  budgetName: string;
+
+  /** The name of the category this transaction is associated with. */
+  categoryName: string;
+};
+
+export type TransactionPage = {
+  transactions: Transaction[];
+  cursor: TransactionCursor | undefined;
 };
 
 export type TransactionFilter =

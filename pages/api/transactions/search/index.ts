@@ -1,13 +1,13 @@
 import { route, routes } from "../../route";
 import { z } from "zod";
-import { TransactionQuerySchema, TransactionSchema } from "src/types/transaction/schema";
+import { TransactionCursorSchema, TransactionQuerySchema } from "src/types/transaction/schema";
 import { searchTransactions } from "../../common";
 
 const router = routes();
 
 const bodySchema = z.object({
   model: TransactionQuerySchema,
-  cursor: TransactionSchema.optional(),
+  cursor: TransactionCursorSchema.optional(),
   limit: z.number().min(10).max(100).default(50),
 });
 

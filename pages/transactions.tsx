@@ -22,9 +22,7 @@ const Page = () => {
   const [sidebarTrx, setSidebarTrx] = useState<Transaction>({
     id: "",
     budget: "",
-    budgetName: "",
     category: "",
-    categoryName: "",
     date: "",
     amount: moneyZero(),
     name: "",
@@ -37,9 +35,7 @@ const Page = () => {
     setSidebarTrx({
       id: "",
       budget: budgets[0].id, // 1st budget should be active, assumes budgets in sorted order
-      budgetName: "",
       category: "",
-      categoryName: "",
       date: asDateString(new Date()), // Today
       amount: null as unknown as Money, // Setting to null default MoneyField to empty value
       name: "",
