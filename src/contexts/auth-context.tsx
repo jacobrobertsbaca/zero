@@ -128,7 +128,12 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     await signOut();
   };
 
-  useEffect(() => void onInitialize(), []);
+  useEffect(
+    () => void onInitialize(),
+    // This effect is only run once, so no need to include `onInitialize` in the deps
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+    []
+  );
 
   return <AuthContext.Provider
     value={{

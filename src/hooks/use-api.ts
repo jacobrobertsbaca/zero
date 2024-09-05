@@ -2,11 +2,12 @@ import { produce, Draft } from "immer";
 import useSWR, { useSWRConfig } from "swr";
 import { useAuth } from "./use-auth";
 import type { Budget } from "src/types/budget/types";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Category } from "src/types/category/types";
-import { Transaction } from "src/types/transaction/types";
+import { Transaction, TransactionPage, TransactionQuery } from "src/types/transaction/types";
 import { http } from "src/utils/http";
-import { transactionCompare } from "src/types/transaction/methods";
+import useSWRInfinite from "swr/infinite";
+import { isEqual } from "lodash";
 
 const fetcher = (token?: string) => (path: string) => http(path, "GET", { token }) as any;
 
@@ -20,6 +21,7 @@ const ApiBudgetsCategory = (budget: string) => `${ApiBudgetsId(budget)}/categori
 const ApiBudgetsCategoryId = (budget: string, category: string) => `${ApiBudgetsCategory(budget)}/${category}`;
 const ApiTransactions = "/transactions";
 const ApiTransactionsId = (trx: string) => `${ApiTransactions}/${trx}`;
+const ApiTransactionsSearch = "/transactions/search";
 
 /* ================================================================================================================= *
  * API Methods                                                                                                       *
@@ -102,7 +104,7 @@ export const useCategoryChanges = () => {
           await mutate(ApiBudgets);
           if (!existing) return undefined;
           return produce(existing, (draft) => {
-            const index = draft.categories.findIndex(c => c.id === category.id);
+            const index = draft.categories.findIndex((c) => c.id === category.id);
             if (index >= 0) draft.categories[index] = category as Draft<Category>;
             else draft.categories.push(category as Draft<Category>);
           });
@@ -124,7 +126,7 @@ export const useCategoryChanges = () => {
           await mutate(ApiTransactions);
           if (!existing) return undefined;
           return produce(existing, (draft) => {
-            const index = draft.categories.findIndex(c => c.id === category);
+            const index = draft.categories.findIndex((c) => c.id === category);
             if (index >= 0) draft.categories.splice(index, 1);
           });
         },
@@ -138,78 +140,181 @@ export const useCategoryChanges = () => {
 };
 
 /**
- * Updates the transaction cache with a transaction, returning a new copy of the cache.
- * @param cache The transaction cache.
- * @param trx The transaction to update.
- * @param remove Whether or not to remove the given transaction
- * @returns A copy of the cache.
+ * Returns a copy of the transaction cache with one transaction modified.
+ * @param cache       The transaction cache
+ * @param id          The id of the transaction to change
+ * @param change      Either a transaction to upsert or a function to modify the existing transaction.
+ *                    If a transaction, will insert to the cache if no such transaction exists, otherwise will update.
+ *                    If a function, will call with existing transaction to get update. If undefined returned, will remove that transaction.
+ * @returns           The updated cache
  */
-const placeTransaction = (
-  cache: readonly Transaction[] | undefined,
-  trx: Transaction,
-  remove: boolean
-): readonly Transaction[] | undefined => {
+const mutateTransactions = (
+  cache: TransactionPage[] | undefined,
+  id: string,
+  change: Transaction | ((trx: Draft<Transaction>) => Transaction | undefined)
+): TransactionPage[] | undefined => {
   if (!cache) return cache;
-  if (!trx.id) return cache;
   return produce(cache, (draft) => {
-    const index = draft.findIndex(t => t.id === trx.id);
-    if (remove) {
-      if (index >= 0) draft.splice(index, 1);
-      return;
+    let modified = false;
+    for (let pageIdx = 0; pageIdx < draft.length; pageIdx++) {
+      const page = draft[pageIdx].transactions;
+      for (let trxIdx = page.length - 1; trxIdx >= 0; trxIdx--) {
+        const trx = page[trxIdx];
+        if (trx.id !== id) continue;
+
+        if (typeof change === "function") {
+          const updated = change(trx);
+          if (updated === undefined) page.splice(trxIdx, 1);
+          else page[trxIdx] = updated;
+        } else page[pageIdx] = change;
+
+        modified = true;
+      }
     }
 
-    if (index >= 0) draft[index] = trx;
-    else draft.push(trx);
-    draft.sort(transactionCompare);
+    if (!modified && typeof change !== "function") {
+      if (draft.length === 0) draft.push({ transactions: [change], cursor: undefined });
+      else draft[0].transactions.unshift(change);
+      modified = true;
+    }
   });
 };
 
-export const useTransactions = () => {
+export const useTransactionsSearch = (query: TransactionQuery) => {
   const { token } = useAuth();
-  const { mutate: globalMutate } = useSWRConfig();
-  const { data, error, isLoading, mutate } = useSWR<readonly Transaction[]>(
-    token ? ApiTransactions : null,
-    fetcher(token)
+  const { mutate: invalidate } = useSWRConfig();
+
+  /** Every page key has the format: [TAG, CURSOR, QUERY_MODEL] */
+  const { data, isValidating, isLoading, setSize, mutate, error } = useSWRInfinite(
+    (_, previousPage?: TransactionPage) => [ApiTransactionsSearch, previousPage?.cursor, query],
+    ([_, cursor, model]) =>
+      http<TransactionPage>(ApiTransactionsSearch, "POST", {
+        token,
+        data: { cursor, model },
+      }),
+    { revalidateFirstPage: false }
   );
 
-  const modifyTransaction = useCallback(
-    async (trx: Transaction, remove: boolean) => {
+  /**
+   * Invalidates all transaction queries, except for the current one.
+   * When changing a transaction, we expect to get updated data when entering a new query.
+   * However, we want to avoid fetching the current query, as it may lead to a jittery UX.
+   */
+  const invalidateQueries = useCallback(() => {
+    invalidate((key) => {
+      if (!Array.isArray(key)) return false;
+      if (key.length !== 3) return false;
+      if (key[0] !== ApiTransactionsSearch) return false;
+      if (isEqual(key[2], query)) return false;
+      console.log("Invalidating", key);
+      return true;
+    });
+  }, [invalidate, query]);
+
+  const canFetchNext = useMemo(() => {
+    // If there is no data yet or we are loading, it doesn't make sense to fetch more.
+    // If the last data page has no rows or no cursor, we also cannot fetch more rows.
+    if (isLoading || isValidating || data === undefined) return false;
+    if (data.length === 0) return true;
+    const lastPage = data[data.length - 1];
+    return lastPage.transactions.length > 0 && !!lastPage.cursor;
+  }, [data, isLoading, isValidating]);
+
+  const fetchMore = useMemo(() => {
+    if (!canFetchNext) return undefined;
+    return () => {
+      setSize((size) => size + 1);
+    };
+  }, [canFetchNext, setSize]);
+
+  const putTransaction = useCallback(
+    async (transaction: Transaction) => {
       await mutate(
         async (cache) => {
-          if (remove) await http(ApiTransactionsId(trx.id), "DELETE", { token });
-          else {
-            trx = await http(ApiTransactions, "PUT", { token, data: { transaction: trx } });
-            await mutate((cache) => placeTransaction(cache, trx, false), { revalidate: false });
-          }
-          await globalMutate(ApiBudgets);
-          await globalMutate(ApiBudgetsId(trx.budget));
-          return placeTransaction(cache, trx, remove);
+          transaction = await http(ApiTransactions, "PUT", { token, data: { transaction } });
+
+          // Changing a transaction may affect what is shown for its budget, so we must invalidate those.
+          await Promise.all([
+            invalidate(ApiBudgets),
+            invalidate(ApiBudgetsId(transaction.budget)),
+            invalidateQueries(),
+          ]);
+          return mutateTransactions(cache, transaction.id, transaction);
         },
         { revalidate: false }
       );
     },
-    [mutate, globalMutate]
+    [mutate, token, invalidate, invalidateQueries]
   );
 
-  const starTransaction = useCallback((trx: Transaction, star: boolean) => {
-    mutate(
-      (cache) => {
-        trx = produce(trx, (draft) => {
-          draft.starred = star;
-        });
-        modifyTransaction(trx, false);
-        return placeTransaction(cache, trx, false);
-      },
-      { revalidate: false }
-    );
-  }, [mutate, modifyTransaction]);
+  const starTransaction = useCallback(
+    async (transaction: Transaction, starred: boolean) => {
+      transaction = produce(transaction, (draft) => {
+        draft.starred = starred;
+      });
+
+      await mutate(
+        async (cache) => {
+          /* Note: starring a transaction shouldn't change any other app state, so no need to invalidate them */
+          await http(ApiTransactions, "PUT", { token, data: { transaction } });
+          await invalidateQueries();
+          return mutateTransactions(cache, transaction.id, () => transaction);
+        },
+        {
+          revalidate: false,
+
+          /* Note: optimisticData does not allow returning undefined. Is returning [] a problem here? */
+          optimisticData: (cache) => mutateTransactions(cache, transaction.id, () => transaction) ?? [],
+        }
+      );
+    },
+    [invalidateQueries, mutate, token]
+  );
+
+  const deleteTransaction = useCallback(
+    async (transaction: Transaction) => {
+      await mutate(
+        async (cache) => {
+          await http(ApiTransactionsId(transaction.id), "DELETE", { token });
+
+          // Deleting a transaction may affect what is shown for its budget, so we must invalidate those.
+          await Promise.all([
+            invalidate(ApiBudgets),
+            invalidate(ApiBudgetsId(transaction.budget)),
+            invalidateQueries(),
+          ]);
+
+          return mutateTransactions(cache, transaction.id, () => undefined);
+        },
+        { revalidate: false }
+      );
+    },
+    [mutate, token, invalidate, invalidateQueries]
+  );
 
   return {
-    transactions: data,
+    /** The transaction data received so far */
+    transactions: data?.flatMap((page) => page.transactions),
+
+    /** The error that occurred while fetching transactions, if any */
     error,
+
+    /** `true` whenever there is an ongoing request whether the data is loaded or not */
     isLoading,
-    putTransaction: (trx: Transaction) => modifyTransaction(trx, false),
-    deleteTransaction: (trx: Transaction) => modifyTransaction(trx, true),
+
+    /** `true` when there is an ongoing request and data is not loaded yet */
+    isValidating,
+
+    /** Upserts a transaction */
+    putTransaction,
+
+    /** Optimistically stars a transaction */
     starTransaction,
+
+    /** Deletes a transaction */
+    deleteTransaction,
+
+    /** Fetches the next page of transaction data. `undefined` if fetching is currently not allowed */
+    fetchMore,
   };
 };

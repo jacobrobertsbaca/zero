@@ -7,8 +7,9 @@ import {
   TransactionQuerySchema,
   TransactionSortSchema,
 } from "./schema";
+import { Immutable } from "immer";
 
-export type Transaction = {
+export type Transaction = Immutable<{
   /** The unique ID of this transaction. */
   id: string;
 
@@ -35,20 +36,20 @@ export type Transaction = {
 
   /** An optional note associated with the transaction. */
   note: string;
-};
+}>;
 
-export type TransactionCursor = Transaction & {
+export type TransactionCursor = Immutable<Transaction & {
   /** The name of the budget this transaction is associated with. */
   budgetName: string;
 
   /** The name of the category this transaction is associated with. */
   categoryName: string;
-};
+}>;
 
-export type TransactionPage = {
+export type TransactionPage = Immutable<{
   transactions: Transaction[];
   cursor: TransactionCursor | undefined;
-};
+}>;
 
 export type TransactionFilter =
   | z.infer<typeof BaseTransactionFilterSchema>

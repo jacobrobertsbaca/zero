@@ -6,7 +6,7 @@ import { TransactionSidebar } from "src/sections/transactions/transaction-sideba
 import { useCallback, useState } from "react";
 import { Transaction } from "src/types/transaction/types";
 import { moneyZero } from "src/types/money/methods";
-import { useBudgets, useTransactions } from "src/hooks/use-api";
+import { useBudgets, useTransactionsSearch } from "src/hooks/use-api";
 import { Loading } from "src/components/loading";
 
 import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
@@ -16,7 +16,15 @@ import { Money } from "src/types/money/types";
 
 const Page = () => {
   const { budgets, error: budgetsError } = useBudgets();
-  const { transactions, error: trxError, putTransaction, deleteTransaction, starTransaction } = useTransactions();
+  const {
+    transactions,
+    error: trxError,
+    putTransaction,
+    deleteTransaction,
+    starTransaction,
+    fetchMore,
+    isValidating
+  } = useTransactionsSearch({});
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTrx, setSidebarTrx] = useState<Transaction>({
@@ -78,6 +86,8 @@ const Page = () => {
         {(transactions) => (
           <TransactionList
             transactions={transactions}
+            fetchMore={fetchMore}
+            isValidating={isValidating}
             budgets={budgets ?? []}
             onTrxSelected={(trx) => {
               setSidebarTrx(trx);

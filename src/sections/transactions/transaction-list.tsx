@@ -1,4 +1,4 @@
-import { Box, CircularProgress, Stack, SvgIcon, Tooltip, useMediaQuery, useTheme } from "@mui/material";
+import { Box, CircularProgress, Stack, SvgIcon, useMediaQuery, useTheme } from "@mui/material";
 import {
   DataGrid,
   GridActionsCellItem,
@@ -20,6 +20,7 @@ import { DateString } from "src/types/utils/types";
 import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
 import StarIconOutlined from "@heroicons/react/24/outline/StarIcon";
 import StarIconSolid from "@heroicons/react/24/solid/StarIcon";
+import { LoadingButton } from "@mui/lab";
 
 /* ================================================================================================================= *
  * Overlays                                                                                                          *
@@ -54,13 +55,17 @@ type TransactionListProps = {
   budgets: readonly Budget[];
   onTrxSelected: (trx: Transaction) => void;
   onTrxStarred: (trx: Transaction, star: boolean) => void;
+  fetchMore: undefined | (() => void);
+  isValidating: boolean;
 };
 
 export const TransactionList = ({
   transactions,
+  fetchMore,
   budgets,
   onTrxSelected,
   onTrxStarred,
+  isValidating,
 }: TransactionListProps) => {
   const theme = useTheme();
   const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
@@ -199,6 +204,9 @@ export const TransactionList = ({
           "--DataGrid-overlayHeight": "300px",
         }}
       />
+      <LoadingButton fullWidth disabled={!fetchMore} loading={isValidating} onClick={fetchMore}>
+        Load more
+      </LoadingButton>
     </Box>
   );
 };
