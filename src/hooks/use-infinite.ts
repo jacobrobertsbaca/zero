@@ -1,27 +1,32 @@
-import { useCallback, useRef } from "react";
-import useSWR, { BareFetcher, SWRConfiguration, type Key } from "swr";
-import { FetcherResponse } from "swr/dist/_internal";
+import { useCallback, useMemo } from "react";
+import useSWR, { type BareFetcher, type SWRConfiguration, type Key, useSWRConfig } from "swr";
+import { type FetcherResponse } from "swr/dist/_internal";
 
-export const useInfinite = <Data = any, Error = any>(
+export const useInfinite = <Page = any, Error = any>(
   key: Key,
-  fetcher: (prevPage: Data | undefined) => FetcherResponse<Data | null>,
-  config: SWRConfiguration<Data[], Error, BareFetcher<Data[]>>
+  fetcher: (prevPage: Page | undefined) => FetcherResponse<Page | null>,
+  config: SWRConfiguration<Page[], Error, BareFetcher<Page[]>>
 ) => {
-  const pages = useRef(1);
-  const swr = useSWR(
-    key,
-    async () => {
-      const data: Data[] = [];
-      let prevPage: Data | undefined = undefined;
+  const cacheKey = useMemo(() => JSON.stringify(key), [key]);
+  const { cache } = useSWRConfig();
 
-      for (let i = 0; i < pages.current; i++) {
+  const swr = useSWR(
+    cacheKey,
+    async () => {
+      const stalePages = cache.get(cacheKey) as Page[] | undefined;
+      const staleCount = stalePages?.length ?? 1;
+
+      const pages: Page[] = [];
+      let prevPage: Page | undefined = undefined;
+
+      for (let i = 0; i < staleCount; i++) {
         const page = await fetcher(prevPage);
         if (page === null) break;
-        data.push(page);
+        pages.push(page);
         prevPage = page;
       }
 
-      return data;
+      return pages;
     },
     config
   );
@@ -30,13 +35,11 @@ export const useInfinite = <Data = any, Error = any>(
     // Do not allow fetching next page if data is loading or we are currently doing so already
     if (swr.isLoading || swr.isValidating) return;
     await swr.mutate(
-      async (data) => {
-        const numPages = pages.current;
-        const prevPage = data?.length ? data[data.length - 1] : undefined;
+      async (pages) => {
+        const prevPage = pages?.length ? pages[pages.length - 1] : undefined;
         const nextPage = await fetcher(prevPage);
-        if (nextPage === null) return data;
-        pages.current = numPages + 1;
-        return [...(data ?? []), nextPage];
+        if (nextPage === null) return pages;
+        return [...(pages ?? []), nextPage];
       },
       { revalidate: false }
     );

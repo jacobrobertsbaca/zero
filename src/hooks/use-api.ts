@@ -1,4 +1,4 @@
-import { produce, type Immutable, Draft } from "immer";
+import { produce, Draft } from "immer";
 import useSWR, { useSWRConfig } from "swr";
 import { useAuth } from "./use-auth";
 import type { Budget } from "src/types/budget/types";
