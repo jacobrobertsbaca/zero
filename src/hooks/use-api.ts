@@ -199,17 +199,29 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
    * Invalidates all transaction queries, except for the current one.
    * When changing a transaction, we expect to get updated data when entering a new query.
    * However, we want to avoid fetching the current query, as it may lead to a jittery UX.
+   * @param budget    The budget to invalidate, if desired.
    */
-  const invalidateQueries = useCallback(() => {
-    invalidate((key) => {
-      if (!Array.isArray(key)) return false;
-      if (key.length !== 3) return false;
-      if (key[0] !== ApiTransactionsSearch) return false;
-      if (isEqual(key[2], query)) return false;
-      console.log("Invalidating", key);
-      return true;
-    });
-  }, [invalidate, query]);
+  const invalidateQueries = useCallback(
+    (budget?: string) => {
+      const promises: Promise<any>[] = [
+        invalidate((key) => {
+          if (!Array.isArray(key)) return false;
+          if (key.length !== 3) return false;
+          if (key[0] !== ApiTransactionsSearch) return false;
+          if (isEqual(key[2], query)) return false;
+          return true;
+        }),
+      ];
+
+      if (budget) {
+        promises.push(invalidate(ApiBudgets));
+        promises.push(invalidate(ApiBudgetsId(budget)));
+      }
+
+      return Promise.all(promises);
+    },
+    [invalidate, query]
+  );
 
   const canFetchNext = useMemo(() => {
     // If there is no data yet or we are loading, it doesn't make sense to fetch more.
@@ -234,17 +246,13 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
           transaction = await http(ApiTransactions, "PUT", { token, data: { transaction } });
 
           // Changing a transaction may affect what is shown for its budget, so we must invalidate those.
-          await Promise.all([
-            invalidate(ApiBudgets),
-            invalidate(ApiBudgetsId(transaction.budget)),
-            invalidateQueries(),
-          ]);
+          await invalidateQueries(transaction.budget);
           return mutateTransactions(cache, transaction.id, transaction);
         },
         { revalidate: false }
       );
     },
-    [mutate, token, invalidate, invalidateQueries]
+    [mutate, token, invalidateQueries]
   );
 
   const starTransaction = useCallback(
@@ -278,18 +286,13 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
           await http(ApiTransactionsId(transaction.id), "DELETE", { token });
 
           // Deleting a transaction may affect what is shown for its budget, so we must invalidate those.
-          await Promise.all([
-            invalidate(ApiBudgets),
-            invalidate(ApiBudgetsId(transaction.budget)),
-            invalidateQueries(),
-          ]);
-
+          await invalidateQueries(transaction.budget);
           return mutateTransactions(cache, transaction.id, () => undefined);
         },
         { revalidate: false }
       );
     },
-    [mutate, token, invalidate, invalidateQueries]
+    [mutate, token, invalidateQueries]
   );
 
   return {
