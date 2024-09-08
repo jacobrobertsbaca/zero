@@ -1,12 +1,4 @@
-import {
-  Box,
-  Table as MuiTable,
-  styled,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-} from "@mui/material";
+import { Box, Table as MuiTable, styled, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
 import { flexRender, RowData, Table } from "@tanstack/react-table";
 import { Transaction } from "src/types/transaction/types";
 
@@ -20,9 +12,10 @@ const Cell = styled(TableCell)({ paddingLeft: 4, paddingRight: 4 });
 
 export type TransactionListProps = {
   table: Table<Transaction>;
+  setSidebarTrx: (trx: Transaction) => void;
 };
 
-export const TransactionList = ({ table }: TransactionListProps) => {
+export const TransactionList = ({ table, setSidebarTrx }: TransactionListProps) => {
   const { rows } = table.getRowModel();
 
   return (
@@ -41,7 +34,7 @@ export const TransactionList = ({ table }: TransactionListProps) => {
         </TableHead>
         <TableBody>
           {rows.map((row) => (
-            <TableRow key={row.id}>
+            <TableRow key={row.id} hover onClick={() => setSidebarTrx(row.original)} sx={{ cursor: "pointer" }}>
               {row.getVisibleCells().map((cell) => (
                 <Cell
                   key={cell.id}

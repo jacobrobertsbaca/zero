@@ -8,6 +8,7 @@ import { Transaction, TransactionPage, TransactionQuery } from "src/types/transa
 import { http } from "src/utils/http";
 import useSWRInfinite from "swr/infinite";
 import { isEqual } from "lodash";
+import { enqueueSnackbar } from "notistack";
 
 const fetcher = (token?: string) => (path: string) => http(path, "GET", { token }) as any;
 
@@ -155,6 +156,7 @@ const mutateTransactions = (
 ): TransactionPage[] | undefined => {
   if (!cache) return cache;
   return produce(cache, (draft) => {
+    let rowsAdded = 0;
     let modified = false;
     for (let pageIdx = 0; pageIdx < draft.length; pageIdx++) {
       const page = draft[pageIdx].transactions;
@@ -164,8 +166,10 @@ const mutateTransactions = (
 
         if (typeof change === "function") {
           const updated = change(trx);
-          if (updated === undefined) page.splice(trxIdx, 1);
-          else page[trxIdx] = updated;
+          if (updated === undefined) {
+            page.splice(trxIdx, 1);
+            rowsAdded--;
+          } else page[trxIdx] = updated;
         } else page[pageIdx] = change;
 
         modified = true;
@@ -173,9 +177,15 @@ const mutateTransactions = (
     }
 
     if (!modified && typeof change !== "function") {
-      if (draft.length === 0) draft.push({ transactions: [change], cursor: undefined });
+      if (draft.length === 0) draft.push({ transactions: [change], cursor: undefined, meta: { count: 1 } });
       else draft[0].transactions.unshift(change);
+      rowsAdded++;
       modified = true;
+    }
+
+    if (modified && draft.length > 0) {
+      if (!draft[0].meta.count) draft[0].meta.count = 0;
+      draft[0].meta.count += rowsAdded;
     }
   });
 };
@@ -191,8 +201,7 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
       http<TransactionPage>(ApiTransactionsSearch, "POST", {
         token,
         data: { cursor, model },
-      }),
-    { revalidateFirstPage: false }
+      })
   );
 
   /**
@@ -204,13 +213,17 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
   const invalidateQueries = useCallback(
     (budget?: string) => {
       const promises: Promise<any>[] = [
-        invalidate((key) => {
-          if (!Array.isArray(key)) return false;
-          if (key.length !== 3) return false;
-          if (key[0] !== ApiTransactionsSearch) return false;
-          if (isEqual(key[2], query)) return false;
-          return true;
-        }),
+        invalidate(
+          (key) => {
+            if (!Array.isArray(key)) return false;
+            if (key.length !== 3) return false;
+            if (key[0] !== ApiTransactionsSearch) return false;
+            if (isEqual(key[2], query)) return false;
+            return true;
+          },
+          undefined,
+          { revalidate: true }
+        ),
       ];
 
       if (budget) {
@@ -258,23 +271,22 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
 
   const starTransaction = useCallback(
     async (transaction: Transaction, starred: boolean) => {
-      transaction = produce(transaction, (draft) => {
+      const newTransaction = produce(transaction, (draft) => {
         draft.starred = starred;
       });
 
       await mutate(
         async (cache) => {
           /* Note: starring a transaction shouldn't change any other app state, so no need to invalidate them */
-          await http(ApiTransactions, "PUT", { token, data: { transaction } });
-          await invalidateQueries();
-          return mutateTransactions(cache, transaction.id, () => transaction);
+          http(ApiTransactions, "PUT", { token, data: { transaction: newTransaction } }).catch((err) => {
+            console.error(err);
+            enqueueSnackbar(`Couldn't ${newTransaction.starred ? "star" : "unstar"} transaction`, { variant: "error" });
+            mutate((cache) => mutateTransactions(cache, transaction.id, () => transaction));
+          });
+          invalidateQueries();
+          return mutateTransactions(cache, transaction.id, () => newTransaction);
         },
-        {
-          revalidate: false,
-
-          /* Note: optimisticData does not allow returning undefined. Is returning [] a problem here? */
-          optimisticData: (cache) => mutateTransactions(cache, transaction.id, () => transaction) ?? [],
-        }
+        { revalidate: false }
       );
     },
     [invalidateQueries, mutate, token]

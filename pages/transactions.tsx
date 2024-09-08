@@ -1,12 +1,4 @@
-import {
-  Box,
-  IconButton,
-  Stack,
-  SvgIcon,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
+import { Box, IconButton, Stack, SvgIcon, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
 import { PageTitle } from "src/components/page-title";
 import { TransactionSidebar } from "src/sections/transactions/transaction-sidebar";
@@ -20,20 +12,14 @@ import { Budget } from "src/types/budget/types";
 import { asDate, asDateString } from "src/types/utils/methods";
 import { Money } from "src/types/money/types";
 import { TransactionSearch } from "src/sections/transactions/transaction-search";
-import {
-  ColumnDef,
-  getCoreRowModel,
-  getSortedRowModel,
-  Row,
-  SortingState,
-  useReactTable,
-} from "@tanstack/react-table";
+import { ColumnDef, getCoreRowModel, getSortedRowModel, Row, SortingState, useReactTable } from "@tanstack/react-table";
 
 import StarIconOutlined from "@heroicons/react/24/outline/StarIcon";
 import StarIconSolid from "@heroicons/react/24/solid/StarIcon";
 import { Category } from "src/types/category/types";
 import { TransactionList } from "src/sections/transactions/transaction-list";
 import { LoadingButton } from "@mui/lab";
+import { Loading } from "src/components/loading";
 
 const convertSorting = (sorting: SortingState): TransactionSort[] =>
   sorting.map((sort) => ({
@@ -60,13 +46,57 @@ const Page = () => {
   const theme = useTheme();
   const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarTrx, setSidebarTrx] = useState<Transaction>({
+    id: "",
+    budget: "",
+    category: "",
+    date: "",
+    amount: moneyZero(),
+    name: "",
+    lastModified: "",
+    starred: false,
+    note: "",
+  });
+
+  const addTransaction = useCallback((budgets: readonly Budget[]) => {
+    setSidebarTrx({
+      id: "",
+      budget: budgets[0].id, // 1st budget should be active, assumes budgets in sorted order
+      category: "",
+      date: asDateString(new Date()), // Today
+      amount: null as unknown as Money, // Setting to null default MoneyField to empty value
+      name: "",
+      lastModified: "",
+      starred: false,
+      note: "",
+    });
+    setSidebarOpen(true);
+  }, []);
+
+  const {
+    transactions,
+    error: trxError,
+    putTransaction,
+    deleteTransaction,
+    starTransaction,
+    fetchMore,
+    isValidating,
+    isLoading,
+  } = useTransactionsSearch({ search, sort: convertSorting(sorting) });
+
   const columns = useMemo<ColumnDef<Transaction>[]>(() => {
     return [
       {
         id: "star",
         cell: ({ row }) => (
-          <IconButton size="small">
-            <SvgIcon color={row.original.starred ? "primary" : "inherit"}>
+          <IconButton
+            onClick={(evt) => {
+              starTransaction(row.original, !row.original.starred);
+              evt.stopPropagation();
+            }}
+          >
+            <SvgIcon color={row.original.starred ? "primary" : "inherit"} sx={{ fontSize: "0.8em" }}>
               {row.original.starred ? <StarIconSolid /> : <StarIconOutlined />}
             </SvgIcon>
           </IconButton>
@@ -114,46 +144,7 @@ const Page = () => {
           ] as ColumnDef<Transaction>[])
         : []),
     ];
-  }, [mobile, budgets]);
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarTrx, setSidebarTrx] = useState<Transaction>({
-    id: "",
-    budget: "",
-    category: "",
-    date: "",
-    amount: moneyZero(),
-    name: "",
-    lastModified: "",
-    starred: false,
-    note: "",
-  });
-
-  const addTransaction = useCallback((budgets: readonly Budget[]) => {
-    setSidebarTrx({
-      id: "",
-      budget: budgets[0].id, // 1st budget should be active, assumes budgets in sorted order
-      category: "",
-      date: asDateString(new Date()), // Today
-      amount: null as unknown as Money, // Setting to null default MoneyField to empty value
-      name: "",
-      lastModified: "",
-      starred: false,
-      note: "",
-    });
-    setSidebarOpen(true);
-  }, []);
-
-  const {
-    transactions,
-    error: trxError,
-    putTransaction,
-    deleteTransaction,
-    starTransaction,
-    fetchMore,
-    isValidating,
-    isLoading,
-  } = useTransactionsSearch({ search, sort: convertSorting(sorting) });
+  }, [mobile, budgets, starTransaction]);
 
   const data = useMemo(() => transactions?.flatMap((page) => page.transactions) ?? [], [transactions]);
   const table = useReactTable({
@@ -198,15 +189,24 @@ const Page = () => {
           }}
         />
       </Stack>
-      <TransactionSearch onSearch={setSearch} />
-      {count ? <Typography variant="caption">Found {count} transactions</Typography> : null}
-      <TransactionList table={table} />
 
-      {canFetch && (
-        <LoadingButton disabled={isValidating} loading={isValidating} fullWidth onClick={fetchMore}>
-          Load more
-        </LoadingButton>
-      )}
+      <Loading error={budgetsError || trxError} loading={false}>
+        <TransactionSearch onSearch={setSearch} />
+        {count ? <Typography variant="caption">Found {count} transactions</Typography> : null}
+        <TransactionList
+          table={table}
+          setSidebarTrx={(trx) => {
+            setSidebarTrx(trx);
+            setSidebarOpen(true);
+          }}
+        />
+
+        {canFetch && (
+          <LoadingButton disabled={isValidating} loading={isValidating} fullWidth onClick={fetchMore}>
+            Load more
+          </LoadingButton>
+        )}
+      </Loading>
     </Stack>
   );
 };
