@@ -235,6 +235,7 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
   const fetchMore = useMemo(() => {
     if (!canFetchNext) return undefined;
     return () => {
+      console.log("Fetching!!");
       setSize((size) => size + 1);
     };
   }, [canFetchNext, setSize]);
@@ -297,7 +298,7 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
 
   return {
     /** The transaction data received so far */
-    transactions: data?.flatMap((page) => page.transactions),
+    transactions: data,
 
     /** The error that occurred while fetching transactions, if any */
     error,

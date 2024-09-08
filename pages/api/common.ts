@@ -484,13 +484,24 @@ const getTrxCursor = (rows: ReadTransactionRow[]): TransactionCursor | undefined
   };
 };
 
-export const searchTransactions = async (
+/**
+ * Get the query to retrieve paginated transactions from the database
+ * @param owner The account owner id
+ * @param model The transaction query model
+ * @param cursor The cursor for paginated data
+ * @param count If true, performs a headless count query
+ * @returns The Supabase query
+ */
+const getTrxQuery = (
   owner: string,
   model: TransactionQuery,
   cursor: TransactionCursor | undefined,
-  limit: number
-): Promise<TransactionPage> => {
-  const query = supabase.from("transactions").select(TRANSACTION_QUERY).eq("owner", owner);
+  count?: boolean
+) => {
+  const query = supabase
+    .from("transactions")
+    .select(TRANSACTION_QUERY, count ? { count: "exact", head: true } : undefined)
+    .eq("owner", owner);
 
   /* Sort query. If sorting unspecified, apply default sorting */
   let sort = model.sort;
@@ -521,13 +532,53 @@ export const searchTransactions = async (
     query.textSearch("search", model.search, { type: "plain" });
   }
 
-  /* Limit query results */
-  query.limit(limit);
+  return query;
+};
 
-  /* Execute query */
-  const rows = await wrap(query);
+const getTrxCountAsync = async (owner: string, model: TransactionQuery, cursor: TransactionCursor | undefined) => {
+  /** Don't return count after first page */
+  if (cursor !== undefined) return undefined;
+  const query = getTrxQuery(owner, model, cursor, true);
+
+  const { count, error } = await query;
+  if (error) {
+    console.log(error);
+    throw new HttpError(error.code, error.message);
+  }
+
+  return count;
+};
+
+const getTrxRowsAsync = async (
+  owner: string,
+  model: TransactionQuery,
+  cursor: TransactionCursor | undefined,
+  limit: number
+): Promise<[Transaction[], TransactionCursor | undefined]> => {
+  /* Idea: query (limit + 1) number of rows. If we actually get that many rows,
+   * then there is still another page to query (we only send back limit rows to the client).
+   */
+  const query = getTrxQuery(owner, model, cursor);
+  query.limit(limit + 1);
+  const rows = await wrap(query); // Rows we received from server
+  const clientRows = rows.slice(0, limit); // Rows we'll send back to client
+  return [clientRows.map(parseTransaction), rows.length <= limit ? undefined : getTrxCursor(clientRows)];
+};
+
+export const searchTransactions = async (
+  owner: string,
+  model: TransactionQuery,
+  cursor: TransactionCursor | undefined,
+  limit: number
+): Promise<TransactionPage> => {
+  const [count, [transactions, nextCursor]] = await Promise.all([
+    getTrxCountAsync(owner, model, cursor),
+    getTrxRowsAsync(owner, model, cursor, limit),
+  ]);
+
   return {
-    transactions: rows.map(parseTransaction),
-    cursor: getTrxCursor(rows),
+    transactions,
+    cursor: nextCursor,
+    meta: { count: count ?? undefined },
   };
 };

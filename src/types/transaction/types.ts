@@ -48,7 +48,12 @@ export type TransactionCursor = Immutable<Transaction & {
 
 export type TransactionPage = Immutable<{
   transactions: Transaction[];
+  /** The cursor to get the next page of results, or `undefined` if none remaining. */
   cursor: TransactionCursor | undefined;
+  meta: {
+    /** The total number of rows for the given query model. Only computed on first request. */
+    count?: number;
+  };
 }>;
 
 export type TransactionFilter =
