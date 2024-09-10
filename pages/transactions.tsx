@@ -91,6 +91,7 @@ const Page = () => {
         id: "star",
         cell: ({ row }) => (
           <IconButton
+            sx={{ padding: 0 }}
             onClick={(evt) => {
               starTransaction(row.original, !row.original.starred);
               evt.stopPropagation();
@@ -102,26 +103,29 @@ const Page = () => {
           </IconButton>
         ),
         enableSorting: false,
-        size: 1,
+        maxSize: mobile ? 10 : 5,
+        meta: { center: true }
       },
       {
         id: "date",
         accessorKey: "date",
         header: "Date",
         cell: ({ getValue }) => asDate(getValue<string>()).toLocaleDateString("en-US"),
-        size: 50,
+        maxSize: mobile ? 25 : 12.5,
       },
       {
         id: "amount",
         accessorKey: "amount",
         header: "Amount",
         cell: ({ getValue }) => moneyFormat(getValue<Money>()),
-        size: 50,
+        maxSize: mobile ? 25 : 12.5,
+        meta: { ellipsis: true }
       },
       {
         id: "name",
         accessorKey: "name",
         meta: { ellipsis: true },
+        maxSize: mobile ? 40 : 35,
       },
 
       // Only show these column on wide displays
@@ -131,14 +135,14 @@ const Page = () => {
               id: "budgetName", // Use "budgetName" instead of "budget" for correct remote sorting
               accessorKey: "budget",
               cell: ({ row }) => getBudget(row, budgets)?.name,
-              maxSize: 75,
+              maxSize: 17.5,
               meta: { ellipsis: true },
             },
             {
               id: "categoryName", // Use "categoryName" instead of "category" for correct remote sorting
               accessorKey: "category",
               cell: ({ row }) => getCategory(row, getBudget(row, budgets))?.name,
-              maxSize: 75,
+              maxSize: 17.5,
               meta: { ellipsis: true },
             },
           ] as ColumnDef<Transaction>[])
@@ -199,6 +203,7 @@ const Page = () => {
             setSidebarTrx(trx);
             setSidebarOpen(true);
           }}
+          isLoading={isLoading}
         />
 
         {canFetch && (

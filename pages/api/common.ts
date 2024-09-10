@@ -527,9 +527,22 @@ const getTrxQuery = (
 
   if (filter) query.or(resolvePostgrestFilter(filter));
 
-  /* Perform FTS on search query */
+  /*
+   * Perform text search on search query.
+   *
+   * We'll use a simple text search that splits the query into tokens and requires
+   * that each matching row contain all of the tokens.
+   * Punctuation is removed both here and in the `transactions.search` Postgres column.
+   */
   if (model.search) {
-    query.textSearch("search", model.search, { type: "plain" });
+    const keywords = model.search
+      .replace(/[\\%_]/g, "\\$&") // Escape %_\ for Postgres ILIKE
+      .split(" ")
+      .filter((s) => s !== "");
+    query.ilikeAllOf(
+      "search",
+      keywords.map((k) => `%${k}%`)
+    );
   }
 
   return query;
