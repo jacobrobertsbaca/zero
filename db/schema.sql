@@ -67,6 +67,8 @@ create table transactions (
   last_modified varchar(27) not null,
   starred boolean not null,
   note text not null check (length(note) <= 1000),
-  search tsvector generated always as 
-    (to_tsvector('english', name || ' ' || note || ' ' ||  budget_name || ' ' || category_name)) stored 
+  search text generated always as 
+    (regexp_replace(
+      name || ' ' || note || ' ' ||  budget_name || ' ' || category_name, 
+      '[!"#$%&''"()*+,|\-.\/:;<=>?\[\\\]^_`~‘’“”]', '', 'g')) stored
 );
