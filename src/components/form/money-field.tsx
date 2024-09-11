@@ -1,3 +1,4 @@
+import MaskedInput from "react-text-mask";
 import { InputAdornment, TextField, TextFieldProps } from "@mui/material";
 import { FormikValues, useFormikContext } from "formik";
 import { get, isEqual } from "lodash";
@@ -84,7 +85,7 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
       }}
       inputProps={{
         inputMode: "decimal",
-        ...inputProps
+        ...inputProps,
       }}
       error={!!error}
       helperText={typeof error === "string" ? error : JSON.stringify(error)}
@@ -92,6 +93,17 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
       onChange={handleChange}
       onBlur={handleBlur}
       {...textFieldProps}
+    />
+  );
+};
+
+export type MoneyFieldPropsV2 = {};
+
+export const MoneyFieldV2 = <T extends FormikValues>(props: MoneyFieldPropsV2) => {
+  return (
+    <MaskedInput
+      mask={value => { console.log(value);  return [/[0-9]/, '0']; }}
+      render={(innerRef, props) => <TextField {...props} label="Amount" inputRef={innerRef} />}
     />
   );
 };
