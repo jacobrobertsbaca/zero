@@ -1,6 +1,24 @@
-import { Box, Table as MuiTable, styled, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  LinearProgress,
+  Table as MuiTable,
+  Stack,
+  styled,
+  SvgIcon,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
+
 import { flexRender, RowData, Table } from "@tanstack/react-table";
 import { Transaction } from "src/types/transaction/types";
+
+import UpArrow from "@heroicons/react/20/solid/ArrowUpIcon";
+import DownArrow from "@heroicons/react/20/solid/ArrowDownIcon";
+import { useEffect, useState } from "react";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -11,13 +29,40 @@ declare module "@tanstack/react-table" {
 
 const Cell = styled(TableCell)({ paddingLeft: 4, paddingRight: 4 });
 
+const LoadingBar = ({
+  colSpan,
+  isValidating,
+  toleranceMs,
+}: {
+  colSpan: number;
+  isValidating: boolean;
+  toleranceMs: number;
+}) => {
+  const [showBar, setShowBar] = useState(isValidating);
+  useEffect(() => {
+    if (isValidating) {
+      const timeout = setTimeout(() => setShowBar(true), toleranceMs);
+      return () => clearTimeout(timeout);
+    } else setShowBar(false);
+  }, [isValidating]);
+
+  return (
+    <TableRow>
+      <TableCell colSpan={colSpan} sx={{ height: 2, padding: 0, borderBottom: "none", borderRadius: 0 }}>
+        {showBar && <LinearProgress sx={{ height: 2 }} />}
+      </TableCell>
+    </TableRow>
+  );
+};
+
 export type TransactionListProps = {
   table: Table<Transaction>;
   setSidebarTrx: (trx: Transaction) => void;
   isLoading: boolean;
+  isValidating: boolean;
 };
 
-export const TransactionList = ({ table, setSidebarTrx, isLoading }: TransactionListProps) => {
+export const TransactionList = ({ table, setSidebarTrx, isLoading, isValidating }: TransactionListProps) => {
   const { rows } = table.getRowModel();
 
   return (
@@ -27,12 +72,59 @@ export const TransactionList = ({ table, setSidebarTrx, isLoading }: Transaction
           {table.getHeaderGroups().map((group) => (
             <TableRow key={group.id}>
               {group.headers.map((header) => (
-                <Cell key={header.id} sx={{ width: `${(header.getSize() / table.getTotalSize()) * 100}%` }}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
+                <Cell
+                  key={header.id}
+                  sx={{
+                    width: `${(header.getSize() / table.getTotalSize()) * 100}%`,
+                    height: 52,
+                    py: 1,
+                    ...(header.column.getCanSort() ? { cursor: "pointer" } : {}),
+                    ...(!header.column.getIsSorted()
+                      ? {
+                          "&:hover": {
+                            "& .button-container": {
+                              visibility: "visible",
+                              width: "auto",
+                            },
+                            "& .button-icon": {
+                              opacity: 0.5,
+                            },
+                          },
+                        }
+                      : {}),
+                  }}
+                  onClick={header.column.getToggleSortingHandler()}
+                >
+                  <Stack direction="row" alignItems="center">
+                    <Typography variant="inherit">
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </Typography>
+                    {header.column.getCanSort() && (
+                      <Box
+                        className="button-container"
+                        sx={
+                          header.column.getIsSorted()
+                            ? { visibility: "visible", width: "auto" }
+                            : { visibility: "hidden", width: 0 }
+                        }
+                      >
+                        <IconButton sx={{ padding: 0.5 }}>
+                          <SvgIcon sx={{ fontSize: "0.7em" }} className="button-icon">
+                            {(header.column.getIsSorted() || header.column.getFirstSortDir()) === "asc" ? (
+                              <UpArrow />
+                            ) : (
+                              <DownArrow />
+                            )}
+                          </SvgIcon>
+                        </IconButton>
+                      </Box>
+                    )}
+                  </Stack>
                 </Cell>
               ))}
             </TableRow>
           ))}
+          <LoadingBar colSpan={table.getVisibleFlatColumns().length} isValidating={isValidating} toleranceMs={500} />
         </TableHead>
         <TableBody>
           {rows.map((row) => (

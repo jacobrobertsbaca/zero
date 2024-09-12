@@ -157,8 +157,8 @@ const Page = () => {
     state: { sorting },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
     manualSorting: true,
-    // debugTable: process.env.NODE_ENV === "development",
   });
 
   /* Can't fetch any more pages if fetching disabled AND we're not loading a page */
@@ -204,6 +204,7 @@ const Page = () => {
             setSidebarOpen(true);
           }}
           isLoading={isLoading}
+          isValidating={isValidating}
         />
 
         {canFetch && (

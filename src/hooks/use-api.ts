@@ -201,7 +201,8 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
       http<TransactionPage>(ApiTransactionsSearch, "POST", {
         token,
         data: { cursor, model },
-      })
+      }),
+    { keepPreviousData: true }
   );
 
   /**
