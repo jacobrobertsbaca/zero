@@ -20,6 +20,7 @@ import { Category } from "src/types/category/types";
 import { TransactionList } from "src/sections/transactions/transaction-list";
 import { LoadingButton } from "@mui/lab";
 import { Loading } from "src/components/loading";
+import { MoneyFieldV2 } from "src/components/form/money-field";
 
 const convertSorting = (sorting: SortingState): TransactionSort[] =>
   sorting.map((sort) => ({
@@ -165,8 +166,11 @@ const Page = () => {
   const canFetch = !!fetchMore || isValidating;
   const count = transactions?.[0].meta?.count;
 
+  const [money, setMoney] = useState<Money | null>(null);
+
   return (
     <Stack spacing={2}>
+      <MoneyFieldV2 value={money} onChange={value => setMoney(value)}/>
       <Stack direction="row" alignItems="normal" spacing={0.5}>
         <PageTitle title="Transactions" />
         {budgets && budgets.length > 0 && (

@@ -1,8 +1,7 @@
-import MaskedInput from "react-text-mask";
 import { InputAdornment, TextField, TextFieldProps } from "@mui/material";
 import { FormikValues, useFormikContext } from "formik";
 import { get, isEqual } from "lodash";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { defaultCurrency, moneyFormat, moneyZero } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
 
@@ -97,13 +96,48 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
   );
 };
 
-export type MoneyFieldPropsV2 = {};
+const parseCurrencyV2 = (input: string): Money | null => {
+  if (input === "" || input === ".") return null;
+  const negative = input[0] === "-";
+  if (negative) input = input.slice(1);
+  const parts = input.split(".");
+  let major = parseInt(parts[0]);
+  let minor = parseInt(parts[1]);
+  if (parts[1] && parts[1].length === 1) minor *= 10;
+  if (isNaN(major) && isNaN(minor)) return null;
+  major = isNaN(major) ? 0 : major;
+  minor = isNaN(minor) ? 0 : minor;
+  return {
+    amount: (negative ? -1 : 1) * (100 * major + minor),
+    currency: defaultCurrency,
+  };
+};
 
-export const MoneyFieldV2 = <T extends FormikValues>(props: MoneyFieldPropsV2) => {
-  return (
-    <MaskedInput
-      mask={value => { console.log(value);  return [/[0-9]/, '0']; }}
-      render={(innerRef, props) => <TextField {...props} label="Amount" inputRef={innerRef} />}
-    />
-  );
+export type MoneyFieldPropsV2 = Omit<TextFieldProps, "value" | "onChange"> & {
+  value: Money | null;
+  onChange: (value: Money | null) => void;
+};
+
+export const MoneyFieldV2 = (props: MoneyFieldPropsV2) => {
+  const { value, onChange, ...rest } = props;
+  const [rawInput, setRawInput] = useState("");
+  const lastValue = useRef(value);
+
+  const onInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setRawInput((prevInput) => maskCurrency(prevInput, event.target.value));
+    const money = parseCurrencyV2(event.target.value);
+    lastValue.current = money;
+    onChange(money);
+    console.log("raw: ", event.target.value, " money: ", money);
+  };
+
+  useEffect(() => {
+    if (isEqual(value, lastValue.current)) return;
+    if (value === null) setRawInput("");
+    else setRawInput(moneyFormat(value, { excludeSymbol: true }));
+    lastValue.current = value;
+    console.log("effect value: ", value);
+  }, [value]);
+
+  return <TextField onChange={onInputChange} value={rawInput} {...rest} />;
 };
