@@ -1,8 +1,8 @@
 import { Stack, styled, Typography } from "@mui/material";
 import { isEqual } from "lodash";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { DateField } from "src/components/form/date-field";
-import { MoneyField } from "src/components/form/money-field";
+import { FormMoneyField } from "src/components/form/money-field";
 import { SelectField } from "src/components/form/select-field";
 import { TextField } from "src/components/form/text-field";
 import { Scrollbar } from "src/components/scrollbar";
@@ -127,7 +127,7 @@ export const TransactionSidebar = ({
                 }}
               />
               <CategorySelector budgets={budgets} />
-              <MoneyField label="Amount" name="amount" />
+              <FormMoneyField label="Amount" name="amount" />
               <TextField label="Name" name="name" placeholder="Optional" max={120} />
               <TextField
                 label="Note"

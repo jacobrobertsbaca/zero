@@ -42,7 +42,6 @@ export const TransactionList = ({ table, setSidebarTrx, isLoading }: Transaction
                   key={cell.id}
                   sx={{
                     width: "auto",
-                    py: 1,
                     ...(cell.column.columnDef.meta?.ellipsis
                       ? { overflow: "hidden", textOverflow: "ellipsis", overflowWrap: "anywhere" }
                       : {}),

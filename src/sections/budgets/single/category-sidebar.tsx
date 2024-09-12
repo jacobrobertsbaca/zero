@@ -10,7 +10,6 @@ import {
   categoryDirty,
   categoryNominal,
   categoryTitle,
-  onCategoryNominal,
 } from "src/types/category/methods";
 import { PeriodList } from "./period-list";
 import { MoneyText } from "src/components/money-text";
@@ -20,7 +19,6 @@ import { useCallback, useEffect, useState } from "react";
 import { TextField } from "src/components/form/text-field";
 import { useFormikContext } from "formik";
 import { SelectField } from "src/components/form/select-field";
-import { MoneyField } from "src/components/form/money-field";
 import { PeriodListMutable } from "./period-list-mutable";
 import { RecurrencePicker } from "./recurrence-picker";
 import { Budget } from "src/types/budget/types";

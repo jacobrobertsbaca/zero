@@ -36,10 +36,7 @@ export const BudgetCardDetails = ({ budget }: BudgetCardDetailsProps) => {
       <Divider sx={{ mt: 2, mb: 2 }} />
       <Stack spacing={1}>
         {summary.map((s) => (
-          <TitledSpendingBar
-            key={s.type}
-            {...s}
-          />
+          <TitledSpendingBar key={s.type ?? "leftover"} {...s} />
         ))}
       </Stack>
     </>

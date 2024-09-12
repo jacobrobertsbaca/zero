@@ -20,7 +20,6 @@ import { Category } from "src/types/category/types";
 import { TransactionList } from "src/sections/transactions/transaction-list";
 import { LoadingButton } from "@mui/lab";
 import { Loading } from "src/components/loading";
-import { MoneyFieldV2 } from "src/components/form/money-field";
 
 const convertSorting = (sorting: SortingState): TransactionSort[] =>
   sorting.map((sort) => ({
@@ -105,28 +104,28 @@ const Page = () => {
         ),
         enableSorting: false,
         maxSize: mobile ? 10 : 5,
-        meta: { center: true }
+        meta: { center: true },
       },
       {
         id: "date",
         accessorKey: "date",
         header: "Date",
         cell: ({ getValue }) => asDate(getValue<string>()).toLocaleDateString("en-US"),
-        maxSize: mobile ? 25 : 12.5,
+        maxSize: mobile ? 30 : 12.5,
       },
       {
         id: "amount",
         accessorKey: "amount",
         header: "Amount",
         cell: ({ getValue }) => moneyFormat(getValue<Money>()),
-        maxSize: mobile ? 25 : 12.5,
-        meta: { ellipsis: true }
+        maxSize: mobile ? 30 : 12.5,
+        meta: { ellipsis: true },
       },
       {
         id: "name",
         accessorKey: "name",
         meta: { ellipsis: true },
-        maxSize: mobile ? 40 : 35,
+        maxSize: mobile ? 30 : 35,
       },
 
       // Only show these column on wide displays
@@ -166,11 +165,8 @@ const Page = () => {
   const canFetch = !!fetchMore || isValidating;
   const count = transactions?.[0].meta?.count;
 
-  const [money, setMoney] = useState<Money | null>(null);
-
   return (
     <Stack spacing={2}>
-      <MoneyFieldV2 value={money} onChange={value => setMoney(value)}/>
       <Stack direction="row" alignItems="normal" spacing={0.5}>
         <PageTitle title="Transactions" />
         {budgets && budgets.length > 0 && (
