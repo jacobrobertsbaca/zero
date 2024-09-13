@@ -3,7 +3,7 @@ import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
 import { PageTitle } from "src/components/page-title";
 import { TransactionSidebar } from "src/sections/transactions/transaction-sidebar";
 import { useCallback, useMemo, useState } from "react";
-import { Transaction, TransactionSort } from "src/types/transaction/types";
+import { Transaction, TransactionQuery } from "src/types/transaction/types";
 import { moneyFormat, moneyZero } from "src/types/money/methods";
 import { useBudgets, useTransactionsSearch } from "src/hooks/use-api";
 
@@ -12,7 +12,15 @@ import { Budget } from "src/types/budget/types";
 import { asDate, asDateString } from "src/types/utils/methods";
 import { Money } from "src/types/money/types";
 import { TransactionSearch } from "src/sections/transactions/transaction-search";
-import { ColumnDef, getCoreRowModel, getSortedRowModel, Row, SortingState, useReactTable } from "@tanstack/react-table";
+import {
+  ColumnDef,
+  functionalUpdate,
+  getCoreRowModel,
+  getSortedRowModel,
+  Row,
+  SortingState,
+  useReactTable,
+} from "@tanstack/react-table";
 
 import StarIconOutlined from "@heroicons/react/24/outline/StarIcon";
 import StarIconSolid from "@heroicons/react/24/solid/StarIcon";
@@ -20,12 +28,60 @@ import { Category } from "src/types/category/types";
 import { TransactionList } from "src/sections/transactions/transaction-list";
 import { LoadingButton } from "@mui/lab";
 import { Loading } from "src/components/loading";
+import { SearchModelOptions, useSearchModel } from "src/hooks/use-search";
+import { TransactionSearchColumnSchema } from "src/types/transaction/schema";
 
-const convertSorting = (sorting: SortingState): TransactionSort[] =>
-  sorting.map((sort) => ({
-    column: sort.id as any,
-    ascending: !sort.desc,
-  }));
+/* ================================================================================================================= *
+ * URLSearchParams Handling                                                                                          *
+ * ================================================================================================================= */
+
+type Query = {
+  search?: string;
+  sort: SortingState;
+};
+
+const encodeQuery: SearchModelOptions<Query>["encodeQuery"] = (query, params) => {
+  if (query.search) params.set("search", query.search);
+  query.sort.forEach((sort) => {
+    params.append("sort", `${sort.id}.${sort.desc ? "d" : "a"}`);
+  });
+};
+
+const decodeQuery: SearchModelOptions<Query>["decodeQuery"] = (params) => {
+  const search = params.get("search") ?? undefined;
+  const sort = params
+    .getAll("sort")
+    .map((sort) => {
+      const [column, dir] = sort.split(".");
+      TransactionSearchColumnSchema.parse(column);
+      return { id: column, desc: dir === "d" };
+    })
+    .filter((sort) => !!sort);
+  return { search, sort };
+};
+
+const convertQuery = (query: Query): TransactionQuery => {
+  return {
+    search: query.search,
+    sort: query.sort.map((sort) => ({ column: sort.id as any, ascending: !sort.desc })),
+  };
+};
+
+const useTransactionsModel = () => {
+  const searchModel = useSearchModel<Query>({
+    href: "/transactions",
+    defaultQuery: { sort: [] },
+    encodeQuery,
+    decodeQuery,
+  });
+
+  const model: TransactionQuery = useMemo(() => convertQuery(searchModel.query), [searchModel.query]);
+  return { ...searchModel, model };
+};
+
+/* ================================================================================================================= *
+ * Transactions Page                                                                                                 *
+ * ================================================================================================================= */
 
 const getBudget = (row: Row<Transaction>, budgets: readonly Budget[] | undefined): Budget | undefined => {
   if (!budgets) return undefined;
@@ -39,9 +95,7 @@ const getCategory = (row: Row<Transaction>, budget: Budget | undefined): Categor
 
 const Page = () => {
   const { budgets, error: budgetsError } = useBudgets();
-
-  const [search, setSearch] = useState<string | undefined>(undefined);
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const { query, setQuery, model } = useTransactionsModel();
 
   const theme = useTheme();
   const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
@@ -83,7 +137,7 @@ const Page = () => {
     fetchMore,
     isValidating,
     isLoading,
-  } = useTransactionsSearch({ search, sort: convertSorting(sorting) });
+  } = useTransactionsSearch(model);
 
   const columns = useMemo<ColumnDef<Transaction>[]>(() => {
     return [
@@ -154,10 +208,10 @@ const Page = () => {
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    state: { sorting: query.sort },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
+    onSortingChange: (sort) => setQuery((query) => ({ ...query, sort: functionalUpdate(sort, query.sort) })),
     manualSorting: true,
   });
 
@@ -195,7 +249,7 @@ const Page = () => {
       </Stack>
 
       <Loading error={budgetsError || trxError} loading={false}>
-        <TransactionSearch onSearch={setSearch} />
+        <TransactionSearch search={query.search} setSearch={(search) => setQuery((query) => ({ ...query, search }))} />
         {count ? <Typography variant="caption">Found {count} transactions</Typography> : null}
         <TransactionList
           table={table}

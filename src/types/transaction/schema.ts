@@ -34,7 +34,7 @@ const textColumns = z.enum([
 const boolColumns = z.enum(["starred"]);
 const numberColumns = z.enum(["amount"]);
 
-export const SearchColumnSchema = z.enum([
+export const TransactionSearchColumnSchema = z.enum([
   ...textColumns.options,
   ...boolColumns.options,
   ...numberColumns.options,
@@ -62,7 +62,7 @@ export const TransactionFilterSchema: z.ZodType<TransactionFilter> = z.union([
 ]);
 
 export const TransactionSortSchema = z.object({
-  column: SearchColumnSchema.exclude(["id"]),
+  column: TransactionSearchColumnSchema.exclude(["id"]),
   ascending: z.boolean(),
 });
 

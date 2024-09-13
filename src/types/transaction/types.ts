@@ -3,7 +3,7 @@ import { Money } from "../money/types";
 import { DateString } from "../utils/types";
 import {
   BaseTransactionFilterSchema,
-  SearchColumnSchema,
+  TransactionSearchColumnSchema,
   TransactionQuerySchema,
   TransactionSortSchema,
 } from "./schema";
@@ -64,5 +64,5 @@ export type TransactionFilter =
     };
 
 export type TransactionSort = z.infer<typeof TransactionSortSchema>;
-export type TransactionSearchColumn = z.infer<typeof SearchColumnSchema>;
+export type TransactionSearchColumn = z.infer<typeof TransactionSearchColumnSchema>;
 export type TransactionQuery = z.infer<typeof TransactionQuerySchema>;

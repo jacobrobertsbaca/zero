@@ -44,7 +44,7 @@ const LoadingBar = ({
       const timeout = setTimeout(() => setShowBar(true), toleranceMs);
       return () => clearTimeout(timeout);
     } else setShowBar(false);
-  }, [isValidating]);
+  }, [isValidating, toleranceMs]);
 
   return (
     <TableRow>
