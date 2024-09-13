@@ -124,7 +124,7 @@ export const TransactionList = ({ table, setSidebarTrx, isLoading, isValidating 
               ))}
             </TableRow>
           ))}
-          <LoadingBar colSpan={table.getVisibleFlatColumns().length} isValidating={isValidating} toleranceMs={500} />
+          <LoadingBar colSpan={table.getVisibleFlatColumns().length} isValidating={isValidating} toleranceMs={1000} />
         </TableHead>
         <TableBody>
           {rows.map((row) => (

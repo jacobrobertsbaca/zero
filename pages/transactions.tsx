@@ -30,6 +30,7 @@ import { LoadingButton } from "@mui/lab";
 import { Loading } from "src/components/loading";
 import { SearchModelOptions, useSearchModel } from "src/hooks/use-search";
 import { TransactionSearchColumnSchema } from "src/types/transaction/schema";
+import { TransactionFilterView } from "src/sections/transactions/transaction-filter";
 
 /* ================================================================================================================= *
  * URLSearchParams Handling                                                                                          *
@@ -249,7 +250,10 @@ const Page = () => {
       </Stack>
 
       <Loading error={budgetsError || trxError} loading={false}>
-        <TransactionSearch search={query.search} setSearch={(search) => setQuery((query) => ({ ...query, search }))} />
+        <Stack direction="row" justifyContent="space-between" spacing={2}>
+          <TransactionSearch fullWidth  search={query.search} setSearch={(search) => setQuery((query) => ({ ...query, search }))} />
+          <TransactionFilterView />
+        </Stack>
         {count ? <Typography variant="caption">Found {count} transactions</Typography> : null}
         <TransactionList
           table={table}

@@ -1,16 +1,16 @@
-import { InputAdornment, SvgIcon, TextField } from "@mui/material";
+import { InputAdornment, SvgIcon, TextField, TextFieldProps } from "@mui/material";
 
 import SearchIcon from "@heroicons/react/20/solid/MagnifyingGlassIcon";
 import { useEffect, useMemo, useState } from "react";
 import { debounce } from "lodash";
 
-export type TransactionSearchProps = {
+export type TransactionSearchProps = TextFieldProps & {
   search: string | undefined;
   setSearch: (search: string | undefined) => void;
   debounceMs?: number;
 };
 
-export const TransactionSearch = ({ search, setSearch, debounceMs = 300 }: TransactionSearchProps) => {
+export const TransactionSearch = ({ search, setSearch, debounceMs = 300, ...rest }: TransactionSearchProps) => {
   const [bufferedSearch, setBufferedSearch] = useState(search ?? "");
 
   const onSearchDebounced = useMemo(
@@ -38,7 +38,6 @@ export const TransactionSearch = ({ search, setSearch, debounceMs = 300 }: Trans
         onSearchDebounced(e.target.value);
         onSyncDebounced.cancel();
       }}
-      variant="standard"
       InputProps={{
         startAdornment: (
           <InputAdornment position="start">
@@ -48,6 +47,10 @@ export const TransactionSearch = ({ search, setSearch, debounceMs = 300 }: Trans
           </InputAdornment>
         ),
       }}
+      variant="filled"
+      hiddenLabel
+      size="small"
+      {...rest}
     />
   );
 };
