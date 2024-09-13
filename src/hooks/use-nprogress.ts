@@ -4,6 +4,7 @@ import nProgress from "nprogress";
 
 const ignoreQuery = (pathRef: MutableRefObject<string | undefined>, func: () => any) => (url: any) => {
   /** If url is not a string, then we can't do any path-dependent logic. */
+  console.log(url);
   if (typeof url === "string") {
     const path = url.split("?")[0];
     if (pathRef.current === path) return;
@@ -17,8 +18,8 @@ export function useNProgress() {
   const endPath = useRef<string>();
 
   useEffect(() => {
-    const onRouteStart = ignoreQuery(startPath, nProgress.start);
-    const onRouteComplete = ignoreQuery(endPath, nProgress.done);
+    const onRouteStart = ignoreQuery(startPath, () => { console.log("start"); nProgress.start(); });
+    const onRouteComplete = ignoreQuery(endPath, () => { console.log("end"); nProgress.done(); });
 
     Router.events.on("routeChangeStart", onRouteStart);
     Router.events.on("routeChangeError", onRouteComplete);
