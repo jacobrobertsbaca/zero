@@ -9,7 +9,7 @@ import { useBudgets, useTransactionsSearch } from "src/hooks/use-api";
 
 import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
 import { Budget } from "src/types/budget/types";
-import { asDate, asDateString } from "src/types/utils/methods";
+import { asDateString, dateFormatShort } from "src/types/utils/methods";
 import { Money } from "src/types/money/types";
 import { TransactionSearch } from "src/sections/transactions/transaction-search";
 import {
@@ -30,7 +30,14 @@ import { LoadingButton } from "@mui/lab";
 import { Loading } from "src/components/loading";
 import { SearchModelOptions, useSearchModel } from "src/hooks/use-search";
 import { TransactionSearchColumnSchema } from "src/types/transaction/schema";
-import { TransactionFilterView } from "src/sections/transactions/transaction-filter";
+import {
+  decodeFilterModel,
+  encodeFilterModel,
+  filterModelToFilters,
+  TransactionFilterChips,
+  TransactionFilterModel,
+  TransactionFilterView,
+} from "src/sections/transactions/transaction-filter";
 
 /* ================================================================================================================= *
  * URLSearchParams Handling                                                                                          *
@@ -38,46 +45,60 @@ import { TransactionFilterView } from "src/sections/transactions/transaction-fil
 
 type Query = {
   search?: string;
-  sort: SortingState;
-};
-
-const encodeQuery: SearchModelOptions<Query>["encodeQuery"] = (query, params) => {
-  if (query.search) params.set("search", query.search);
-  query.sort.forEach((sort) => {
-    params.append("sort", `${sort.id}.${sort.desc ? "d" : "a"}`);
-  });
-};
-
-const decodeQuery: SearchModelOptions<Query>["decodeQuery"] = (params) => {
-  const search = params.get("search") ?? undefined;
-  const sort = params
-    .getAll("sort")
-    .map((sort) => {
-      const [column, dir] = sort.split(".");
-      TransactionSearchColumnSchema.parse(column);
-      return { id: column, desc: dir === "d" };
-    })
-    .filter((sort) => !!sort);
-  return { search, sort };
+  sorting: SortingState;
+  filter: TransactionFilterModel;
 };
 
 const convertQuery = (query: Query): TransactionQuery => {
   return {
     search: query.search,
-    sort: query.sort.map((sort) => ({ column: sort.id as any, ascending: !sort.desc })),
+    sort: query.sorting.map((sort) => ({ column: sort.id as any, ascending: !sort.desc })),
+    filter: filterModelToFilters(query.filter),
   };
 };
 
-const useTransactionsModel = () => {
-  const searchModel = useSearchModel<Query>({
+const useTransactionsModel = ({ budgets }: { budgets: readonly Budget[] | undefined }) => {
+  const encodeQuery: SearchModelOptions<Query>["encodeQuery"] = useCallback((query, params) => {
+    if (query.search) params.set("search", query.search);
+    query.sorting.forEach((sort) => {
+      params.append("sort", `${sort.desc ? "-" : ""}${sort.id}`);
+    });
+    encodeFilterModel(query.filter, params);
+  }, []);
+
+  const decodeQuery: SearchModelOptions<Query>["decodeQuery"] = useCallback(
+    (params) => {
+      const search = params.get("search") ?? undefined;
+      const sorting = params
+        .getAll("sort")
+        .map((column) => {
+          const desc = column.startsWith("-");
+          if (desc) column = column.slice(1);
+          const result = TransactionSearchColumnSchema.safeParse(column);
+          if (!result.success) return undefined;
+          return { id: column, desc };
+        })
+        .filter((sort) => !!sort);
+      const filter = decodeFilterModel(params, budgets);
+      return { search, sorting, filter };
+    },
+    [budgets]
+  );
+
+  const { query, setQuery } = useSearchModel<Query>({
     href: "/transactions",
-    defaultQuery: { sort: [] },
     encodeQuery,
     decodeQuery,
   });
 
-  const model: TransactionQuery = useMemo(() => convertQuery(searchModel.query), [searchModel.query]);
-  return { ...searchModel, model };
+  const model: TransactionQuery = useMemo(() => convertQuery(query), [query]);
+  return {
+    ...query,
+    model,
+    setSearch: useCallback((search?: string) => setQuery((query) => ({ ...query, search })), [setQuery]),
+    setSort: useCallback((sort: SortingState) => setQuery((query) => ({ ...query, sorting: sort })), [setQuery]),
+    setFilter: useCallback((filter: TransactionFilterModel) => setQuery((query) => ({ ...query, filter })), [setQuery]),
+  };
 };
 
 /* ================================================================================================================= *
@@ -96,7 +117,7 @@ const getCategory = (row: Row<Transaction>, budget: Budget | undefined): Categor
 
 const Page = () => {
   const { budgets, error: budgetsError } = useBudgets();
-  const { query, setQuery, model } = useTransactionsModel();
+  const { search, sorting, filter, setSearch, setSort, setFilter, model } = useTransactionsModel({ budgets });
 
   const theme = useTheme();
   const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
@@ -165,14 +186,14 @@ const Page = () => {
         id: "date",
         accessorKey: "date",
         header: "Date",
-        cell: ({ getValue }) => asDate(getValue<string>()).toLocaleDateString("en-US"),
+        cell: ({ getValue }) => dateFormatShort(getValue<string>()),
         maxSize: mobile ? 30 : 12.5,
       },
       {
         id: "amount",
         accessorKey: "amount",
         header: "Amount",
-        cell: ({ getValue }) => moneyFormat(getValue<Money>()),
+        cell: ({ getValue }) => moneyFormat(getValue<Money>(), { keepZero: true }),
         maxSize: mobile ? 30 : 12.5,
         meta: { ellipsis: true },
       },
@@ -209,10 +230,10 @@ const Page = () => {
   const table = useReactTable({
     data,
     columns,
-    state: { sorting: query.sort },
+    state: { sorting },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    onSortingChange: (sort) => setQuery((query) => ({ ...query, sort: functionalUpdate(sort, query.sort) })),
+    onSortingChange: (sort) => setSort(functionalUpdate(sort, sorting)),
     manualSorting: true,
   });
 
@@ -250,10 +271,11 @@ const Page = () => {
       </Stack>
 
       <Loading error={budgetsError || trxError} loading={false}>
-        <Stack direction="row" justifyContent="space-between" spacing={2}>
-          <TransactionSearch fullWidth  search={query.search} setSearch={(search) => setQuery((query) => ({ ...query, search }))} />
+        <Stack direction="row" justifyContent="space-between" spacing={1}>
+          <TransactionSearch fullWidth search={search} setSearch={setSearch} />
           <TransactionFilterView />
         </Stack>
+        <TransactionFilterChips filter={filter} setFilter={setFilter} budgets={budgets} />
         {count ? <Typography variant="caption">Found {count} transactions</Typography> : null}
         <TransactionList
           table={table}

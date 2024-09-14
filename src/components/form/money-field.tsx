@@ -2,7 +2,7 @@ import { InputAdornment, TextField, TextFieldProps } from "@mui/material";
 import { FormikValues, useFormikContext } from "formik";
 import { isEqual } from "lodash";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
-import { defaultCurrency, moneyFormat } from "src/types/money/methods";
+import { moneyFormat, moneyParse } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
 
 const maskCurrency = (prev: string, current: string): string => {
@@ -15,23 +15,6 @@ const maskCurrency = (prev: string, current: string): string => {
   if (periods > 1) return prev;
   if (parts[1] && parts[1].length > 2) return prev;
   return current;
-};
-
-const parseCurrency = (input: string): Money | null => {
-  if (input === "" || input === ".") return null;
-  const negative = input[0] === "-";
-  if (negative) input = input.slice(1);
-  const parts = input.split(".");
-  let major = parseInt(parts[0]);
-  let minor = parseInt(parts[1]?.slice(0, 2));
-  if (parts[1] && parts[1].length === 1) minor *= 10;
-  if (isNaN(major) && isNaN(minor)) return null;
-  major = isNaN(major) ? 0 : major;
-  minor = isNaN(minor) ? 0 : minor;
-  return {
-    amount: (negative ? -1 : 1) * (100 * major + minor),
-    currency: defaultCurrency,
-  };
 };
 
 export type MoneyFieldProps = Omit<TextFieldProps, "value" | "onChange"> & {
@@ -49,7 +32,7 @@ export const MoneyField = (props: MoneyFieldProps) => {
   const onInputChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       setRawInput((prevInput) => maskCurrency(prevInput, event.target.value));
-      const money = parseCurrency(event.target.value);
+      const money = moneyParse(event.target.value);
       lastValue.current = money;
       onChange(money);
     },
@@ -58,7 +41,7 @@ export const MoneyField = (props: MoneyFieldProps) => {
 
   const onInputBlur = useCallback(
     (event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement, Element>) => {
-      if (value) setRawInput(moneyFormat(value, { excludeSymbol: true }));
+      if (value) setRawInput(moneyFormat(value, { keepZero: true, excludeSymbol: true }));
       else setRawInput("");
       onBlur?.(event);
     },
@@ -68,7 +51,7 @@ export const MoneyField = (props: MoneyFieldProps) => {
   useEffect(() => {
     if (isEqual(value, lastValue.current)) return;
     if (value === null) setRawInput("");
-    else setRawInput(moneyFormat(value, { excludeSymbol: true }));
+    else setRawInput(moneyFormat(value, { keepZero: true, excludeSymbol: true }));
     lastValue.current = value;
   }, [value]);
 
