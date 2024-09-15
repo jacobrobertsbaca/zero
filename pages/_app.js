@@ -53,6 +53,7 @@ const App = (props) => {
               <SWRConfig
                 value={{
                   onError(err) {
+                    if (err) console.error(err);
                     enqueueSnackbar(err?.message ?? "An error occurred", { variant: "error" });
                   },
                 }}

@@ -1,16 +1,8 @@
-import {
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 
 import { Scrollbar } from "src/components/scrollbar";
 import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
-import {
-  categoryActual,
-  categoryDirty,
-  categoryNominal,
-  categoryTitle,
-} from "src/types/category/methods";
+import { categoryActual, categoryDirty, categoryNominal, categoryTitle } from "src/types/category/methods";
 import { PeriodList } from "./period-list";
 import { MoneyText } from "src/components/money-text";
 import { EditActions, EditState } from "../../../components/sidebar/edit-actions";
@@ -26,7 +18,6 @@ import { RolloverPicker } from "./rollover-picker";
 import * as Yup from "yup";
 import { useCategoryChanges } from "src/hooks/use-api";
 import { Sidebar } from "src/components/sidebar/sidebar";
-import { SidebarHeader } from "src/components/sidebar/sidebar-header";
 import { DeleteDialog } from "src/components/delete-dialog";
 
 /* ================================================================================================================= *
@@ -146,6 +137,13 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
     <Sidebar
       open={open}
       onClose={onClose}
+      title={(formik) =>
+        editState !== EditState.Edit
+          ? category.name
+          : category.id
+          ? formik.values.name
+          : formik.values.name || "New Category"
+      }
       FormProps={{
         enableReinitialize: true,
         initialValues: category,
@@ -162,14 +160,6 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
     >
       {(formik) => (
         <>
-          <SidebarHeader onClose={onClose}>
-            {editState !== EditState.Edit
-              ? category.name
-              : category.id
-              ? formik.values.name
-              : formik.values.name || "New Category"}
-          </SidebarHeader>
-
           <DeleteDialog
             open={deleteModal}
             title={`Delete category ${category.name}?`}
@@ -178,19 +168,15 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
             onDelete={handleDelete}
           />
 
-          <Scrollbar sx={{ flexGrow: 1 }}>
-            <Stack spacing={3} sx={{ p: 3 }}>
-              {editState === EditState.Edit && <CategoryEditView budget={budget} />}
-              {editState !== EditState.Edit && <CategoryDetailsView category={category} />}
-              <EditActions
-                allowDelete={!!category.id}
-                dirty={categoryDirty(formik.values, category)}
-                state={editState}
-                onStateChanged={setEditState}
-                onDelete={openModal}
-              />
-            </Stack>
-          </Scrollbar>
+          {editState === EditState.Edit && <CategoryEditView budget={budget} />}
+          {editState !== EditState.Edit && <CategoryDetailsView category={category} />}
+          <EditActions
+            allowDelete={!!category.id}
+            dirty={categoryDirty(formik.values, category)}
+            state={editState}
+            onStateChanged={setEditState}
+            onDelete={openModal}
+          />
         </>
       )}
     </Sidebar>

@@ -36,7 +36,7 @@ import {
   filterModelToFilters,
   TransactionFilterChips,
   TransactionFilterModel,
-  TransactionFilterView,
+  TransactionFilterButton,
 } from "src/sections/transactions/transaction-filter";
 
 /* ================================================================================================================= *
@@ -273,7 +273,7 @@ const Page = () => {
       <Loading error={budgetsError || trxError} loading={false}>
         <Stack direction="row" justifyContent="space-between" spacing={1}>
           <TransactionSearch fullWidth search={search} setSearch={setSearch} />
-          <TransactionFilterView />
+          <TransactionFilterButton filter={filter} setFilter={setFilter} budgets={budgets} />
         </Stack>
         <TransactionFilterChips filter={filter} setFilter={setFilter} budgets={budgets} />
         {count ? <Typography variant="caption">Found {count} transactions</Typography> : null}

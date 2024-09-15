@@ -9,10 +9,11 @@ import { Budget } from "src/types/budget/types";
 import { ReadonlyURLSearchParams } from "next/navigation";
 import { moneyFormat, MoneyFormatOptions, moneyParse } from "src/types/money/methods";
 import { DateStringSchema } from "src/types/utils/schema";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Stack } from "@mui/system";
 import { dateFormatShort } from "src/types/utils/methods";
 import { TransactionFilter } from "src/types/transaction/types";
+import { Sidebar } from "src/components/sidebar/sidebar";
 
 export type TransactionFilterModel = {
   dateMin: DateString | null /* start in URL */;
@@ -26,6 +27,29 @@ export type TransactionFilterModel = {
   /** An array of category IDs to filter by. This is disjunctive, and disjunctive with budget. */
   category: string[] /* category in URL */;
 };
+
+export const filterModelToFilters = (model: TransactionFilterModel): TransactionFilter | undefined => {
+  const filters: TransactionFilter[] = [];
+
+  if (model.dateMin) filters.push({ type: "column", column: "date", filter: "gte", value: model.dateMin });
+  if (model.dateMax) filters.push({ type: "column", column: "date", filter: "lte", value: model.dateMax });
+  if (model.amountMin) filters.push({ type: "column", column: "amount", filter: "gte", value: model.amountMin.amount });
+  if (model.amountMax) filters.push({ type: "column", column: "amount", filter: "lte", value: model.amountMax.amount });
+
+  if (model.budget.length > 0 || model.category.length > 0) {
+    const subFilters: TransactionFilter[] = [];
+    model.budget.forEach((id) => subFilters.push({ type: "column", column: "budget", filter: "eq", value: id }));
+    model.category.forEach((id) => subFilters.push({ type: "column", column: "category", filter: "eq", value: id }));
+    filters.push({ type: "or", filters: subFilters });
+  }
+
+  if (filters.length === 0) return undefined;
+  return { type: "and", filters };
+};
+
+/* ================================================================================================================= *
+ * URLSearchParams Handling                                                                                          *
+ * ================================================================================================================= */
 
 export const encodeFilterModel = (filter: TransactionFilterModel, params: URLSearchParams): void => {
   if (!filter) return;
@@ -80,44 +104,58 @@ export const decodeFilterModel = (
   return { dateMin, dateMax, amountMin, amountMax, budget, category };
 };
 
-export const filterModelToFilters = (model: TransactionFilterModel): TransactionFilter | undefined => {
-  const filters: TransactionFilter[] = [];
+/* ================================================================================================================= *
+ * Transaction Filter Sidebar                                                                                        *
+ * ================================================================================================================= */
 
-  if (model.dateMin) filters.push({ type: "column", column: "date", filter: "gte", value: model.dateMin });
-  if (model.dateMax) filters.push({ type: "column", column: "date", filter: "lte", value: model.dateMax });
-  if (model.amountMin) filters.push({ type: "column", column: "amount", filter: "gte", value: model.amountMin.amount });
-  if (model.amountMax) filters.push({ type: "column", column: "amount", filter: "lte", value: model.amountMax.amount });
-
-  if (model.budget.length > 0 || model.category.length > 0) {
-    const subFilters: TransactionFilter[] = [];
-    model.budget.forEach((id) => subFilters.push({ type: "column", column: "budget", filter: "eq", value: id }));
-    model.category.forEach((id) => subFilters.push({ type: "column", column: "category", filter: "eq", value: id }));
-    filters.push({ type: "or", filters: subFilters });
-  }
-
-  if (filters.length === 0) return undefined;
-  return { type: "and", filters };
+export type TransactionFilterButtonProps = {
+  filter: TransactionFilterModel;
+  setFilter: (filter: TransactionFilterModel) => void;
+  budgets?: readonly Budget[];
 };
 
-export type TransactionFilterProps = {};
-
-export const TransactionFilterView: React.FC<TransactionFilterProps> = () => {
+export const TransactionFilterButton = ({ budgets, ...rest }: TransactionFilterButtonProps) => {
+  const [open, setOpen] = useState(false);
   return (
-    <IconButton
-      sx={{
-        /** We want the button style to match the MuiFilledInput style so it matches
-         * the search bar. These styles are copied from the MuiFilledInput style.
-         */
-        borderRadius: "8px",
-        border: `1px solid ${neutral[200]}`,
-      }}
-    >
-      <SvgIcon>
-        <FilterIcon />
-      </SvgIcon>
-    </IconButton>
+    <>
+      <IconButton
+        sx={{
+          /** We want the button style to match the MuiFilledInput style so it matches
+           * the search bar. These styles are copied from the MuiFilledInput style.
+           */
+          borderRadius: "8px",
+          border: `1px solid ${neutral[200]}`,
+        }}
+        disabled={!budgets}
+        onClick={() => setOpen(true)}
+      >
+        <SvgIcon>
+          <FilterIcon />
+        </SvgIcon>
+      </IconButton>
+      {budgets !== undefined && (
+        <TransactionFilterSidebar {...rest} budgets={budgets} open={open} onClose={() => setOpen(false)} />
+      )}
+    </>
   );
 };
+
+export type TransactionFilterSidebarProps = Omit<TransactionFilterButtonProps, "budgets"> & {
+  budgets: NonNullable<TransactionFilterButtonProps["budgets"]>;
+  open: boolean;
+  onClose: () => void;
+};
+
+const TransactionFilterSidebar = ({ open, onClose }: TransactionFilterSidebarProps) => {
+  return (
+    <Sidebar open={open} onClose={onClose} title="Edit Filters">
+    </Sidebar>
+  );
+};
+
+/* ================================================================================================================= *
+ * Filter Chips                                                                                                      *
+ * ================================================================================================================= */
 
 type TransactionFilterChip = {
   id?: string;
@@ -159,6 +197,11 @@ const getFilterChips = (
     } else if (filter.dateMax) {
       label = `Until ${max}`;
     }
+
+    chips.push({
+      label,
+      onDelete: (model) => ({ ...model, dateMin: null, dateMax: null }),
+    });
   }
 
   for (const id of filter.budget) {
@@ -197,7 +240,6 @@ export type TransactionFilterChipsProps = {
 };
 
 export const TransactionFilterChips = ({ filter, setFilter, budgets }: TransactionFilterChipsProps) => {
-  if (!filter) return null;
   const chips = useMemo(() => getFilterChips(4, filter, budgets), [filter, budgets]);
   if (chips.length === 0) return null;
   return (
