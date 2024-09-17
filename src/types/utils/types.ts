@@ -5,3 +5,8 @@ import { Immutable } from "immer";
  */
 export type DateString = string;
 export type Dates = Immutable<{ begin: DateString; end: DateString }>;
+
+/**
+ * A unique identifier for a database object.
+ */
+export type Id = string;

@@ -8,12 +8,18 @@ import { Money } from "src/types/money/types";
 import { Budget } from "src/types/budget/types";
 import { ReadonlyURLSearchParams } from "next/navigation";
 import { moneyFormat, MoneyFormatOptions, moneyParse } from "src/types/money/methods";
-import { DateStringSchema } from "src/types/utils/schema";
+import { DateStringSchema, IdSchema } from "src/types/utils/schema";
 import { useMemo, useState } from "react";
 import { Stack } from "@mui/system";
 import { dateFormatShort } from "src/types/utils/methods";
 import { TransactionFilter } from "src/types/transaction/types";
 import { Sidebar } from "src/components/sidebar/sidebar";
+import { z } from "zod";
+import { MoneySchema } from "src/types/money/schema";
+import { toFormikValidationSchema } from "zod-formik-adapter";
+import { FormMoneyField } from "src/components/form/money-field";
+import { EditActions, EditState } from "src/components/sidebar/edit-actions";
+import { isEqual } from "lodash";
 
 export type TransactionFilterModel = {
   dateMin: DateString | null /* start in URL */;
@@ -140,15 +146,63 @@ export const TransactionFilterButton = ({ budgets, ...rest }: TransactionFilterB
   );
 };
 
+const FilterSchema = z.object({
+  amountMin: MoneySchema.nullable(),
+  amountMax: MoneySchema.nullable(),
+  dateMin: DateStringSchema.nullable(),
+  dateMax: DateStringSchema.nullable(),
+  category: IdSchema.array(),
+  budget: IdSchema.array(),
+});
+
 export type TransactionFilterSidebarProps = Omit<TransactionFilterButtonProps, "budgets"> & {
   budgets: NonNullable<TransactionFilterButtonProps["budgets"]>;
   open: boolean;
   onClose: () => void;
 };
 
-const TransactionFilterSidebar = ({ open, onClose }: TransactionFilterSidebarProps) => {
+const TransactionFilterSidebar = ({ open, onClose, filter, setFilter }: TransactionFilterSidebarProps) => {
   return (
-    <Sidebar open={open} onClose={onClose} title="Edit Filters">
+    <Sidebar
+      open={open}
+      onClose={onClose}
+      title="Edit Filters"
+      FormProps={{
+        enableReinitialize: true,
+        initialValues: filter,
+        validationSchema: toFormikValidationSchema(FilterSchema),
+        onSubmit(values) {
+          setFilter(values);
+          onClose();
+        },
+      }}
+    >
+      {(form) => (
+        <>
+          <FormMoneyField name="amountMin" label="Minimum Amount" />
+          <FormMoneyField name="amountMax" label="Maximum Amount" />
+          <EditActions
+            allowDelete={true}
+            state={EditState.Edit}
+            dirty={!isEqual(form.values, filter)}
+            onDelete={() => {
+              setFilter({
+                dateMin: null,
+                dateMax: null,
+                amountMin: null,
+                amountMax: null,
+                budget: [],
+                category: [],
+              });
+              onClose();
+            }}
+            ButtonProps={{
+              submit: { children: "Apply Filters" },
+              delete: { children: "Clear Filters", startIcon: null },
+            }}
+          />
+        </>
+      )}
     </Sidebar>
   );
 };
