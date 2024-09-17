@@ -20,6 +20,7 @@ import { toFormikValidationSchema } from "zod-formik-adapter";
 import { FormMoneyField } from "src/components/form/money-field";
 import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { isEqual } from "lodash";
+import { DateField } from "src/components/form/date-field";
 
 export type TransactionFilterModel = {
   dateMin: DateString | null /* start in URL */;
@@ -179,10 +180,15 @@ const TransactionFilterSidebar = ({ open, onClose, filter, setFilter }: Transact
     >
       {(form) => (
         <>
-          <FormMoneyField name="amountMin" label="Minimum Amount" />
-          <FormMoneyField name="amountMax" label="Maximum Amount" />
+          <Stack direction="row" spacing={1}>
+            <FormMoneyField fullWidth name="amountMin" label="Minimum" />
+            <FormMoneyField fullWidth name="amountMax" label="Maximum" />
+          </Stack>
+          <Stack direction="row" spacing={1}>
+            <DateField name="dateMin" label="From" />
+            <DateField name="dateMax" label="Until" />
+          </Stack>
           <EditActions
-            allowDelete={true}
             state={EditState.Edit}
             dirty={!isEqual(form.values, filter)}
             onDelete={() => {

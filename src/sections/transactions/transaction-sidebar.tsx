@@ -1,6 +1,6 @@
 import { Stack, styled, Typography } from "@mui/material";
 import { isEqual } from "lodash";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DateField } from "src/components/form/date-field";
 import { FormMoneyField } from "src/components/form/money-field";
 import { SelectField } from "src/components/form/select-field";
@@ -75,17 +75,30 @@ export const TransactionSidebar = ({
 }: TransactionSidebarProps) => {
   const isExisting = !!transaction.id;
 
-  const budgetValues = budgets.map((b) => ({
-    value: b.id,
-    label: (
-      <Stack>
-        <Typography variant="body2">{b.name}</Typography>
-        <Typography variant="caption" color="text.secondary">
-          {`${dateFormat(b.dates.begin)} — ${dateFormat(b.dates.end)}`}
-        </Typography>
-      </Stack>
-    ),
-  }));
+  const budgetValues = useMemo(
+    () =>
+      budgets.map((b) => ({
+        value: b.id,
+        label: (
+          <Stack>
+            <Typography variant="body2">{b.name}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {`${dateFormat(b.dates.begin)} — ${dateFormat(b.dates.end)}`}
+            </Typography>
+          </Stack>
+        ),
+      })),
+    [budgets]
+  );
+
+  const handleDelete = useCallback(async () => {
+    await onDelete(transaction);
+    enqueueSnackbar({
+      message: "Transaction deleted",
+      autoHideDuration: 10000,
+      action: (key) => <UndoDeleteButton snackbar={key} transaction={transaction} update={onUpdate} />,
+    });
+  }, [transaction, onDelete, onUpdate]);
 
   return (
     <Sidebar
@@ -125,7 +138,7 @@ export const TransactionSidebar = ({
           />
           <CategorySelector budgets={budgets} />
           <FormMoneyField label="Amount" name="amount" />
-          <TextField label="Name" name="name" placeholder="Optional" max={120} />
+          <TextField label="Name" name="name" placeholder="Optional" max={120} autoComplete="off" />
           <TextField
             label="Note"
             name="note"
@@ -134,20 +147,13 @@ export const TransactionSidebar = ({
             multiline
             rows={5}
             inputProps={{ style: { resize: "vertical" } }}
+            autoComplete="off"
           />
 
           <EditActions
-            allowDelete={isExisting}
             dirty={!isEqual(form.values, transaction)}
             state={EditState.Edit}
-            onDelete={async () => {
-              await onDelete(transaction);
-              enqueueSnackbar({
-                message: "Transaction deleted",
-                autoHideDuration: 10000,
-                action: (key) => <UndoDeleteButton snackbar={key} transaction={transaction} update={onUpdate} />,
-              });
-            }}
+            onDelete={isExisting ? handleDelete : undefined}
           />
         </>
       )}

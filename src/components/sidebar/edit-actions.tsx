@@ -12,7 +12,6 @@ export enum EditState {
 }
 
 type EditActionsProps = BoxProps & {
-  allowDelete?: boolean;
   dirty?: boolean;
   state: EditState;
   onStateChanged?: (state: EditState) => void;
@@ -24,7 +23,7 @@ type EditActionsProps = BoxProps & {
 };
 
 export const EditActions = (props: EditActionsProps) => {
-  const { allowDelete, dirty, state, onStateChanged, onDelete, ButtonProps, ...boxProps } = props;
+  const { dirty, state, onStateChanged, onDelete, ButtonProps, ...boxProps } = props;
   const { submit: submitProps, delete: deleteProps } = ButtonProps ?? {};
 
   const { enqueueSnackbar } = useSnackbar();
@@ -51,8 +50,12 @@ export const EditActions = (props: EditActionsProps) => {
         )}
         {state === EditState.Edit && (
           <>
-            <SubmitButton variant="outlined" disabled={!dirty} children="Save" {...submitProps} />
-            {allowDelete && (
+            {
+              // Pass children as prop so they are overridable by ButtonProps
+              /* eslint-disable-next-line react/no-children-prop */
+              <SubmitButton variant="outlined" disabled={!dirty} children="Save" {...submitProps} />
+            }
+            {onDelete && (
               <LoadingButton
                 variant="outlined"
                 color="error"
@@ -63,6 +66,8 @@ export const EditActions = (props: EditActionsProps) => {
                   </SvgIcon>
                 }
                 onClick={handleDelete}
+                // Pass children as prop so they are overridable by ButtonProps
+                /* eslint-disable-next-line react/no-children-prop */
                 children={<span>Delete</span>}
                 {...deleteProps}
               />

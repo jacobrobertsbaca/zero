@@ -83,10 +83,9 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
             </Alert>
           )}
           <EditActions
-            allowDelete={!!budget.id}
             dirty={!isEqual(form.values, budget)}
             state={EditState.Edit}
-            onDelete={openModal}
+            onDelete={budget.id ? openModal : undefined}
           />
         </>
       )}

@@ -81,13 +81,15 @@ export const TransactionList = ({ table, setSidebarTrx, isLoading, isValidating 
                     ...(header.column.getCanSort() ? { cursor: "pointer" } : {}),
                     ...(!header.column.getIsSorted()
                       ? {
-                          "&:hover": {
-                            "& .button-container": {
-                              visibility: "visible",
-                              width: "auto",
-                            },
-                            "& .button-icon": {
-                              opacity: 0.5,
+                          "@media (hover: hover)": {
+                            "&:hover": {
+                              "& .button-container": {
+                                visibility: "visible",
+                                width: "auto",
+                              },
+                              "& .button-icon": {
+                                opacity: 0.5,
+                              },
                             },
                           },
                         }

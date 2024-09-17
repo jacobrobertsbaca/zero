@@ -171,11 +171,10 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
           {editState === EditState.Edit && <CategoryEditView budget={budget} />}
           {editState !== EditState.Edit && <CategoryDetailsView category={category} />}
           <EditActions
-            allowDelete={!!category.id}
             dirty={categoryDirty(formik.values, category)}
             state={editState}
             onStateChanged={setEditState}
-            onDelete={openModal}
+            onDelete={category.id ? openModal : undefined}
           />
         </>
       )}

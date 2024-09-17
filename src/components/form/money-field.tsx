@@ -68,6 +68,7 @@ export const MoneyField = (props: MoneyFieldProps) => {
       onChange={onInputChange}
       onBlur={onInputBlur}
       value={rawInput}
+      autoComplete="off" // Unlikely that money fields should be autocompleted
       {...TextFieldProps}
     />
   );

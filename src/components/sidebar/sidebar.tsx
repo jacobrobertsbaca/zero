@@ -56,7 +56,7 @@ export const Sidebar = <T extends FormikValues>({ open, onClose, children, FormP
           <Stack height={1} sx={{ overflow: "hidden" }}>
             <SidebarHeader onClose={onClose}>{typeof title === "function" ? title(formik) : title}</SidebarHeader>
             <Scrollbar sx={{ flexGrow: 1 }}>
-              <Stack spacing={3} sx={{ p: 3 }}>
+              <Stack spacing={2} sx={{ p: 3 }}>
                 {typeof children === "function" ? children(formik) : children}
               </Stack>
             </Scrollbar>
