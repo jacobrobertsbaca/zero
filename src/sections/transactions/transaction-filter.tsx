@@ -21,7 +21,7 @@ import { FormMoneyField } from "src/components/form/money-field";
 import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { isEqual } from "lodash";
 import { DateField } from "src/components/form/date-field";
-import { TreeAutocomplete } from "src/components/form/tree-autocomplete";
+import { TransactionGroupSelector } from "./transaction-group-selector";
 
 export type TransactionFilterModel = {
   dateMin: DateString | null /* start in URL */;
@@ -164,16 +164,6 @@ export type TransactionFilterSidebarProps = Omit<TransactionFilterButtonProps, "
 };
 
 const TransactionFilterSidebar = ({ budgets, open, onClose, filter, setFilter }: TransactionFilterSidebarProps) => {
-  const budgetTree = useMemo(
-    () =>
-      budgets.map((b) => ({
-        id: b.id,
-        label: b.name,
-        children: b.categories.map((c) => ({ id: c.id, label: c.name })),
-      })),
-    [budgets]
-  );
-
   return (
     <Sidebar
       open={open}
@@ -199,7 +189,7 @@ const TransactionFilterSidebar = ({ budgets, open, onClose, filter, setFilter }:
             <DateField name="dateMin" label="From" />
             <DateField name="dateMax" label="Until" />
           </Stack>
-          <TreeAutocomplete options={budgetTree} renderInput={(params) => <TextField {...params} />} />
+          <TransactionGroupSelector options={budgets} renderInput={(params) => <TextField {...params} />} />
           <EditActions
             state={EditState.Edit}
             dirty={!isEqual(form.values, filter)}

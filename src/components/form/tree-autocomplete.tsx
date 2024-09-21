@@ -1,46 +1,70 @@
-import { Autocomplete, AutocompleteProps, ChipTypeMap } from "@mui/material";
+import { Autocomplete, AutocompleteProps, Checkbox, ChipTypeMap, createFilterOptions } from "@mui/material";
 import React, { useMemo } from "react";
 
-export type TreeAutocompleteOption = {
-  id: string;
-  label: React.ReactNode;
-  children?: TreeAutocompleteOption[];
+export type TreeOption<Value extends TreeOption<Value>> = {
+  content?: React.ReactNode;
+  label: string;
+  children?: Value[];
 };
 
-export type TreeAutocompleteFlatOption = TreeAutocompleteOption & {
-  depth: number;
+export type TreeFlatOption<Value> = Value & {
+  _depth: number;
+  _terms: string[];
 };
 
 export type TreeAutocompleteProps<
+  Value extends TreeOption<Value>,
   Multiple extends boolean | undefined,
   DisableClearable extends boolean | undefined,
   FreeSolo extends boolean | undefined,
   ChipComponent extends React.ElementType
 > = Omit<
-  AutocompleteProps<TreeAutocompleteFlatOption, Multiple, DisableClearable, FreeSolo, ChipComponent>,
-  "options"
+  AutocompleteProps<TreeFlatOption<Value>, Multiple, DisableClearable, FreeSolo, ChipComponent>,
+  "options" | "multiple"
 > & {
-  options: TreeAutocompleteOption[];
+  options: Value[];
 };
 
 export const TreeAutocomplete = <
-  Multiple extends boolean | undefined = false,
+  Value extends TreeOption<Value>,
   DisableClearable extends boolean | undefined = false,
   FreeSolo extends boolean | undefined = false,
   ChipComponent extends React.ElementType = ChipTypeMap["defaultComponent"]
 >({
   options,
   ...rest
-}: TreeAutocompleteProps<Multiple, DisableClearable, FreeSolo, ChipComponent>) => {
+}: TreeAutocompleteProps<Value, true, DisableClearable, FreeSolo, ChipComponent>) => {
   const flatOptions = useMemo(() => {
-    const flatten = (options: TreeAutocompleteOption[], depth = 0): TreeAutocompleteFlatOption[] => {
+    const flatten = (options: Value[], depth: number = 0): TreeFlatOption<Value>[] => {
       return options.flatMap((option) => {
-        return [{ ...option, depth }, ...flatten(option.children ?? [], depth + 1)];
+        const children = flatten(option.children ?? [], depth + 1);
+        return [{ ...option, _depth: depth, _terms: [option.label, ...children.map((c) => c.label)] }, ...children];
       });
     };
 
     return flatten(options);
   }, [options]);
 
-  return <Autocomplete options={flatOptions} {...rest} />;
+  return (
+    <Autocomplete
+      multiple
+      options={flatOptions}
+      getOptionLabel={(option) => (typeof option === "string" ? option : option.label)}
+      renderOption={(props, option, { selected }) => {
+        const { key, ...optionProps } = props;
+        return (
+          <li key={key} {...optionProps}>
+            <Checkbox sx={{ ml: 2 * option._depth }} checked={selected} size="small" />
+            {option.label}
+          </li>
+        );
+      }}
+      filterOptions={createFilterOptions({
+        /** Note: using nbsp here to avoid matching adjacent terms */
+        stringify: (option) => option._terms.join(" "),
+        
+      })}
+      {...rest}
+    />
+  );
 };
