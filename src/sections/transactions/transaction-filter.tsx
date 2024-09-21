@@ -1,4 +1,4 @@
-import { Chip, IconButton, SvgIcon } from "@mui/material";
+import { Chip, IconButton, SvgIcon, TextField } from "@mui/material";
 
 import { neutral } from "src/theme/colors";
 
@@ -21,7 +21,7 @@ import { FormMoneyField } from "src/components/form/money-field";
 import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { isEqual } from "lodash";
 import { DateField } from "src/components/form/date-field";
-import { TreeAutocomplete, TreeAutocompleteOption } from "src/components/form/tree-autocomplete";
+import { TreeAutocomplete } from "src/components/form/tree-autocomplete";
 
 export type TransactionFilterModel = {
   dateMin: DateString | null /* start in URL */;
@@ -164,7 +164,7 @@ export type TransactionFilterSidebarProps = Omit<TransactionFilterButtonProps, "
 };
 
 const TransactionFilterSidebar = ({ budgets, open, onClose, filter, setFilter }: TransactionFilterSidebarProps) => {
-  const budgetTree: TreeAutocompleteOption[] = useMemo(
+  const budgetTree = useMemo(
     () =>
       budgets.map((b) => ({
         id: b.id,
@@ -199,7 +199,7 @@ const TransactionFilterSidebar = ({ budgets, open, onClose, filter, setFilter }:
             <DateField name="dateMin" label="From" />
             <DateField name="dateMax" label="Until" />
           </Stack>
-          <TreeAutocomplete items={budgetTree} />
+          <TreeAutocomplete options={budgetTree} renderInput={(params) => <TextField {...params} />} />
           <EditActions
             state={EditState.Edit}
             dirty={!isEqual(form.values, filter)}

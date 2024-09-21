@@ -1,77 +1,46 @@
-import { Autocomplete, Box, ClickAwayListener, Paper, Popper, TextField, TextFieldProps } from "@mui/material";
-import { RichTreeView, RichTreeViewProps } from "@mui/x-tree-view";
-import { Dispatch, SetStateAction, useCallback, useRef, useState } from "react";
+import { Autocomplete, AutocompleteProps, ChipTypeMap } from "@mui/material";
+import React, { useMemo } from "react";
 
 export type TreeAutocompleteOption = {
   id: string;
-  label: string;
+  label: React.ReactNode;
   children?: TreeAutocompleteOption[];
 };
 
-export type TreeSearchProps<R extends TreeAutocompleteOption, Multiple extends boolean | undefined> = RichTreeViewProps<
-  R,
-  Multiple
->;
+export type TreeAutocompleteFlatOption = TreeAutocompleteOption & {
+  depth: number;
+};
 
-const TreeSearch = <R extends TreeAutocompleteOption, Multiple extends boolean | undefined>({
+export type TreeAutocompleteProps<
+  Multiple extends boolean | undefined,
+  DisableClearable extends boolean | undefined,
+  FreeSolo extends boolean | undefined,
+  ChipComponent extends React.ElementType
+> = Omit<
+  AutocompleteProps<TreeAutocompleteFlatOption, Multiple, DisableClearable, FreeSolo, ChipComponent>,
+  "options"
+> & {
+  options: TreeAutocompleteOption[];
+};
+
+export const TreeAutocomplete = <
+  Multiple extends boolean | undefined = false,
+  DisableClearable extends boolean | undefined = false,
+  FreeSolo extends boolean | undefined = false,
+  ChipComponent extends React.ElementType = ChipTypeMap["defaultComponent"]
+>({
+  options,
   ...rest
-}: TreeSearchProps<R, Multiple>) => {
-  return <RichTreeView {...rest} />;
-};
+}: TreeAutocompleteProps<Multiple, DisableClearable, FreeSolo, ChipComponent>) => {
+  const flatOptions = useMemo(() => {
+    const flatten = (options: TreeAutocompleteOption[], depth = 0): TreeAutocompleteFlatOption[] => {
+      return options.flatMap((option) => {
+        return [{ ...option, depth }, ...flatten(option.children ?? [], depth + 1)];
+      });
+    };
 
-const useSensitiveOpen = (delayMs: number) => {
-  const lastOpen = useRef(0);
-  const [open, setOpen] = useState(false);
+    return flatten(options);
+  }, [options]);
 
-  return {
-    open,
-    setOpen(value: boolean) {
-      if (value) lastOpen.current = Date.now();
-      setOpen(value);
-    },
-    closeSensitive() {
-      if (Date.now() - lastOpen.current > delayMs) setOpen(false);
-    },
-  };
-};
-
-export type TreeAutocompleteProps<R extends TreeAutocompleteOption, Multiple extends boolean | undefined> = {
-  items: R[];
-  slotProps?: {
-    tree?: Omit<TreeSearchProps<R, Multiple>, "items">;
-    input?: TextFieldProps;
-  };
-};
-
-export const TreeAutocomplete = <R extends TreeAutocompleteOption, Multiple extends boolean | undefined>({
-  items,
-  slotProps,
-}: TreeAutocompleteProps<R, Multiple>) => {
-  slotProps = slotProps ?? {};
-  const { tree: treeProps, input: inputProps } = slotProps;
-  const { open, setOpen, closeSensitive } = useSensitiveOpen(150);
-
-  return (
-    <Autocomplete
-      options={items.length ? [items] : []} // So that we show no options if there are no tree items
-      renderOption={() => <TreeSearch items={items} {...treeProps} />}
-      renderInput={(params) => (
-        <TextField {...params} {...inputProps} onFocus={(e) => setOpen(true)} onBlur={(e) => e.preventDefault()} />
-      )}
-      getOptionLabel={() => ""}
-      getOptionKey={() => ""}
-      filterOptions={(o) => o}
-      disableCloseOnSelect
-      onOpen={() => setOpen(true)}
-      onClose={(_, reason) => {
-        if (reason !== "blur" && reason != "toggleInput") setOpen(false);
-      }}
-      open={open}
-      PopperComponent={(props) => (
-        <ClickAwayListener onClickAway={closeSensitive}>
-          <Popper {...props} />
-        </ClickAwayListener>
-      )}
-    />
-  );
+  return <Autocomplete options={flatOptions} {...rest} />;
 };

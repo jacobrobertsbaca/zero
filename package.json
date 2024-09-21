@@ -38,7 +38,6 @@
     "@mui/lab": "5.0.0-alpha.120",
     "@mui/material": "^5.16.7",
     "@mui/x-date-pickers": "^6.16.3",
-    "@mui/x-tree-view": "^7.17.0",
     "@supabase/supabase-js": "^2.33.2",
     "@tanstack/react-table": "^8.20.5",
     "@types/lodash": "^4.14.198",
