@@ -1,7 +1,20 @@
-import { Autocomplete, AutocompleteProps, Box, Checkbox, Collapse, Typography } from "@mui/material";
+import {
+  Autocomplete,
+  AutocompleteProps,
+  Checkbox,
+  CheckboxProps,
+  Collapse,
+  MenuItem,
+  Stack,
+  SvgIcon,
+  Typography,
+} from "@mui/material";
 import { useMemo, useState } from "react";
 import { Budget } from "src/types/budget/types";
 import { Category } from "src/types/category/types";
+
+import ChevronRight from "@heroicons/react/20/solid/ChevronRightIcon";
+import ChevronDown from "@heroicons/react/20/solid/ChevronDownIcon";
 
 type CategoryOption = {
   budget: Budget;
@@ -48,10 +61,10 @@ export const TransactionGroupSelector = ({ options, ...rest }: TransactionGroupS
       renderOption={(props, option, { selected }) => {
         const { key, ...optionProps } = props;
         return (
-          <li key={key} {...optionProps}>
-            <Checkbox checked={selected} size="small" />
+          <MenuItem key={key} sx={{ ml: 4 }} dense {...optionProps}>
+            <Check checked={selected} />
             {option.category.name}
-          </li>
+          </MenuItem>
         );
       }}
       inputValue={input}
@@ -66,22 +79,38 @@ export const TransactionGroupSelector = ({ options, ...rest }: TransactionGroupS
 };
 
 type CollapseGroupProps = {
-  key: string;
   budget: Budget;
   children?: React.ReactNode;
   open: boolean;
   setOpen: (open: boolean) => void;
 };
 
-const CollapseGroup = ({ key, budget, children, open, setOpen }: CollapseGroupProps) => {
-  console.log(budget.name, open);
+const CollapseGroup = ({ budget, children, open, setOpen }: CollapseGroupProps) => {
   return (
-    <Box key={key}>
-      <Checkbox size="small" />
-      <Typography variant="inherit" display={"inline"} onClick={() => setOpen(!open)}>
-        {budget.name}
-      </Typography>
+    <>
+      <MenuItem dense onClick={() => setOpen(!open)}>
+        <Stack direction="row" alignItems="center">
+          <SvgIcon sx={{ py: 0.5 }}>{open ? <ChevronDown /> : <ChevronRight />}</SvgIcon>
+          <Check
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          />
+          <Typography variant="inherit" display={"inline"}>
+            {budget.name}
+          </Typography>
+        </Stack>
+      </MenuItem>
       <Collapse in={open}>{children}</Collapse>
-    </Box>
+    </>
   );
+};
+
+const Check = (props: CheckboxProps) => {
+  return <Checkbox size="small" {...props} />;
 };
