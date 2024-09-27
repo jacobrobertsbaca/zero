@@ -1,7 +1,5 @@
-import NextLink from "next/link";
-import { useRouter } from "next/navigation";
 import * as Yup from "yup";
-import { Button, Divider, Link, Stack, Typography } from "@mui/material";
+import { Button, Divider, Stack, Typography } from "@mui/material";
 import { useAuth } from "src/hooks/use-auth";
 import { Layout as AuthLayout } from "src/layouts/auth/layout";
 import { TextField } from "src/components/form/text-field";
@@ -10,7 +8,6 @@ import { Form } from "src/components/form/form";
 import Image from "next/image";
 
 const Page = () => {
-  const router = useRouter();
   const auth = useAuth();
 
   return (
@@ -25,7 +22,6 @@ const Page = () => {
       })}
       onSubmit={async (values) => {
         await auth.signIn(values.email, values.password);
-        router.push("/budgets");
       }}
     >
       <Stack spacing={3}>
@@ -34,12 +30,6 @@ const Page = () => {
         <SubmitButton fullWidth size="large" sx={{ mt: 3 }}>
           Continue
         </SubmitButton>
-        <Typography color="text.secondary" variant="body2" sx={{ mt: 3 }}>
-          Don&apos;t have an account? &nbsp;
-          <Link component={NextLink} href="/auth/register" underline="hover" variant="subtitle2">
-            Register
-          </Link>
-        </Typography>
         <Divider>
           <Typography variant="caption" color="text.secondary">
             OR

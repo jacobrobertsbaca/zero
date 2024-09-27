@@ -7,8 +7,8 @@ import { supabase } from "src/utils/supabase";
 export enum AuthProviders {
   Unknown = "unknown",
   Email = "email",
-  Google = "google"
-};
+  Google = "google",
+}
 
 type AuthUser = Immutable<{
   name: string;
@@ -20,13 +20,13 @@ type AuthUser = Immutable<{
 
 type AuthState = Immutable<{
   /**
-   * Whether or not the auth system is loading. 
-   * During loading, default auth may be retrieved. 
+   * Whether or not the auth system is loading.
+   * During loading, default auth may be retrieved.
    */
   loading: boolean;
 
   /**
-   * The current user. If undefined, the user is not authenticated 
+   * The current user. If undefined, the user is not authenticated
    */
   user?: AuthUser;
 
@@ -36,37 +36,39 @@ type AuthState = Immutable<{
   token?: string;
 }>;
 
-type AuthContextType = AuthState & Immutable<{
-  signIn(email: string, password: string): Promise<void>;
-  signInWithGoogle(): Promise<void>;
-  signUp(email: string, password: string): Promise<void>;
-  signOut(): Promise<void>;
-  updatePassword(newPassword: string): Promise<void>;
-  deleteAccount(): Promise<void>;
-}>;
+type AuthContextType = AuthState &
+  Immutable<{
+    signIn(email: string, password: string): Promise<void>;
+    signInWithGoogle(): Promise<void>;
+    signOut(): Promise<void>;
+    updatePassword(newPassword: string): Promise<void>;
+    deleteAccount(): Promise<void>;
+  }>;
 
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 type AuthProviderProps = {
-  children: React.ReactNode
+  children: React.ReactNode;
 };
 
-export const AuthProvider = ({ children } : AuthProviderProps) => {
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [initialized, setInitialized] = useState<boolean>(false);
   const [state, setState] = useState<AuthState>({
-    loading: true
+    loading: true,
   });
 
   const fromSession = (session: Session): void => {
-    setState(produce(state, draft => {
-      draft.loading = false;
-      draft.user = {
-        name: session.user.email!,
-        token: session.access_token,
-        provider: (session.user.app_metadata.provider ?? "unknown") as AuthProviders
-      };
-      draft.token = session.access_token;
-    }));
+    setState(
+      produce(state, (draft) => {
+        draft.loading = false;
+        draft.user = {
+          name: session.user.email!,
+          token: session.access_token,
+          provider: (session.user.app_metadata.provider ?? "unknown") as AuthProviders,
+        };
+        draft.token = session.access_token;
+      })
+    );
   };
 
   const onInitialize = async (): Promise<void> => {
@@ -77,19 +79,27 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     supabase.auth.onAuthStateChange((evt, session) => {
       if (evt === "SIGNED_IN") fromSession(session!);
       else if (evt === "TOKEN_REFRESHED") fromSession(session!);
-      else if (evt === "SIGNED_OUT") setState(produce(state, draft => {
-        draft.user = undefined;
-        draft.loading = false;
-        draft.token = undefined;
-      }));
+      else if (evt === "SIGNED_OUT")
+        setState(
+          produce(state, (draft) => {
+            draft.user = undefined;
+            draft.loading = false;
+            draft.token = undefined;
+          })
+        );
     });
 
     /* Check if user is already logged in */
-    const { data: { session }} = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (session) fromSession(session);
-    else setState(produce(state, draft => {
-      draft.loading = false;
-    }));
+    else
+      setState(
+        produce(state, (draft) => {
+          draft.loading = false;
+        })
+      );
   };
 
   const signIn = async (email: string, password: string): Promise<void> => {
@@ -101,20 +111,17 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
   const signInWithGoogle = async (): Promise<void> => {
     const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google" });
     if (error) throw new Error(error.message);
-  }
-
-  const signUp = async (email: string, password: string): Promise<void> => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) throw new Error(error.message);
   };
 
   const signOut = async (): Promise<void> => {
     const { error } = await supabase.auth.signOut();
     if (error) throw new Error(error.message);
-    setState(produce(state, draft => {
-      draft.user = undefined;
-      draft.token = undefined;
-    }));
+    setState(
+      produce(state, (draft) => {
+        draft.user = undefined;
+        draft.token = undefined;
+      })
+    );
   };
 
   const updatePassword = async (newPassword: string): Promise<void> => {
@@ -135,18 +142,20 @@ export const AuthProvider = ({ children } : AuthProviderProps) => {
     []
   );
 
-  return <AuthContext.Provider
-    value={{
-      ...state,
-      signIn,
-      signInWithGoogle,
-      signUp,
-      signOut,
-      updatePassword,
-      deleteAccount
-    }}>
+  return (
+    <AuthContext.Provider
+      value={{
+        ...state,
+        signIn,
+        signInWithGoogle,
+        signOut,
+        updatePassword,
+        deleteAccount,
+      }}
+    >
       {children}
-  </AuthContext.Provider>
+    </AuthContext.Provider>
+  );
 };
 
 export const AuthConsumer = AuthContext.Consumer;
