@@ -39,7 +39,7 @@ export const AuthGuard: React.FC<PropTypes> = ({ protect, children }: PropTypes)
     } else {
       setChecked(true);
     }
-  }, [router, user, protect]);
+  }, [router, user, protect, searchParams]);
 
   if (!checked) {
     return null;

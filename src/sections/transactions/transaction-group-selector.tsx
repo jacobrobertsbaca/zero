@@ -81,7 +81,7 @@ export const TransactionGroupSelector = ({
     }
 
     return value;
-  }, [categories, budgets]);
+  }, [categories, budgets, flatOptions]);
 
   const onAutocompleteChange = useCallback(
     (event: React.SyntheticEvent, value: CategoryOption[], reason: string) => {
@@ -97,7 +97,7 @@ export const TransactionGroupSelector = ({
 
       onChange(Array.from(categorySet), budgetIds);
     },
-    [options]
+    [options, onChange]
   );
 
   const selectBudget = useCallback(
@@ -124,7 +124,7 @@ export const TransactionGroupSelector = ({
 
       onChange(Array.from(categorySet), Array.from(budgetSet));
     },
-    [budgets, categories, input]
+    [budgets, categories, input, getFilteredOptions, onChange]
   );
 
   const onInputChange = useCallback(
@@ -139,7 +139,7 @@ export const TransactionGroupSelector = ({
 
       setInput(value);
     },
-    [flatOptions]
+    [flatOptions, getFilteredOptions]
   );
 
   return (
@@ -192,8 +192,8 @@ export const TransactionGroupSelector = ({
             if (renderedBudgets.has(option.budget.id)) return null;
             renderedBudgets.add(option.budget.id);
             tagProps.onDelete = () => selectBudget(option.budget, false);
-            return <Chip {...tagProps} size="small" label={option.budget.name} />;
-          } else return <Chip {...tagProps} size="small" label={option.category.name} />;
+            return <Chip {...tagProps} key={option.budget.id} size="small" label={option.budget.name} />;
+          } else return <Chip {...tagProps} key={option.category.id} size="small" label={option.category.name} />;
         });
       }}
       filterOptions={filterOptions}
