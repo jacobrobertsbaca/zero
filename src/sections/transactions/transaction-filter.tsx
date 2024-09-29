@@ -189,7 +189,17 @@ const TransactionFilterSidebar = ({ budgets, open, onClose, filter, setFilter }:
             <DateField name="dateMin" label="From" />
             <DateField name="dateMax" label="Until" />
           </Stack>
-          <TransactionGroupSelector options={budgets} renderInput={(params) => <TextField {...params} />} />
+          <TransactionGroupSelector
+            options={budgets}
+            renderInput={(params) => <TextField {...params} />}
+            budgets={form.values.budget}
+            categories={form.values.category}
+            onChange={(categories, budgets) => {
+              console.log("Setting values", categories, budgets);
+              form.setFieldValue("category", categories);
+              form.setFieldValue("budget", budgets);
+            }}
+          />
           <EditActions
             state={EditState.Edit}
             dirty={!isEqual(form.values, filter)}
