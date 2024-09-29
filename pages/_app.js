@@ -56,6 +56,9 @@ const App = (props) => {
                     if (err) console.error(err);
                     enqueueSnackbar(err?.message ?? "An error occurred", { variant: "error" });
                   },
+
+                  /** IMO This leads to a lot of extra revalidations for not a lot of benefit... */
+                  revalidateOnFocus: false,
                 }}
               >
                 <AuthConsumer>

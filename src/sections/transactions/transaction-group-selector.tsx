@@ -1,6 +1,5 @@
 import {
   Autocomplete,
-  AutocompleteChangeReason,
   AutocompleteInputChangeReason,
   AutocompleteProps,
   Checkbox,
