@@ -191,11 +191,10 @@ const TransactionFilterSidebar = ({ budgets, open, onClose, filter, setFilter }:
           </Stack>
           <TransactionGroupSelector
             options={budgets}
-            renderInput={(params) => <TextField {...params} />}
+            renderInput={(params) => <TextField label="Category" {...params} />}
             budgets={form.values.budget}
             categories={form.values.category}
             onChange={(categories, budgets) => {
-              console.log("Setting values", categories, budgets);
               form.setFieldValue("category", categories);
               form.setFieldValue("budget", budgets);
             }}
