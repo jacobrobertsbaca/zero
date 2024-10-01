@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     /* Check if user is already logged in */
     const {
       data: { session },
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.refreshSession();
     if (session) fromSession(session);
     else
       setState(
