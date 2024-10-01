@@ -8,7 +8,7 @@ const router = routes();
 const bodySchema = z.object({
   model: TransactionQuerySchema,
   cursor: TransactionCursorSchema.optional(),
-  limit: z.number().min(10).max(100).default(50),
+  limit: z.number().min(10).max(100).default(25),
 });
 
 router.post(
