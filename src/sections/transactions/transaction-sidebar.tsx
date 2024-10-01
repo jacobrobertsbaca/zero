@@ -1,14 +1,13 @@
 import { Stack, styled, Typography } from "@mui/material";
 import { isEqual } from "lodash";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DateField } from "src/components/form/date-field";
-import { MoneyField } from "src/components/form/money-field";
+import { FormMoneyField } from "src/components/form/money-field";
 import { SelectField } from "src/components/form/select-field";
 import { TextField } from "src/components/form/text-field";
 import { Scrollbar } from "src/components/scrollbar";
 import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { Sidebar } from "src/components/sidebar/sidebar";
-import { SidebarHeader } from "src/components/sidebar/sidebar-header";
 import { Budget } from "src/types/budget/types";
 import { Transaction } from "src/types/transaction/types";
 import { dateFormat } from "src/types/utils/methods";
@@ -76,22 +75,36 @@ export const TransactionSidebar = ({
 }: TransactionSidebarProps) => {
   const isExisting = !!transaction.id;
 
-  const budgetValues = budgets.map((b) => ({
-    value: b.id,
-    label: (
-      <Stack>
-        <Typography variant="body2">{b.name}</Typography>
-        <Typography variant="caption" color="text.secondary">
-          {`${dateFormat(b.dates.begin)} — ${dateFormat(b.dates.end)}`}
-        </Typography>
-      </Stack>
-    ),
-  }));
+  const budgetValues = useMemo(
+    () =>
+      budgets.map((b) => ({
+        value: b.id,
+        label: (
+          <Stack>
+            <Typography variant="body2">{b.name}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {`${dateFormat(b.dates.begin)} — ${dateFormat(b.dates.end)}`}
+            </Typography>
+          </Stack>
+        ),
+      })),
+    [budgets]
+  );
+
+  const handleDelete = useCallback(async () => {
+    await onDelete(transaction);
+    enqueueSnackbar({
+      message: "Transaction deleted",
+      autoHideDuration: 10000,
+      action: (key) => <UndoDeleteButton snackbar={key} transaction={transaction} update={onUpdate} />,
+    });
+  }, [transaction, onDelete, onUpdate]);
 
   return (
     <Sidebar
       open={open}
       onClose={onClose}
+      title={isExisting ? "Edit Transaction" : "New Transaction"}
       FormProps={{
         enableReinitialize: true,
         initialValues: transaction,
@@ -112,50 +125,36 @@ export const TransactionSidebar = ({
     >
       {(form) => (
         <>
-          <SidebarHeader onClose={onClose}>{isExisting ? "Edit Transaction" : "New Transaction"}</SidebarHeader>
-          <Scrollbar sx={{ flexGrow: 1 }}>
-            <Stack spacing={3} sx={{ p: 3 }}>
-              <DateField label="Date" name="date" />
-              <SelectField
-                label="Budget"
-                name="budget"
-                values={budgetValues}
-                onChange={(evt) => {
-                  // Reset category to none when budget changes
-                  form.setFieldValue("category", "");
-                  form.setFieldValue("budget", evt.target.value);
-                }}
-              />
-              <CategorySelector budgets={budgets} />
-              <MoneyField label="Amount" name="amount" />
-              <TextField label="Name" name="name" placeholder="Optional" max={120} />
-              <TextField
-                label="Note"
-                name="note"
-                placeholder="Optional"
-                max={1000}
-                multiline
-                rows={5}
-                inputProps={{ style: { resize: "vertical" } }}
-              />
+          <DateField label="Date" name="date" />
+          <SelectField
+            label="Budget"
+            name="budget"
+            values={budgetValues}
+            onChange={(evt) => {
+              // Reset category to none when budget changes
+              form.setFieldValue("category", "");
+              form.setFieldValue("budget", evt.target.value);
+            }}
+          />
+          <CategorySelector budgets={budgets} />
+          <FormMoneyField label="Amount" name="amount" />
+          <TextField label="Name" name="name" placeholder="Optional" max={120} autoComplete="off" />
+          <TextField
+            label="Note"
+            name="note"
+            placeholder="Optional"
+            max={1000}
+            multiline
+            rows={5}
+            inputProps={{ style: { resize: "vertical" } }}
+            autoComplete="off"
+          />
 
-              <EditActions
-                allowDelete={isExisting}
-                dirty={!isEqual(form.values, transaction)}
-                state={EditState.Edit}
-                onDelete={async () => {
-                  await onDelete(transaction);
-                  enqueueSnackbar({
-                    message: "Transaction deleted",
-                    autoHideDuration: 10000,
-                    action: (key) => (
-                      <UndoDeleteButton snackbar={key} transaction={transaction} update={onUpdate} />
-                    ),
-                  });
-                }}
-              />
-            </Stack>
-          </Scrollbar>
+          <EditActions
+            dirty={!isEqual(form.values, transaction)}
+            state={EditState.Edit}
+            onDelete={isExisting ? handleDelete : undefined}
+          />
         </>
       )}
     </Sidebar>

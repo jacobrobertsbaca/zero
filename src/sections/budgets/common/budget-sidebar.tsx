@@ -3,7 +3,6 @@ import { DateField } from "src/components/form/date-field";
 import { TextField } from "src/components/form/text-field";
 import { Scrollbar } from "src/components/scrollbar";
 import { Sidebar } from "src/components/sidebar/sidebar";
-import { SidebarHeader } from "src/components/sidebar/sidebar-header";
 import { Budget } from "src/types/budget/types";
 import * as Yup from "yup";
 import { isEqual } from "lodash";
@@ -38,6 +37,7 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
     <Sidebar
       open={open}
       onClose={onClose}
+      title={isExisting ? "Edit Budget Details" : "New Budget"}
       FormProps={{
         enableReinitialize: true,
         initialValues: budget,
@@ -65,8 +65,6 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
     >
       {(form) => (
         <>
-          <SidebarHeader onClose={onClose}>{isExisting ? "Edit Budget Details" : "New Budget"}</SidebarHeader>
-
           <DeleteDialog
             open={deleteModal}
             title={`Delete budget ${budget.name}?`}
@@ -75,25 +73,20 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
             onDelete={handleDelete}
           />
 
-          <Scrollbar sx={{ flexGrow: 1 }}>
-            <Stack spacing={3} sx={{ p: 3 }}>
-              <TextField fullWidth label="Name" name="name" type="text" max={60} />
-              <DateField label="Begin" name="dates.begin" />
-              <DateField label="End" name="dates.end" />
-              {isExisting && !isEqual(form.values.dates, budget.dates) && (
-                <Alert severity="warning">
-                  Changing budget dates will preserve the total planned amount of existing categories, but their
-                  recurring amounts may change as a result.
-                </Alert>
-              )}
-              <EditActions
-                allowDelete={!!budget.id}
-                dirty={!isEqual(form.values, budget)}
-                state={EditState.Edit}
-                onDelete={openModal}
-              />
-            </Stack>
-          </Scrollbar>
+          <TextField fullWidth label="Name" name="name" type="text" max={60} />
+          <DateField label="Begin" name="dates.begin" />
+          <DateField label="End" name="dates.end" />
+          {isExisting && !isEqual(form.values.dates, budget.dates) && (
+            <Alert severity="warning">
+              Changing budget dates will preserve the total planned amount of existing categories, but their recurring
+              amounts may change as a result.
+            </Alert>
+          )}
+          <EditActions
+            dirty={!isEqual(form.values, budget)}
+            state={EditState.Edit}
+            onDelete={budget.id ? openModal : undefined}
+          />
         </>
       )}
     </Sidebar>

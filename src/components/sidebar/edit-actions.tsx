@@ -1,16 +1,10 @@
-import {
-  Box,
-  BoxProps,
-  Button,
-  Stack,
-  SvgIcon,
-} from "@mui/material";
+import { Box, BoxProps, Button, Stack, SvgIcon } from "@mui/material";
 
 import TrashIcon from "@heroicons/react/24/outline/TrashIcon";
 import { SubmitButton } from "../form/submit-button";
 import { useCallback, useState } from "react";
 import { useSnackbar } from "notistack";
-import { LoadingButton } from "@mui/lab";
+import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 
 export enum EditState {
   View,
@@ -18,15 +12,20 @@ export enum EditState {
 }
 
 type EditActionsProps = BoxProps & {
-  allowDelete?: boolean;
   dirty?: boolean;
   state: EditState;
   onStateChanged?: (state: EditState) => void;
   onDelete?: () => void | Promise<void>;
+  ButtonProps?: {
+    submit?: LoadingButtonProps;
+    delete?: LoadingButtonProps;
+  };
 };
 
 export const EditActions = (props: EditActionsProps) => {
-  const { allowDelete, dirty, state, onStateChanged, onDelete, ...boxProps } = props;
+  const { dirty, state, onStateChanged, onDelete, ButtonProps, ...boxProps } = props;
+  const { submit: submitProps, delete: deleteProps } = ButtonProps ?? {};
+
   const { enqueueSnackbar } = useSnackbar();
   const [deleting, setDeleting] = useState(false);
 
@@ -51,10 +50,12 @@ export const EditActions = (props: EditActionsProps) => {
         )}
         {state === EditState.Edit && (
           <>
-            <SubmitButton variant="outlined" disabled={!dirty}>
-              Save
-            </SubmitButton>
-            {allowDelete && (
+            {
+              // Pass children as prop so they are overridable by ButtonProps
+              /* eslint-disable-next-line react/no-children-prop */
+              <SubmitButton variant="outlined" disabled={!dirty} children="Save" {...submitProps} />
+            }
+            {onDelete && (
               <LoadingButton
                 variant="outlined"
                 color="error"
@@ -65,9 +66,11 @@ export const EditActions = (props: EditActionsProps) => {
                   </SvgIcon>
                 }
                 onClick={handleDelete}
-              >
-                <span>Delete</span>
-              </LoadingButton>
+                // Pass children as prop so they are overridable by ButtonProps
+                /* eslint-disable-next-line react/no-children-prop */
+                children={<span>Delete</span>}
+                {...deleteProps}
+              />
             )}
           </>
         )}

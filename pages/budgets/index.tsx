@@ -1,4 +1,4 @@
-import { Box, Card, IconButton, Stack, SvgIcon, Unstable_Grid2 as Grid, Skeleton } from "@mui/material";
+import { Box, Card, IconButton, Stack, SvgIcon, Unstable_Grid2 as Grid } from "@mui/material";
 import { Loading } from "src/components/loading";
 import { PageTitle } from "src/components/page-title";
 import { useBudgets } from "src/hooks/use-api";
@@ -33,7 +33,7 @@ const Page = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <>
+    <Stack spacing={1}>
       <Stack direction="row" alignItems="normal" spacing={0.5}>
         <PageTitle title="Budgets" />
         <Box>
@@ -68,7 +68,7 @@ const Page = () => {
           return false;
         }}
       />
-    </>
+    </Stack>
   );
 };
 

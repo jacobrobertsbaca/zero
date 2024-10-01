@@ -1,8 +1,6 @@
 import { Stack } from "@mui/material";
-import { FormikProps, useFormikContext } from "formik";
-import { produce } from "immer";
-import { isEqual } from "lodash";
-import { ChangeEvent, useCallback, useState } from "react";
+import { useFormikContext } from "formik";
+import { useCallback, useState } from "react";
 import { MoneyField } from "src/components/form/money-field";
 import { SelectField } from "src/components/form/select-field";
 import { Budget } from "src/types/budget/types";
@@ -88,6 +86,7 @@ export const RecurrencePicker = ({ budget }: { budget: Budget }) => {
         label="Total"
         value={categoryNominal(form.values)}
         onChange={(total) => {
+          if (!total) return;
           setTotalModified(new Date());
           form.setValues(onCategoryNominal(form.values, total));
         }}
@@ -107,9 +106,10 @@ export const RecurrencePicker = ({ budget }: { budget: Budget }) => {
             InputProps={{ sx: { height: 1 } }}
             label="Amount"
             value={form.values.recurrence.amount}
-            onChange={(a) => {
+            onChange={(amount) => {
+              if (!amount) return;
               setRecurringModified(new Date());
-              onChange({ amount: a });
+              onChange({ amount });
             }}
           />
           <SelectField

@@ -8,7 +8,15 @@ import { budgetCompare } from "src/types/budget/methods";
 import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
-import { Transaction } from "src/types/transaction/types";
+import type {
+  Transaction,
+  TransactionCursor,
+  TransactionFilter,
+  TransactionPage,
+  TransactionQuery,
+  TransactionSearchColumn,
+  TransactionSort,
+} from "src/types/transaction/types";
 import { transactionCompare } from "src/types/transaction/methods";
 
 /* ================================================================================================================= *
@@ -20,7 +28,7 @@ import { transactionCompare } from "src/types/transaction/methods";
  * @param query The query to wrap
  * @returns A promise that, when awaited, returns the query's data.
  */
- export const wrap = async <TResult>(
+export const wrap = async <TResult>(
   query: PostgrestFilterBuilder<any, any, TResult, any> | PostgrestTransformBuilder<any, any, TResult, any>
 ): Promise<TResult> => {
   const { data, error } = await query;
@@ -48,7 +56,7 @@ const BUDGET_QUERY = `
 ` as const;
 
 const TRANSACTION_QUERY = `
-  id, category, budget, date, amount, name, last_modified, starred, note
+  id, category, category_name, budget, budget_name, date, amount, name, last_modified, starred, note
 ` as const;
 
 const retrieveBudgets = async (owner: string, id?: string) => {
@@ -67,14 +75,14 @@ const retrieveTransactions = async (owner: string) => {
   return await wrap(query);
 };
 
-type ReadBudgetRow        = Awaited<ReturnType<typeof retrieveBudgets>>[0];
-type ReadCategoryRow      = ReadBudgetRow["categories"][0];
-type ReadPeriodRow        = ReadCategoryRow["periods"][0];
-type ReadTransactionRow   = Awaited<ReturnType<typeof retrieveTransactions>>[0];
-type WriteBudgetRow       = Omit<ReadBudgetRow, "categories"> & { owner: any };
-type WriteCategoryRow     = Omit<ReadCategoryRow, "periods"> & { owner: any, budget: any };
-type WritePeriodRow       = ReadPeriodRow & { owner: any, budget: any, category: any };
-type WriteTransactionRow  = ReadTransactionRow & { owner: any };
+type ReadBudgetRow = Awaited<ReturnType<typeof retrieveBudgets>>[0];
+type ReadCategoryRow = ReadBudgetRow["categories"][0];
+type ReadPeriodRow = ReadCategoryRow["periods"][0];
+type ReadTransactionRow = Awaited<ReturnType<typeof retrieveTransactions>>[0];
+type WriteBudgetRow = Omit<ReadBudgetRow, "categories"> & { owner: any };
+type WriteCategoryRow = Omit<ReadCategoryRow, "periods"> & { owner: any; budget: any };
+type WritePeriodRow = ReadPeriodRow & { owner: any; budget: any; category: any };
+type WriteTransactionRow = Omit<ReadTransactionRow, "category_name" | "budget_name"> & { owner: any };
 
 const parsePeriod = (row: ReadPeriodRow): Period => ({
   dates: {
@@ -131,7 +139,7 @@ const parseTransaction = (row: ReadTransactionRow): Transaction => ({
   name: row.name,
   lastModified: row.last_modified,
   starred: row.starred,
-  note: row.note
+  note: row.note,
 });
 
 const formatPeriod = (owner: string, budget: string, category: string, period: Period): WritePeriodRow => ({
@@ -143,7 +151,7 @@ const formatPeriod = (owner: string, budget: string, category: string, period: P
   days: period.days,
   nominal: period.nominal.amount,
   actual: period.actual.amount,
-  truncate: period.truncate
+  truncate: period.truncate,
 });
 
 const formatCategory = (owner: string, budget: string, category: Category): WriteCategoryRow => ({
@@ -156,7 +164,7 @@ const formatCategory = (owner: string, budget: string, category: Category): Writ
   rec_day: (category.recurrence as any).day,
   rec_amount: category.recurrence.amount.amount,
   ro_loss: category.rollover.loss,
-  ro_surplus: category.rollover.surplus
+  ro_surplus: category.rollover.surplus,
 });
 
 const formatBudget = (owner: string, budget: Budget): WriteBudgetRow => ({
@@ -164,7 +172,7 @@ const formatBudget = (owner: string, budget: Budget): WriteBudgetRow => ({
   id: budget.id,
   name: budget.name,
   begin_date: budget.dates.begin,
-  end_date: budget.dates.end
+  end_date: budget.dates.end,
 });
 
 const formatTransaction = (owner: string, trx: Transaction): WriteTransactionRow => ({
@@ -177,7 +185,7 @@ const formatTransaction = (owner: string, trx: Transaction): WriteTransactionRow
   name: trx.name,
   last_modified: trx.lastModified,
   starred: trx.starred,
-  note: trx.note
+  note: trx.note,
 });
 
 /* ================================================================================================================= *
@@ -238,7 +246,7 @@ export const putBudget = async (owner: string, budget: Omit<Budget, "categories"
   /* Budget exists and its dates have changed, so we need to modify the `budgets`, `categories`, and `periods` tables.
    * We can accomplish this by computing what the new budget, categories, and periods should look like, and then call
    * the `put_budget` SQL function to atomically modify the tables.
-   * 
+   *
    * `put_budget` will automatically adjust the values of `period.actual` to match existing transactions for each
    * category, so we will need to refetch the budget after calling `put_budget`.
    */
@@ -259,8 +267,10 @@ export const putBudget = async (owner: string, budget: Omit<Budget, "categories"
   });
 
   const budgetRow = formatBudget(owner, newBudget);
-  const categoryRows = newBudget.categories.map(c => formatCategory(owner, newBudget.id, c));
-  const periodRows = newBudget.categories.flatMap(c => c.periods.map(p => formatPeriod(owner, newBudget.id, c.id, p)));
+  const categoryRows = newBudget.categories.map((c) => formatCategory(owner, newBudget.id, c));
+  const periodRows = newBudget.categories.flatMap((c) =>
+    c.periods.map((p) => formatPeriod(owner, newBudget.id, c.id, p))
+  );
 
   await wrap(
     supabase.rpc("put_budget", {
@@ -295,17 +305,19 @@ export const putCategory = async (owner: string, bid: string, category: Category
     );
     if (existing.length === 0) throw new NotFound("No such category exists!");
   } else {
-    category = produce(category, (draft) => { draft.id = crypto.randomUUID(); });
+    category = produce(category, (draft) => {
+      draft.id = crypto.randomUUID();
+    });
   }
 
   /* Upload new category to database */
   const categoryRow = formatCategory(owner, bid, category);
-  const periodRows = category.periods.map(p => formatPeriod(owner, bid, category.id, p));
+  const periodRows = category.periods.map((p) => formatPeriod(owner, bid, category.id, p));
 
-  await wrap (
+  await wrap(
     supabase.rpc("put_category", {
       category_json: categoryRow,
-      periods_json: periodRows
+      periods_json: periodRows,
     })
   );
 
@@ -352,21 +364,23 @@ export const putTransaction = async (owner: string, trx: Transaction): Promise<T
   /* If modifying an existing transaction, verify that transaction exists and is owned by this user.
    * Otherwise give the transaction a fresh id */
   if (trx.id) {
-    const existing = await wrap(
-      supabase.from("transactions").select("id").eq("owner", owner)
-    );
+    const existing = await wrap(supabase.from("transactions").select("id").eq("owner", owner));
     if (existing.length === 0) throw new NotFound("No such transaction exists!");
   } else {
-    trx = produce(trx, (draft) => { draft.id = crypto.randomUUID(); });
+    trx = produce(trx, (draft) => {
+      draft.id = crypto.randomUUID();
+    });
   }
 
   /* Set last modified time */
-  trx = produce(trx, (draft) => { draft.lastModified = (new Date()).toISOString(); });
+  trx = produce(trx, (draft) => {
+    draft.lastModified = new Date().toISOString();
+  });
 
   /* Write transaction to the database using `put_transaction` rpc */
   await wrap(
     supabase.rpc("put_transaction", {
-      transaction_json: formatTransaction(owner, trx)
+      transaction_json: formatTransaction(owner, trx),
     })
   );
 
@@ -380,4 +394,204 @@ export const deleteTransaction = async (owner: string, tid: string): Promise<voi
       owner_id: owner,
     })
   );
+};
+
+/* ================================================================================================================= *
+ * Transaction Search                                                                                                *
+ * ================================================================================================================= */
+
+/**
+ * Converts a transaction object key to its associated database column.
+ * @param column The transaction column name
+ */
+const getTrxDbColumn = (column: TransactionSearchColumn): string => {
+  if (column === "lastModified") return "last_modified";
+  if (column === "categoryName") return "category_name";
+  if (column === "budgetName") return "budget_name";
+  return column;
+};
+
+const resolvePostgrestFilter = (filter: TransactionFilter): string => {
+  if (filter.type === "column") {
+    return `${getTrxDbColumn(filter.column)}.${filter.filter}.${JSON.stringify(filter.value)}`;
+  }
+
+  if (filter.type === "and" || filter.type === "or") {
+    return `${filter.type}(${filter.filters.map(resolvePostgrestFilter).join(",")})`;
+  }
+
+  // If we add new filter types, the following lines should verify that
+  // we checked all possible values for `filter.type` and if not, throw a
+  // compile time error for TypeScript
+  type assert<T extends true> = never;
+  type check = assert<typeof filter.type extends never ? true : false>;
+  throw new Error(`No such filter type: ${filter.type}`);
+};
+
+/**
+ * Converts the transaction cursor into a series of filters that restrict the
+ * results to those occuring after the cursor.
+ * @param sort   How results should be ordered
+ * @param cursor A transaction cursor
+ */
+const getTrxCursorFilter = (sort: TransactionSort[], cursor: TransactionCursor): TransactionFilter => {
+  const filters: TransactionFilter[] = [];
+
+  function filterFor(equal: boolean, order?: TransactionSort): TransactionFilter {
+    const column = order?.column || "id";
+
+    /* Need to select correct value when column is amount */
+    let value;
+    if (column === "amount") value = cursor.amount!.amount;
+    else value = cursor[column]!;
+
+    return {
+      type: "column",
+      filter: equal ? "eq" : order ? (order.ascending ? "gt" : "lt") : "gt",
+      column: column as any,
+      value,
+    };
+  }
+
+  // Construct comparison (t0, t1, ..., tn) > (c0, c1, ..., cn)
+  // with the caveat that individual terms can be either ascending or descending.
+  // tn and cn are always sorting the transactions by id in ascending order
+  for (let i = 0; i <= sort.length; i++) {
+    if (i === 0) {
+      filters.push(filterFor(false, sort[i]));
+      continue;
+    }
+
+    const andFilters: TransactionFilter[] = [];
+    for (let j = 0; j < i; j++) {
+      andFilters.push(filterFor(true, sort[j]));
+    }
+    andFilters.push(filterFor(false, sort[i]));
+    filters.push({ type: "and", filters: andFilters });
+  }
+
+  if (filters.length === 1) return filters[0];
+  return { type: "or", filters };
+};
+
+const getTrxCursor = (rows: ReadTransactionRow[]): TransactionCursor | undefined => {
+  if (rows.length === 0) return undefined;
+  const last = rows[rows.length - 1];
+  return {
+    ...parseTransaction(last),
+    budgetName: last.budget_name,
+    categoryName: last.category_name,
+  };
+};
+
+/**
+ * Get the query to retrieve paginated transactions from the database
+ * @param owner The account owner id
+ * @param model The transaction query model
+ * @param cursor The cursor for paginated data
+ * @param count If true, performs a headless count query
+ * @returns The Supabase query
+ */
+const getTrxQuery = (
+  owner: string,
+  model: TransactionQuery,
+  cursor: TransactionCursor | undefined,
+  count?: boolean
+) => {
+  const query = supabase
+    .from("transactions")
+    .select(TRANSACTION_QUERY, count ? { count: "exact", head: true } : undefined)
+    .eq("owner", owner);
+
+  /* Sort query. If sorting unspecified, apply default sorting */
+  let sort = model.sort;
+  if (!sort || sort.length === 0)
+    sort = [
+      { column: "starred", ascending: false },
+      { column: "date", ascending: false },
+    ];
+
+  for (const column of sort) {
+    query.order(getTrxDbColumn(column.column), { ascending: column.ascending });
+  }
+
+  query.order("id");
+
+  /* Apply filters to query, including those for the cursor */
+  let filter = model.filter;
+  if (cursor) {
+    const cursorFilter = getTrxCursorFilter(sort, cursor);
+    if (filter) filter = { type: "and", filters: [filter, cursorFilter] };
+    else filter = cursorFilter;
+  }
+
+  if (filter) query.or(resolvePostgrestFilter(filter));
+
+  /*
+   * Perform text search on search query.
+   *
+   * We'll use a simple text search that splits the query into tokens and requires
+   * that each matching row contain all of the tokens.
+   * Punctuation is removed both here and in the `transactions.search` Postgres column.
+   */
+  if (model.search) {
+    const keywords = model.search
+      .replace(/[\\%_]/g, "\\$&") // Escape %_\ for Postgres ILIKE
+      .split(" ")
+      .filter((s) => s !== "");
+    query.ilikeAllOf(
+      "search",
+      keywords.map((k) => `%${k}%`)
+    );
+  }
+
+  return query;
+};
+
+const getTrxCountAsync = async (owner: string, model: TransactionQuery, cursor: TransactionCursor | undefined) => {
+  /** Don't return count after first page */
+  if (cursor !== undefined) return undefined;
+  const query = getTrxQuery(owner, model, cursor, true);
+
+  const { count, error } = await query;
+  if (error) {
+    console.log(error);
+    throw new HttpError(error.code, error.message);
+  }
+
+  return count;
+};
+
+const getTrxRowsAsync = async (
+  owner: string,
+  model: TransactionQuery,
+  cursor: TransactionCursor | undefined,
+  limit: number
+): Promise<[Transaction[], TransactionCursor | undefined]> => {
+  /* Idea: query (limit + 1) number of rows. If we actually get that many rows,
+   * then there is still another page to query (we only send back limit rows to the client).
+   */
+  const query = getTrxQuery(owner, model, cursor);
+  query.limit(limit + 1);
+  const rows = await wrap(query); // Rows we received from server
+  const clientRows = rows.slice(0, limit); // Rows we'll send back to client
+  return [clientRows.map(parseTransaction), rows.length <= limit ? undefined : getTrxCursor(clientRows)];
+};
+
+export const searchTransactions = async (
+  owner: string,
+  model: TransactionQuery,
+  cursor: TransactionCursor | undefined,
+  limit: number
+): Promise<TransactionPage> => {
+  const [count, [transactions, nextCursor]] = await Promise.all([
+    getTrxCountAsync(owner, model, cursor),
+    getTrxRowsAsync(owner, model, cursor, limit),
+  ]);
+
+  return {
+    transactions,
+    cursor: nextCursor,
+    meta: { count: count ?? undefined },
+  };
 };

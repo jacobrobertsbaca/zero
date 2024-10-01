@@ -1,6 +1,4 @@
-import Head from 'next/head';
-import { Box, Container, Stack, Typography } from '@mui/material';
-import { SettingsNotifications } from 'src/sections/settings/settings-notifications';
+import { Stack } from '@mui/material';
 import { SettingsPassword } from 'src/sections/settings/settings-password';
 import { Layout as DashboardLayout } from 'src/layouts/dashboard/layout';
 import { SettingsSignOut } from 'src/sections/settings/settings-sign-out';

@@ -29,3 +29,5 @@ export const DatesSchema = z
   .refine((value) => {
     return value.begin <= value.end;
   }, "Dates cannot end before it begins!");
+
+export const IdSchema = z.string().uuid();

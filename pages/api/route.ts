@@ -3,7 +3,7 @@ import { supabase } from "./supabase";
 import { HttpError, Unauthorized } from "./errors";
 import { createRouter } from "next-connect";
 import { RequestHandler } from "next-connect/dist/types/node";
-import { ZodError, ZodType } from "zod";
+import { z } from "zod";
 
 type User = {
   /**
@@ -35,14 +35,14 @@ type RouteOptions<TBody, TQuery> = {
    * If the body does not conform, then a 400 is returned.
    * If undefined, the body is not validated.
    */
-  bodySchema?: ZodType<TBody>;
+  bodySchema?: z.ZodType<TBody, any, any>;
 
   /**
    * If defined, specifies the schema which the query parameters must conform to.
    * If the query parameters do not conform, then a 400 is returned.
    * If undefined, the query parameters are not validated.
    */
-  querySchema?: ZodType<TQuery>;
+  querySchema?: z.ZodType<TQuery, any, any>;
 } & ({
   protect: false;
   handler: RequestHandler<Request<TBody, TQuery>, NextApiResponse>;
@@ -51,11 +51,11 @@ type RouteOptions<TBody, TQuery> = {
   handler: RequestHandler<AuthorizedRequest<TBody, TQuery>, NextApiResponse>;
 });
 
-const validate = async <T>(o: any, schema: ZodType<T>): Promise<T> => {
+const validate = async <T extends z.ZodTypeAny>(o: any, schema: T): Promise<z.infer<T>> => {
   try {
     return await schema.parseAsync(o);
   } catch (err) {
-    if (err instanceof ZodError)
+    if (err instanceof z.ZodError)
       throw new HttpError(400, err.toString());
     throw err;
   }

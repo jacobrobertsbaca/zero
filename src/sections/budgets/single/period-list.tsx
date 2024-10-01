@@ -1,4 +1,4 @@
-import { Stack, Table, TableBody, TableCell, TableFooter, TableHead, TableRow, Typography } from "@mui/material";
+import { Stack, TableBody, TableCell, TableFooter, TableHead, TableRow, Typography } from "@mui/material";
 import { Category, Period, RecurrenceType } from "src/types/category/types";
 import { SpendingBar } from "../common/spending-bar";
 import { categoryActiveIndex, categoryRollover, periodDatesFormat } from "src/types/category/methods";
@@ -7,19 +7,18 @@ import { moneySum, RoundingMode } from "src/types/money/methods";
 import { PaginatedTable } from "src/components/table/paginated-table";
 import { PaginatedRows } from "src/components/table/paginated-rows";
 import { PaginatedOptions } from "src/components/table/paginated-options";
+import { TransactionsLink } from "src/sections/transactions/transactions-link";
 
 type PeriodListProps = {
   category: Category;
 };
 
 export const PeriodList = ({ category }: PeriodListProps) => {
-  
   const includeEarlier = category.periods[0].actual.amount !== 0;
   const includeLater = category.periods[category.periods.length - 1].actual.amount !== 0;
 
   /* Hide period list if recurrence is none and no earlier/later periods */
-  if (category.recurrence.type === RecurrenceType.None && !includeEarlier && !includeLater)
-    return null;
+  if (category.recurrence.type === RecurrenceType.None && !includeEarlier && !includeLater) return null;
 
   const activeIndex = categoryActiveIndex(category) - (includeEarlier ? 0 : 1);
   const rollovers = categoryRollover(category).filter((p, i) => {
@@ -48,7 +47,7 @@ export const PeriodList = ({ category }: PeriodListProps) => {
       <TableHead>
         <TableRow>
           <TableCell>Period</TableCell>
-          <TableCell>Progress</TableCell>
+          <TableCell width="40%">Progress</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -56,17 +55,20 @@ export const PeriodList = ({ category }: PeriodListProps) => {
           {(period: Period, index: number) => (
             <TableRow hover key={`${period.dates.begin}${period.dates.end}`}>
               <TableCell>
-                <Stack>
-                  {index === 0 && includeEarlier
-                    ? "Earlier"
-                    : index === rows.length - 1 && includeLater
-                    ? "Later"
-                    : periodDatesFormat(period)}
-                  {isCurrent(index) && (
-                    <Typography variant="caption" color="text.secondary">
-                      Current
-                    </Typography>
-                  )}
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <TransactionsLink category={category} period={period} />
+                  <Stack>
+                    {index === 0 && includeEarlier
+                      ? "Earlier"
+                      : index === rows.length - 1 && includeLater
+                      ? "Later"
+                      : periodDatesFormat(period)}
+                    {isCurrent(index) && (
+                      <Typography variant="caption" color="text.secondary">
+                        Current
+                      </Typography>
+                    )}
+                  </Stack>
                 </Stack>
               </TableCell>
               <TableCell>

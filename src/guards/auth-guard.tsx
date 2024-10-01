@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import PropTypes from "prop-types";
 import { useAuth } from "src/hooks/use-auth";
+import { useSearchParams } from "next/navigation";
 
 type PropTypes = {
   protect: boolean;
@@ -12,6 +13,7 @@ export const AuthGuard: React.FC<PropTypes> = ({ protect, children }: PropTypes)
   const router = useRouter();
   const { user } = useAuth();
   const [checked, setChecked] = useState(false);
+  const searchParams = useSearchParams();
 
   // Only do authentication check on component mount.
   // This flow allows you to manually redirect the user after sign-out, otherwise this will be
@@ -27,16 +29,17 @@ export const AuthGuard: React.FC<PropTypes> = ({ protect, children }: PropTypes)
       router
         .replace({
           pathname: "/auth/login",
-          query: router.asPath !== "/" ? { continueUrl: router.asPath } : undefined,
+          query: router.asPath !== "/" ? { url: router.asPath } : undefined,
         })
         .catch(console.error);
     } else if (user && !protect) {
       console.log("Already authenticated, redirecting");
-      router.replace({ pathname: "/budgets" }).catch(console.error);
+      const redirect = searchParams.get("url") ?? "/budgets";
+      router.replace({ pathname: redirect }).catch(console.error);
     } else {
       setChecked(true);
     }
-  }, [router, user, protect]);
+  }, [router, user, protect, searchParams]);
 
   if (!checked) {
     return null;

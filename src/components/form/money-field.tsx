@@ -1,23 +1,9 @@
 import { InputAdornment, TextField, TextFieldProps } from "@mui/material";
 import { FormikValues, useFormikContext } from "formik";
-import { get, isEqual } from "lodash";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
-import { defaultCurrency, moneyFormat, moneyZero } from "src/types/money/methods";
+import { isEqual } from "lodash";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import { moneyFormat, moneyParse } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
-
-type MoneyFieldProps = Omit<TextFieldProps, "value" | "onChange"> &
-  (
-    | {
-        name?: undefined;
-        value: Money | null;
-        onChange: (value: Money) => void;
-      }
-    | {
-        name: string;
-        value?: undefined;
-        onChange?: undefined;
-      }
-  );
 
 const maskCurrency = (prev: string, current: string): string => {
   current = current.replace(/[^0-9.-]/g, ""); // Remove non-numeric, non-period, non-dash characters
@@ -31,50 +17,43 @@ const maskCurrency = (prev: string, current: string): string => {
   return current;
 };
 
-const parseCurrency = (input: string): Money => {
-  if (input === "" || input === ".") return moneyZero();
-  const negative = input[0] === "-";
-  if (negative) input = input.slice(1);
-  const parts = input.split(".");
-  let major = parseInt(parts[0]);
-  let minor = parseInt(parts[1]);
-  if (parts[1] && parts[1].length === 1) minor *= 10;
-  if (isNaN(major) && isNaN(minor)) return moneyZero();
-  major = isNaN(major) ? 0 : major;
-  minor = isNaN(minor) ? 0 : minor;
-  return {
-    amount: (negative ? -1 : 1) * (100 * major + minor),
-    currency: defaultCurrency,
-  };
+export type MoneyFieldProps = Omit<TextFieldProps, "value" | "onChange"> & {
+  value: Money | null;
+  onChange: (value: Money | null) => void;
 };
 
-export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
-  const { name, value, onChange, ...rest } = props;
-  const formik = useFormikContext<T>();
-  const current = value !== undefined ? value : (get(formik.values, name) as Money);
-  const [raw, setRaw] = useState(current ? moneyFormat(current, { excludeSymbol: true }) : "");
+export const MoneyField = (props: MoneyFieldProps) => {
+  const { value, onChange, onBlur, ...rest } = props;
+  const { InputProps, inputProps, ...TextFieldProps } = rest;
 
-  const handleChange = useCallback(
+  const [rawInput, setRawInput] = useState("");
+  const lastValue = useRef<Money | null>();
+
+  const onInputChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setRaw(maskCurrency(raw, event.target.value));
+      setRawInput((prevInput) => maskCurrency(prevInput, event.target.value));
+      const money = moneyParse(event.target.value);
+      lastValue.current = money;
+      onChange(money);
     },
-    [raw]
+    [onChange]
   );
 
-  const handleBlur = useCallback(() => {
-    const money = parseCurrency(raw);
-    if (current) setRaw(moneyFormat(current, { excludeSymbol: true }));
-    if (isEqual(money, current)) return;
-    if (onChange) onChange(money);
-    else formik.setFieldValue(name, money);
-  }, [formik, name, onChange, raw, current]);
+  const onInputBlur = useCallback(
+    (event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement, Element>) => {
+      if (value) setRawInput(moneyFormat(value, { keepZero: true, excludeSymbol: true }));
+      else setRawInput("");
+      onBlur?.(event);
+    },
+    [value, onBlur]
+  );
 
   useEffect(() => {
-    setRaw(current ? moneyFormat(current, { excludeSymbol: true }) : "");
-  }, [current]);
-
-  const { InputProps, inputProps, ...textFieldProps } = rest;
-  const error = name ? get(formik.touched, name) && get(formik.errors, name) : "";
+    if (isEqual(value, lastValue.current)) return;
+    if (value === null) setRawInput("");
+    else setRawInput(moneyFormat(value, { keepZero: true, excludeSymbol: true }));
+    lastValue.current = value;
+  }, [value]);
 
   return (
     <TextField
@@ -84,14 +63,48 @@ export const MoneyField = <T extends FormikValues>(props: MoneyFieldProps) => {
       }}
       inputProps={{
         inputMode: "decimal",
-        ...inputProps
+        ...inputProps,
       }}
-      error={!!error}
-      helperText={typeof error === "string" ? error : JSON.stringify(error)}
-      value={raw}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      {...textFieldProps}
+      onChange={onInputChange}
+      onBlur={onInputBlur}
+      value={rawInput}
+      autoComplete="off" // Unlikely that money fields should be autocompleted
+      {...TextFieldProps}
+    />
+  );
+};
+
+export type FormMoneyFieldProps = Omit<MoneyFieldProps, "value" | "onChange" | "name"> & {
+  name: string;
+  onChange?: (value: Money | null) => void;
+  value?: Money | null;
+};
+
+export const FormMoneyField = <T extends FormikValues>(props: FormMoneyFieldProps) => {
+  const { name, onChange, value, helperText, ...rest } = props;
+
+  const formik = useFormikContext<T>();
+  const formMeta = formik.getFieldMeta(name);
+  const formValue = (value ?? formMeta.value) as Money | null;
+  const formError = (formMeta.touched && formMeta.error) || undefined;
+
+  const onFieldChange = useCallback(
+    (value: Money | null) => {
+      formik.setFieldValue(name, value);
+      onChange?.(value);
+    },
+    [formik, name, onChange]
+  );
+
+  return (
+    <MoneyField
+      name={name}
+      value={formValue}
+      onChange={onFieldChange}
+      error={!!formError}
+      helperText={formError ?? helperText}
+      onBlur={formik.handleBlur}
+      {...rest}
     />
   );
 };

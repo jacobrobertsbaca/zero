@@ -59,10 +59,13 @@ create table transactions (
   owner uuid not null references auth.users on delete cascade,
   category uuid not null references public.categories on delete cascade,
   budget uuid not null references public.budgets on delete cascade,
+  category_name citext not null default '',
+  budget_name citext not null default '',
   date char(8) not null,
   amount bigint not null,
-  name varchar(120) not null,
+  name citext not null check (length(name) <= 120),
   last_modified varchar(27) not null,
   starred boolean not null,
-  note text not null check (length(note) <= 1000)
+  note text not null check (length(note) <= 1000),
+  search text generated always as (name || ' ' || note || ' ' ||  budget_name || ' ' || category_name) stored
 );

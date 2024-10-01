@@ -1,7 +1,15 @@
+import z from "zod";
 import { Money } from "../money/types";
 import { DateString } from "../utils/types";
+import {
+  BaseTransactionFilterSchema,
+  TransactionSearchColumnSchema,
+  TransactionQuerySchema,
+  TransactionSortSchema,
+} from "./schema";
+import { Immutable } from "immer";
 
-export type Transaction = {
+export type Transaction = Immutable<{
   /** The unique ID of this transaction. */
   id: string;
 
@@ -28,4 +36,33 @@ export type Transaction = {
 
   /** An optional note associated with the transaction. */
   note: string;
-};
+}>;
+
+export type TransactionCursor = Immutable<Transaction & {
+  /** The name of the budget this transaction is associated with. */
+  budgetName: string;
+
+  /** The name of the category this transaction is associated with. */
+  categoryName: string;
+}>;
+
+export type TransactionPage = Immutable<{
+  transactions: Transaction[];
+  /** The cursor to get the next page of results, or `undefined` if none remaining. */
+  cursor: TransactionCursor | undefined;
+  meta: {
+    /** The total number of rows for the given query model. Only computed on first request. */
+    count?: number;
+  };
+}>;
+
+export type TransactionFilter =
+  | z.infer<typeof BaseTransactionFilterSchema>
+  | {
+      type: "or" | "and";
+      filters: TransactionFilter[];
+    };
+
+export type TransactionSort = z.infer<typeof TransactionSortSchema>;
+export type TransactionSearchColumn = z.infer<typeof TransactionSearchColumnSchema>;
+export type TransactionQuery = z.infer<typeof TransactionQuerySchema>;
