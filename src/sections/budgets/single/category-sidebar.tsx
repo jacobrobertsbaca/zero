@@ -19,6 +19,7 @@ import * as Yup from "yup";
 import { useCategoryChanges } from "src/hooks/use-api";
 import { Sidebar } from "src/components/sidebar/sidebar";
 import { DeleteDialog } from "src/components/delete-dialog";
+import { TransactionsLink } from "src/sections/transactions/transactions-link";
 
 /* ================================================================================================================= *
  * Utility                                                                                                           *
@@ -137,13 +138,16 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
     <Sidebar
       open={open}
       onClose={onClose}
-      title={(formik) =>
-        editState !== EditState.Edit
-          ? category.name
-          : category.id
-          ? formik.values.name
-          : formik.values.name || "New Category"
-      }
+      title={(formik) => (
+        <Stack direction="row" alignItems="center">
+          {editState !== EditState.Edit && <TransactionsLink category={category} />}
+          {editState !== EditState.Edit
+            ? category.name
+            : category.id
+            ? formik.values.name
+            : formik.values.name || "New Category"}
+        </Stack>
+      )}
       FormProps={{
         enableReinitialize: true,
         initialValues: category,

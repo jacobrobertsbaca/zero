@@ -36,6 +36,15 @@ export type TransactionFilterModel = {
   category: string[] /* category in URL */;
 };
 
+export const emptyFilters = (): TransactionFilterModel => ({
+  dateMin: null,
+  dateMax: null,
+  amountMin: null,
+  amountMax: null,
+  budget: [],
+  category: [],
+});
+
 export const filterModelToFilters = (model: TransactionFilterModel): TransactionFilter | undefined => {
   const filters: TransactionFilter[] = [];
 
