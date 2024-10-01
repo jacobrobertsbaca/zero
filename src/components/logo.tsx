@@ -14,7 +14,7 @@ export const LogoLink = () => {
   return (
     <Box
       component={NextLink}
-      href="/budgets"
+      href="/"
       sx={{
         display: "inline-flex",
         height: 32,

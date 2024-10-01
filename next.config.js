@@ -4,7 +4,7 @@ module.exports = {
     return [
       {
         source: '/',
-        destination: '/budgets',
+        destination: '/transactions',
         permanent: true,
       },
     ]

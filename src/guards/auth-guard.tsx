@@ -34,7 +34,7 @@ export const AuthGuard: React.FC<PropTypes> = ({ protect, children }: PropTypes)
         .catch(console.error);
     } else if (user && !protect) {
       console.log("Already authenticated, redirecting");
-      const redirect = searchParams.get("url") ?? "/budgets";
+      const redirect = searchParams.get("url") ?? "/";
       router.replace({ pathname: redirect }).catch(console.error);
     } else {
       setChecked(true);

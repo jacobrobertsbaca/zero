@@ -1,9 +1,9 @@
 import { Typography, Stack, IconButton, SvgIcon, Box } from "@mui/material";
 import { useRouter } from "next/router";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import { Loading } from "src/components/loading";
 import { PageTitle } from "src/components/page-title";
-import { useBudget, useBudgetChanges } from "src/hooks/use-api";
+import { useBudget } from "src/hooks/use-api";
 import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
 import { BudgetSummaryList } from "src/sections/budgets/single/budget-summary-list";
 import { CategoryList } from "src/sections/budgets/single/category-list";
@@ -18,11 +18,6 @@ import { BudgetSidebar } from "src/sections/budgets/common/budget-sidebar";
 const Page = () => {
   const router = useRouter();
   const { budget, error } = useBudget(router.query.id as string);
-
-  /* Render 404 when we fail to load budget */
-  // useEffect(() => {
-  //   if (error) router.replace("/404");
-  // }, [error]);
 
   /* Sidebar state. Use dummy category to ensure non-null */
   const [sidebarOpen, setSidebarOpen] = useState(false);
