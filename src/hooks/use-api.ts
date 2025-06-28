@@ -170,7 +170,7 @@ const mutateTransactions = (
             page.splice(trxIdx, 1);
             rowsAdded--;
           } else page[trxIdx] = updated;
-        } else page[pageIdx] = change;
+        } else page[trxIdx] = change;
 
         modified = true;
       }
