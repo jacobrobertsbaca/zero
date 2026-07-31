@@ -34,9 +34,16 @@ const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
 
   return (
     <tr
-      key={category.id}
+      role="button"
+      tabIndex={0}
       onClick={() => onClick(category)}
-      className="cursor-pointer border-b last:border-b-0 hover:bg-muted/40"
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick(category);
+        }
+      }}
+      className="cursor-pointer rounded-md border-b last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/40"
     >
       <td className="px-2 py-2.5 align-middle">
         <div className="flex flex-col">
@@ -98,9 +105,16 @@ export const CategoryList = ({ budget, onCategoryClicked }: CategoryListProps) =
         {budget.categories.map((category) => (
           <CategoryRow key={category.id} state={state} category={category} onClick={onCategoryClicked} />
         ))}
-        <tr className="cursor-pointer hover:bg-muted/40" onClick={onAddCategory}>
-          <td colSpan={3} className="py-3 text-center">
-            <Plus className="mx-auto size-4 text-muted-foreground/50" />
+        <tr>
+          <td colSpan={3} className="p-0">
+            <button
+              type="button"
+              aria-label="Add category"
+              onClick={onAddCategory}
+              className="flex w-full cursor-pointer items-center justify-center border-0 bg-transparent py-3 hover:bg-muted/40 focus-visible:bg-muted/40"
+            >
+              <Plus className="size-4 text-muted-foreground/50" />
+            </button>
           </td>
         </tr>
       </tbody>

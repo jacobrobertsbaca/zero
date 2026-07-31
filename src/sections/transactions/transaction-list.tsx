@@ -31,11 +31,17 @@ export const TransactionList = ({ table, setSidebarTrx, isLoading }: Transaction
                 style={{ width: `${(header.getSize() / table.getTotalSize()) * 100}%` }}
                 className={cn(
                   "group px-2 py-2 align-middle font-medium",
-                  header.column.getCanSort() && "cursor-pointer"
+                  header.column.getCanSort() && "cursor-pointer",
+                  header.column.columnDef.meta?.center && "text-center"
                 )}
                 onClick={header.column.getToggleSortingHandler()}
               >
-                <div className="flex items-center">
+                <div
+                  className={cn(
+                    "flex items-center",
+                    header.column.columnDef.meta?.center && "justify-center"
+                  )}
+                >
                   <span>{flexRender(header.column.columnDef.header, header.getContext())}</span>
                   {header.column.getCanSort() && (
                     <span
@@ -61,8 +67,16 @@ export const TransactionList = ({ table, setSidebarTrx, isLoading }: Transaction
         {rows.map((row) => (
           <tr
             key={row.id}
+            role="button"
+            tabIndex={0}
             onClick={() => setSidebarTrx(row.original)}
-            className="cursor-pointer border-b last:border-b-0 hover:bg-muted/40"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setSidebarTrx(row.original);
+              }
+            }}
+            className="cursor-pointer rounded-md border-b last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/40"
           >
             {row.getVisibleCells().map((cell) => (
               <td

@@ -192,8 +192,7 @@ export const TransactionGroupSelector = ({
           <button
             type="button"
             className={cn(
-              "flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm",
-              "focus:outline-none focus:ring-1 focus:ring-ring"
+              "flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm"
             )}
           >
             {renderedBudgets.length > 0 ? renderedBudgets : <span className="text-muted-foreground">Any category</span>}

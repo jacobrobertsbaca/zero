@@ -165,7 +165,7 @@ const Page = () => {
         cell: ({ row }) => (
           <button
             type="button"
-            className="flex items-center justify-center p-0"
+            className="inline-flex items-center justify-center rounded-md align-middle"
             onClick={(evt) => {
               starTransaction(row.original, !row.original.starred);
               evt.stopPropagation();
@@ -270,10 +270,10 @@ const Page = () => {
 
       <Loading error={budgetsError || trxError} loading={false}>
         <TransactionSearch fullWidth search={search} setSearch={setSearch} />
+        {count ? <p className="text-xs text-muted-foreground">Found {count} transactions</p> : null}
         <TransactionFilterChips filter={filter} setFilter={setFilter} budgets={budgets}>
           <TransactionFilterButton filter={filter} setFilter={setFilter} budgets={budgets} />
         </TransactionFilterChips>
-        {count ? <p className="text-xs text-muted-foreground">Found {count} transactions</p> : null}
         <TransactionList
           table={table}
           setSidebarTrx={(trx) => {

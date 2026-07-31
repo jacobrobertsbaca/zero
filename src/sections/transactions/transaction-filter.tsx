@@ -139,7 +139,7 @@ export const TransactionFilterButton = ({ budgets, ...rest }: TransactionFilterB
         onClick={() => setOpen(true)}
         className={cn(
           badgeVariants({ variant: "outline" }),
-          "border-dashed font-normal text-muted-foreground focus:ring-0 focus:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+          "border-dashed font-normal text-muted-foreground disabled:pointer-events-none disabled:opacity-50"
         )}
       >
         + Add Filter
