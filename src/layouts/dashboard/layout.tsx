@@ -30,7 +30,9 @@ export const Layout = withAuthGuard(true, ({ children }: LayoutProps) => {
       <div className="flex max-w-full flex-1 lg:pl-[240px]" style={{ ["--side-nav-width" as string]: `${SIDE_NAV_WIDTH}px` }}>
         <div className="flex w-full flex-1 flex-col">
           <main className="flex-1 py-6 md:py-8">
-            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">{children}</div>
+            <div key={pathname} className="page-enter mx-auto w-full max-w-6xl px-4 sm:px-6">
+              {children}
+            </div>
           </main>
         </div>
       </div>

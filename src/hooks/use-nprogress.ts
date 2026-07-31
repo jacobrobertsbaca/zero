@@ -2,6 +2,8 @@ import { MutableRefObject, useEffect, useRef } from "react";
 import Router from "next/router";
 import nProgress from "nprogress";
 
+nProgress.configure({ showSpinner: false, trickleSpeed: 200, minimum: 0.08 });
+
 const ignoreQuery = (pathRef: MutableRefObject<string | undefined>, func: () => any) => (url: any) => {
   /** If url is not a string, then we can't do any path-dependent logic. */
   if (typeof url === "string") {
