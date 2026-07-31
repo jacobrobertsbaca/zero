@@ -5,6 +5,7 @@ import { DateField } from "src/components/form/date-field";
 import { FormMoneyField } from "src/components/form/money-field";
 import { SelectField } from "src/components/form/select-field";
 import { TextField } from "src/components/form/text-field";
+import { NoteField } from "src/components/form/note-field";
 import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { Sidebar } from "src/components/sidebar/sidebar";
 import { Button } from "src/components/ui/button";
@@ -137,7 +138,7 @@ export const TransactionSidebar = ({
           <CategorySelector budgets={budgets} />
           <FormMoneyField label="Amount" name="amount" />
           <TextField label="Name" name="name" placeholder="Optional" max={120} autoComplete="off" />
-          <TextField label="Note" name="note" placeholder="Optional" max={1000} multiline rows={5} autoComplete="off" />
+          <NoteField label="Note" name="note" placeholder="Optional" />
 
           <EditActions
             dirty={!isEqual(form.values, transaction)}
