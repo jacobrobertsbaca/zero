@@ -269,11 +269,10 @@ const Page = () => {
       </div>
 
       <Loading error={budgetsError || trxError} loading={false}>
-        <div className="flex items-center justify-between gap-2">
-          <TransactionSearch fullWidth search={search} setSearch={setSearch} />
+        <TransactionSearch fullWidth search={search} setSearch={setSearch} />
+        <TransactionFilterChips filter={filter} setFilter={setFilter} budgets={budgets}>
           <TransactionFilterButton filter={filter} setFilter={setFilter} budgets={budgets} />
-        </div>
-        <TransactionFilterChips filter={filter} setFilter={setFilter} budgets={budgets} />
+        </TransactionFilterChips>
         {count ? <p className="text-xs text-muted-foreground">Found {count} transactions</p> : null}
         <TransactionList
           table={table}

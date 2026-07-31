@@ -1,4 +1,4 @@
-import { X, SlidersHorizontal } from "lucide-react";
+import { X } from "lucide-react";
 
 import { DateString } from "src/types/utils/types";
 import { Money } from "src/types/money/types";
@@ -18,8 +18,8 @@ import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { isEqual } from "lodash";
 import { DateField } from "src/components/form/date-field";
 import { TransactionGroupSelector } from "./transaction-group-selector";
-import { Badge } from "src/components/ui/badge";
-import { Button } from "src/components/ui/button";
+import { Badge, badgeVariants } from "src/components/ui/badge";
+import { cn } from "src/lib/utils";
 
 export type TransactionFilterModel = {
   dateMin: DateString | null /* start in URL */;
@@ -133,17 +133,17 @@ export const TransactionFilterButton = ({ budgets, ...rest }: TransactionFilterB
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button
+      <button
         type="button"
-        variant="outline"
-        size="icon"
-        className="shrink-0 border-border bg-muted/40"
         disabled={!budgets}
         onClick={() => setOpen(true)}
+        className={cn(
+          badgeVariants({ variant: "outline" }),
+          "border-dashed font-normal text-muted-foreground focus:ring-0 focus:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+        )}
       >
-        <SlidersHorizontal className="size-4" />
-        <span className="sr-only">Filters</span>
-      </Button>
+        + Add Filter
+      </button>
       {budgets !== undefined && (
         <TransactionFilterSidebar {...rest} budgets={budgets} open={open} onClose={() => setOpen(false)} />
       )}
@@ -311,13 +311,13 @@ export type TransactionFilterChipsProps = {
   filter: TransactionFilterModel;
   setFilter: (filter: TransactionFilterModel) => void;
   budgets?: readonly Budget[];
+  children?: React.ReactNode;
 };
 
-export const TransactionFilterChips = ({ filter, setFilter, budgets }: TransactionFilterChipsProps) => {
+export const TransactionFilterChips = ({ filter, setFilter, budgets, children }: TransactionFilterChipsProps) => {
   const chips = useMemo(() => getFilterChips(4, filter, budgets), [filter, budgets]);
-  if (chips.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       {chips.map((chip) => (
         <Badge key={chip.id ?? chip.label} variant="outline" className="gap-1 font-normal">
           {chip.label}
@@ -328,6 +328,7 @@ export const TransactionFilterChips = ({ filter, setFilter, budgets }: Transacti
           )}
         </Badge>
       ))}
+      {children}
     </div>
   );
 };
