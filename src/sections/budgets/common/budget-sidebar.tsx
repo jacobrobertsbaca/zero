@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import { DateField } from "src/components/form/date-field";
+import { DateRangeField } from "src/components/form/date-range-field";
 import { TextField } from "src/components/form/text-field";
 import { Sidebar } from "src/components/sidebar/sidebar";
 import { Budget } from "src/types/budget/types";
@@ -73,8 +73,7 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
           />
 
           <TextField fullWidth label="Name" name="name" type="text" max={60} />
-          <DateField label="Begin" name="dates.begin" />
-          <DateField label="End" name="dates.end" />
+          <DateRangeField label="Dates" name="dates" />
           {isExisting && !isEqual(form.values.dates, budget.dates) && (
             <div className="flex gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
