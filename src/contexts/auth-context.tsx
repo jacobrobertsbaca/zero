@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     /* Check if user is already logged in */
     const {
       data: { session },
-    } = await supabase.auth.refreshSession();
+    } = await supabase.auth.getSession();
     if (session) fromSession(session);
     else
       setState(
@@ -109,7 +109,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signInWithGoogle = async (): Promise<void> => {
-    const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google" });
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}${window.location.pathname}${window.location.search}`,
+      },
+    });
     if (error) throw new Error(error.message);
   };
 
