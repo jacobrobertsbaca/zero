@@ -38,14 +38,14 @@ const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
       onClick={() => onClick(category)}
       className="cursor-pointer border-b last:border-b-0 hover:bg-muted/40"
     >
-      <td className="px-2 py-2.5 align-top">
+      <td className="px-2 py-2.5 align-middle">
         <div className="flex flex-col">
           <span className="text-sm font-medium">{category.name}</span>
           <span className="text-xs text-muted-foreground">{categoryTitle(category.type)}</span>
         </div>
       </td>
       {state === BudgetView.Current && (
-        <td className="px-2 py-2.5 align-top">
+        <td className="px-2 py-2.5 align-middle">
           <PeriodTooltip recurrence={category.recurrence.type} dates={activePeriod!.dates} under />
         </td>
       )}

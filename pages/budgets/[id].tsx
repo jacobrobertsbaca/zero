@@ -33,7 +33,7 @@ const Page = () => {
 
   return (
     <>
-      <div className="mb-3 flex items-center gap-1">
+      <div className="mb-1 flex items-center gap-1">
         <PageTitle title={budget.name} />
         <Button type="button" variant="ghost" size="icon" onClick={() => setDetailsSidebarOpen(true)}>
           <Pencil className="size-4" />

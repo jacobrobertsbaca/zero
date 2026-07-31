@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { InfoTooltip } from "src/components/info-tooltip";
 import { MoneyText } from "src/components/money-text";
+import { Progress } from "src/components/ui/progress";
 import { ActualNominal } from "src/types/budget/types";
 import { moneyAbs, moneyFactor, moneySub, RoundingMode } from "src/types/money/methods";
 import { cn } from "src/lib/utils";
@@ -54,12 +55,7 @@ export const SpendingBar = ({ actual, nominal, remaining, warn }: SpendingBarPro
 
   return (
     <div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
-        <div
-          className={cn("h-full rounded-full transition-all", warn && shouldWarn ? "bg-destructive" : "bg-primary")}
-          style={{ width: `${value}%` }}
-        />
-      </div>
+      <Progress value={value} className={cn(warn && shouldWarn && "bg-destructive/20 [&>div]:bg-destructive")} />
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2">
         <span className="text-xs text-muted-foreground">
           <MoneyText className="font-bold" amount={actual} round={RoundingMode.RoundZero} />
