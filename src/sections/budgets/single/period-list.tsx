@@ -1,4 +1,3 @@
-import { Stack, TableBody, TableCell, TableFooter, TableHead, TableRow, Typography } from "@mui/material";
 import { Category, Period, RecurrenceType } from "src/types/category/types";
 import { SpendingBar } from "../common/spending-bar";
 import { categoryActiveIndex, categoryRollover, periodDatesFormat } from "src/types/category/methods";
@@ -44,42 +43,39 @@ export const PeriodList = ({ category }: PeriodListProps) => {
 
   return (
     <PaginatedTable rows={rows} rowsPerPageOptions={[10]} defaultPage={defaultPage}>
-      <TableHead>
-        <TableRow>
-          <TableCell>Period</TableCell>
-          <TableCell width="40%">Progress</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
+      <thead>
+        <tr className="border-b text-left text-xs text-muted-foreground">
+          <th className="px-2 py-2 font-medium">Period</th>
+          <th className="w-2/5 px-2 py-2 font-medium">Progress</th>
+        </tr>
+      </thead>
+      <tbody>
         <PaginatedRows>
           {(period: Period, index: number) => (
-            <TableRow hover key={`${period.dates.begin}${period.dates.end}`}>
-              <TableCell>
-                <Stack direction="row" alignItems="center" spacing={1}>
+            <tr key={`${period.dates.begin}${period.dates.end}`} className="border-b last:border-b-0 hover:bg-muted/40">
+              <td className="px-2 py-2.5 align-top">
+                <div className="flex items-center gap-1.5">
                   <TransactionsLink category={category} period={period} />
-                  <Stack>
-                    {index === 0 && includeEarlier
-                      ? "Earlier"
-                      : index === rows.length - 1 && includeLater
-                      ? "Later"
-                      : periodDatesFormat(period)}
-                    {isCurrent(index) && (
-                      <Typography variant="caption" color="text.secondary">
-                        Current
-                      </Typography>
-                    )}
-                  </Stack>
-                </Stack>
-              </TableCell>
-              <TableCell>
+                  <div className="flex flex-col">
+                    <span className="text-sm">
+                      {index === 0 && includeEarlier
+                        ? "Earlier"
+                        : index === rows.length - 1 && includeLater
+                        ? "Later"
+                        : periodDatesFormat(period)}
+                    </span>
+                    {isCurrent(index) && <span className="text-xs text-muted-foreground">Current</span>}
+                  </div>
+                </div>
+              </td>
+              <td className="px-2 py-2.5 align-top">
                 <SpendingBar
                   actual={period.actual}
                   nominal={moneySum(period.nominal, rollovers[index])}
                   remaining={
                     rollovers[index].amount !== 0 && (
                       <MoneyText
-                        variant="caption"
-                        fontWeight={700}
+                        className="text-xs font-bold"
                         amount={rollovers[index]}
                         plus
                         status
@@ -88,16 +84,18 @@ export const PeriodList = ({ category }: PeriodListProps) => {
                     )
                   }
                 />
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           )}
         </PaginatedRows>
-      </TableBody>
-      <TableFooter>
-        <TableRow>
-          <PaginatedOptions colSpan={2} />
-        </TableRow>
-      </TableFooter>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colSpan={2}>
+            <PaginatedOptions />
+          </td>
+        </tr>
+      </tfoot>
     </PaginatedTable>
   );
 };

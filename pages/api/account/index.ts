@@ -1,6 +1,6 @@
-import { HttpError } from "../errors";
-import { route, routes } from "../route";
-import { supabase } from "../supabase";
+import { HttpError } from "src/server/errors";
+import { route, routes } from "src/server/route";
+import { supabase } from "src/server/supabase";
 
 const router = routes();
 

@@ -1,21 +1,29 @@
-import InformationCircleIcon from "@heroicons/react/24/outline/InformationCircleIcon";
-import { SvgIcon, Tooltip, TooltipProps } from "@mui/material";
+import { Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "src/components/ui/tooltip";
 
-export const InfoTooltip = (props: Omit<TooltipProps, "children">) =>
-  (
-    <Tooltip 
-      placement="top" 
-      arrow 
-      enterTouchDelay={0} 
-      onClick={event => event.stopPropagation()}
-      onMouseDown={event => event.stopPropagation()}
-      {...props}
-    >
-      <SvgIcon 
-        fontSize="small" 
-        color="disabled" 
-        onTouchStart={event => event.stopPropagation()}>
-        <InformationCircleIcon />
-      </SvgIcon>
+type InfoTooltipProps = {
+  title: React.ReactNode;
+  className?: string;
+};
+
+export const InfoTooltip = ({ title, className }: InfoTooltipProps) => (
+  <TooltipProvider delayDuration={200}>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className={className}
+          onClick={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+          onTouchStart={(event) => event.stopPropagation()}
+        >
+          <Info className="size-4 text-muted-foreground" />
+          <span className="sr-only">Info</span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs">
+        {title}
+      </TooltipContent>
     </Tooltip>
-  );
+  </TooltipProvider>
+);

@@ -1,65 +1,55 @@
-import {
-  Autocomplete,
-  AutocompleteInputChangeReason,
-  AutocompleteProps,
-  Checkbox,
-  CheckboxProps,
-  Chip,
-  Collapse,
-  createFilterOptions,
-  MenuItem,
-  Stack,
-  SvgIcon,
-  Typography,
-} from "@mui/material";
+import { ChevronDown, ChevronRight, ChevronsUpDown, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { Budget } from "src/types/budget/types";
 import { Category } from "src/types/category/types";
-
-import ChevronRight from "@heroicons/react/20/solid/ChevronRightIcon";
-import ChevronDown from "@heroicons/react/20/solid/ChevronDownIcon";
+import { Field } from "src/components/ui/field";
+import { Badge } from "src/components/ui/badge";
+import { Checkbox } from "src/components/ui/checkbox";
+import { Input } from "src/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "src/components/ui/popover";
+import { cn } from "src/lib/utils";
 
 type CategoryOption = {
   budget: Budget;
   category: Category;
 };
 
-type TransactionGroupSelectorBaseProps = {
+export type TransactionGroupSelectorProps = {
   options: readonly Budget[];
   categories: string[];
   budgets: string[];
   onChange: (categories: string[], budgets: string[]) => void;
+  label?: React.ReactNode;
+  className?: string;
 };
 
-export type TransactionGroupSelectorProps = Omit<
-  AutocompleteProps<CategoryOption, true, false, false>,
-  "options" | "value" | "onChange"
-> &
-  TransactionGroupSelectorBaseProps;
-
-const filterOptions = createFilterOptions<CategoryOption>({
-  stringify: (option) => `${option.category.name} ${option.budget.name} ${option.category.type}`,
-});
+const matchesInput = (option: CategoryOption, input: string): boolean => {
+  if (!input) return true;
+  const q = input.toLowerCase();
+  return (
+    option.category.name.toLowerCase().includes(q) ||
+    option.budget.name.toLowerCase().includes(q) ||
+    option.category.type.toLowerCase().includes(q)
+  );
+};
 
 export const TransactionGroupSelector = ({
   options,
   categories,
   budgets,
   onChange,
-  ...rest
+  label,
+  className,
 }: TransactionGroupSelectorProps) => {
-  const [open, setOpen] = useState(new Set<string>());
+  const [open, setOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState(new Set<string>());
   const [input, setInput] = useState("");
 
   const flatOptions = useMemo(() => {
     return options.flatMap((budget) => budget.categories.map((category) => ({ budget, category })));
   }, [options]);
 
-  const getFilteredOptions = useCallback(
-    (value: string) =>
-      filterOptions(flatOptions, { inputValue: value, getOptionLabel: (option) => option.category.name }),
-    [flatOptions]
-  );
+  const filteredOptions = useMemo(() => flatOptions.filter((option) => matchesInput(option, input)), [flatOptions, input]);
 
   const value: CategoryOption[] = useMemo(() => {
     const value: CategoryOption[] = [];
@@ -67,7 +57,6 @@ export const TransactionGroupSelector = ({
 
     for (const budget of budgets) {
       const budgetOptions = flatOptions.filter((option) => option.budget.id === budget);
-
       for (const option of budgetOptions) {
         categorySet.delete(option.category.id);
         value.push(option);
@@ -82,21 +71,28 @@ export const TransactionGroupSelector = ({
     return value;
   }, [categories, budgets, flatOptions]);
 
-  const onAutocompleteChange = useCallback(
-    (event: React.SyntheticEvent, value: CategoryOption[], reason: string) => {
-      const categorySet = new Set(value.map((option) => option.category.id));
+  const applyValue = useCallback(
+    (newValue: CategoryOption[]) => {
+      const categorySet = new Set(newValue.map((option) => option.category.id));
       const budgetIds: string[] = [];
       for (const budget of options) {
         const budgetCategories = budget.categories.map((category) => category.id);
-        if (budgetCategories.every((category) => categorySet.has(category))) {
+        if (budgetCategories.length > 0 && budgetCategories.every((category) => categorySet.has(category))) {
           budgetIds.push(budget.id);
           for (const category of budgetCategories) categorySet.delete(category);
         }
       }
-
       onChange(Array.from(categorySet), budgetIds);
     },
     [options, onChange]
+  );
+
+  const toggleCategory = useCallback(
+    (option: CategoryOption, checked: boolean) => {
+      const newValue = checked ? [...value, option] : value.filter((v) => v.category.id !== option.category.id);
+      applyValue(newValue);
+    },
+    [value, applyValue]
   );
 
   const selectBudget = useCallback(
@@ -109,8 +105,7 @@ export const TransactionGroupSelector = ({
         budgetSet.delete(budget.id);
         budgetCategories.forEach((category) => categorySet.delete(category));
       } else {
-        const universe = getFilteredOptions(input);
-        const choices = universe.filter((option) => option.budget.id === budget.id);
+        const choices = filteredOptions.filter((option) => option.budget.id === budget.id);
 
         if (choices.length === budget.categories.length) {
           budgetSet.add(budget.id);
@@ -123,133 +118,163 @@ export const TransactionGroupSelector = ({
 
       onChange(Array.from(categorySet), Array.from(budgetSet));
     },
-    [budgets, categories, input, getFilteredOptions, onChange]
+    [budgets, categories, filteredOptions, onChange]
   );
 
-  const onInputChange = useCallback(
-    (event: React.SyntheticEvent, value: string, reason: AutocompleteInputChangeReason) => {
-      // By default, MUI clears the input when the user selects an option
-      // With multiple selections, this is kind of jittery so we prevent this here.
-      if (reason === "reset") return;
+  const toggleGroup = useCallback((budgetId: string, next: boolean) => {
+    setOpenGroups((prev) => {
+      const copy = new Set(prev);
+      if (next) copy.add(budgetId);
+      else copy.delete(budgetId);
+      return copy;
+    });
+  }, []);
 
-      // Expand all groups that match the input
-      if (value === "") setOpen(new Set());
-      else setOpen(new Set(getFilteredOptions(value).map((option) => option.budget.id)));
-
-      setInput(value);
-    },
-    [flatOptions, getFilteredOptions]
-  );
-
-  return (
-    <Autocomplete
-      multiple
-      options={flatOptions}
-      value={value}
-      onChange={onAutocompleteChange}
-      getOptionLabel={(option) => option.category.name}
-      getOptionKey={(option) => option.category.id}
-      groupBy={(option) => option.budget.id}
-      renderGroup={(params) => (
-        <CollapseGroup
-          key={params.key}
-          budget={options.find((b) => b.id === params.group)!}
-          open={open.has(params.group)}
-          setOpen={(open) =>
-            setOpen((prev) => {
-              const next = new Set(prev);
-              if (open) next.add(params.group);
-              else next.delete(params.group);
-              return next;
-            })
-          }
-          options={options}
-          categories={categories}
-          budgets={budgets}
-          onChange={onChange}
-          selectBudget={selectBudget}
-        >
-          {params.children}
-        </CollapseGroup>
-      )}
-      renderOption={(props, option, { selected }) => {
-        const { key, ...optionProps } = props;
-        return (
-          <MenuItem key={key} sx={{ ml: 4 }} dense {...optionProps}>
-            <Check checked={selected} />
-            {option.category.name}
-          </MenuItem>
+  const budgetSelected = useMemo(() => new Set(budgets), [budgets]);
+  const renderedBudgets = useMemo(() => {
+    const rendered = new Set<string>();
+    const chips: React.ReactNode[] = [];
+    for (const option of value) {
+      if (budgetSelected.has(option.budget.id)) {
+        if (rendered.has(option.budget.id)) continue;
+        rendered.add(option.budget.id);
+        chips.push(
+          <Badge key={option.budget.id} variant="secondary" className="gap-1 font-normal">
+            {option.budget.name}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                selectBudget(option.budget, false);
+              }}
+            >
+              <X className="size-3" />
+            </button>
+          </Badge>
         );
-      }}
-      renderTags={(value, getTagProps) => {
-        const budgetSet = new Set(budgets);
-        const renderedBudgets = new Set<string>();
+      } else {
+        chips.push(
+          <Badge key={option.category.id} variant="secondary" className="gap-1 font-normal">
+            {option.category.name}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleCategory(option, false);
+              }}
+            >
+              <X className="size-3" />
+            </button>
+          </Badge>
+        );
+      }
+    }
+    return chips;
+  }, [value, budgetSelected, selectBudget, toggleCategory]);
 
-        return value.map((option, index) => {
-          const tagProps = getTagProps({ index });
-          if (budgetSet.has(option.budget.id)) {
-            if (renderedBudgets.has(option.budget.id)) return null;
-            renderedBudgets.add(option.budget.id);
-            tagProps.onDelete = () => selectBudget(option.budget, false);
-            return <Chip {...tagProps} key={option.budget.id} size="small" label={option.budget.name} />;
-          } else return <Chip {...tagProps} key={option.category.id} size="small" label={option.category.name} />;
-        });
-      }}
-      filterOptions={filterOptions}
-      inputValue={input}
-      onInputChange={onInputChange}
-      disableCloseOnSelect
-      {...rest}
-    />
-  );
-};
-
-type CollapseGroupProps = TransactionGroupSelectorBaseProps & {
-  budget: Budget;
-  selectBudget: (budget: Budget, selected: boolean) => void;
-  children?: React.ReactNode;
-  open: boolean;
-  setOpen: (open: boolean) => void;
-};
-
-const CollapseGroup = ({ budget, selectBudget, children, open, setOpen, categories, budgets }: CollapseGroupProps) => {
-  const selected: boolean | null = useMemo(() => {
-    if (budgets.includes(budget.id)) return true;
-    const chosen = budget.categories.filter((category) => categories.includes(category.id));
-    if (chosen.length > 0) return null;
-    return false;
-  }, [budget, budgets, categories]);
+  const groupBudgets = useMemo(() => {
+    if (!input) return options;
+    const visible = new Set(filteredOptions.map((o) => o.budget.id));
+    return options.filter((b) => visible.has(b.id));
+  }, [options, input, filteredOptions]);
 
   return (
-    <>
-      <MenuItem dense onClick={() => setOpen(!open)} sx={{ pl: 1.5 }} selected={!!selected}>
-        <Stack direction="row" alignItems="center">
-          <SvgIcon sx={{ py: 0.5 }}>{open ? <ChevronDown /> : <ChevronRight />}</SvgIcon>
-          <Check
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
+    <Field label={label} className={className}>
+      <Popover
+        modal
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setInput("");
+        }}
+      >
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm",
+              "focus:outline-none focus:ring-1 focus:ring-ring"
+            )}
+          >
+            {renderedBudgets.length > 0 ? renderedBudgets : <span className="text-muted-foreground">Any category</span>}
+            <ChevronsUpDown className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="z-[60] w-[var(--radix-popover-trigger-width)] p-0"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          <div className="border-b p-2">
+            <Input
+              autoFocus
+              placeholder="Search categories..."
+              value={input}
+              onChange={(e) => {
+                const next = e.target.value;
+                setInput(next);
+                if (next === "") setOpenGroups(new Set());
+                else {
+                  const matches = flatOptions.filter((option) => matchesInput(option, next));
+                  setOpenGroups(new Set(matches.map((option) => option.budget.id)));
+                }
+              }}
+            />
+          </div>
+          <div className="max-h-72 overflow-y-auto overscroll-contain p-1">
+            {groupBudgets.length === 0 && (
+              <div className="px-2 py-4 text-center text-sm text-muted-foreground">No categories found</div>
+            )}
+            {groupBudgets.map((budget) => {
+              const groupOptions = filteredOptions.filter((option) => option.budget.id === budget.id);
+              const isOpen = openGroups.has(budget.id);
+              const selected: boolean | "indeterminate" = budgetSelected.has(budget.id)
+                ? true
+                : budget.categories.some((c) => categories.includes(c.id))
+                  ? "indeterminate"
+                  : false;
 
-              const checked = budgets.includes(budget.id);
-              selectBudget(budget, !checked);
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            checked={!!selected}
-            indeterminate={selected === null}
-          />
-          <Typography variant="inherit" display={"inline"}>
-            {budget.name}
-          </Typography>
-        </Stack>
-      </MenuItem>
-      <Collapse in={open}>{children}</Collapse>
-    </>
+              return (
+                <div key={budget.id}>
+                  <div
+                    className="flex cursor-pointer items-center gap-1.5 rounded-sm px-1.5 py-1.5 text-sm hover:bg-accent"
+                    onClick={() => toggleGroup(budget.id, !isOpen)}
+                  >
+                    {isOpen ? (
+                      <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+                    )}
+                    <Checkbox
+                      checked={selected}
+                      onClick={(e) => e.stopPropagation()}
+                      onCheckedChange={(checked) => selectBudget(budget, !!checked)}
+                    />
+                    <span className="truncate">{budget.name}</span>
+                  </div>
+                  {isOpen && (
+                    <div className="ml-8 flex flex-col">
+                      {groupOptions.map((option) => (
+                        <label
+                          key={option.category.id}
+                          className="flex cursor-pointer items-center gap-1.5 rounded-sm px-1.5 py-1.5 text-sm hover:bg-accent"
+                        >
+                          <Checkbox
+                            checked={budgetSelected.has(budget.id) || categories.includes(option.category.id)}
+                            onCheckedChange={(checked) => toggleCategory(option, !!checked)}
+                          />
+                          <span className="truncate">{option.category.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </Field>
   );
-};
-
-const Check = (props: CheckboxProps) => {
-  return <Checkbox size="small" {...props} />;
 };

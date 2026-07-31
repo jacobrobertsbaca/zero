@@ -1,7 +1,16 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 import React, { useCallback, useState } from "react";
-import { LoadingButton } from "@mui/lab";
+import { Loader2 } from "lucide-react";
 import { wrapAsync } from "src/utils/wrap-errors";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "src/components/ui/alert-dialog";
 
 type DeleteDialogProps = {
   open: boolean;
@@ -13,6 +22,7 @@ type DeleteDialogProps = {
 
 export const DeleteDialog = ({ open, title, desc, onClose, onDelete }: DeleteDialogProps) => {
   const [loading, setLoading] = useState(false);
+
   const handleDelete = useCallback(async () => {
     setLoading(true);
     await wrapAsync(async () => {
@@ -22,32 +32,36 @@ export const DeleteDialog = ({ open, title, desc, onClose, onDelete }: DeleteDia
     setLoading(false);
   }, [onDelete, onClose]);
 
-  const handleClose = useCallback(() => {
-    if (loading) return;
-    onClose();
-  }, [loading, onClose]);
+  const handleClose = useCallback(
+    (next: boolean) => {
+      if (!next && loading) return;
+      if (!next) onClose();
+    },
+    [loading, onClose]
+  );
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      aria-labelledby="delete-dialog-title"
-      aria-describedby="delete-dialog-description"
-    >
-      <DialogTitle id="delete-dialog-title">{title}</DialogTitle>
-      <DialogContent>
-        <DialogContentText id="delete-dialog-description">{desc}</DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        {!loading && (
-          <Button onClick={handleClose} autoFocus>
-            Cancel
-          </Button>
-        )}
-        <LoadingButton onClick={handleDelete} loading={loading} color="error">
-          <span>Delete</span>
-        </LoadingButton>
-      </DialogActions>
-    </Dialog>
+    <AlertDialog open={open} onOpenChange={handleClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          {desc ? <AlertDialogDescription>{desc}</AlertDialogDescription> : null}
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          {!loading && <AlertDialogCancel>Cancel</AlertDialogCancel>}
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              handleDelete();
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={loading}
+          >
+            {loading && <Loader2 className="size-4 animate-spin" />}
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };

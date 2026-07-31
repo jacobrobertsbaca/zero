@@ -1,9 +1,9 @@
-import { route, routes } from "../route";
+import { route, routes } from "src/server/route";
 import { z } from "zod";
 import { BudgetSchema } from "src/types/budget/schema";
 import { budgetMaxDays, budgetMaxYears } from "src/types/budget/methods";
 import { datesDays } from "src/types/utils/methods";
-import { getBudgets, putBudget } from "../common";
+import { getBudgets, putBudget } from "src/server/common";
 
 const router = routes();
 

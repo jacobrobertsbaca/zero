@@ -1,10 +1,11 @@
-import { IconButton, SvgIcon, Tooltip } from "@mui/material";
+import { CreditCard } from "lucide-react";
 import { Category, Period } from "src/types/category/types";
 
-import LinkIcon from "@heroicons/react/24/outline/CreditCardIcon";
 import { useMemo } from "react";
 import { emptyFilters, encodeFilterModel } from "./transaction-filter";
 import { dateMax, dateMin } from "src/types/utils/methods";
+import { Button } from "src/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "src/components/ui/tooltip";
 
 export type TransactionsLinkProps = {
   category?: Category;
@@ -26,12 +27,18 @@ export const TransactionsLink = ({ category, period }: TransactionsLinkProps) =>
   }, [category, period]);
 
   return (
-    <Tooltip title="View transactions" placement="left" arrow>
-      <IconButton href={path} target="_blank" size="small">
-        <SvgIcon sx={{ fontSize: "1em" }}>
-          <LinkIcon />
-        </SvgIcon>
-      </IconButton>
-    </Tooltip>
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="size-6" asChild>
+            <a href={path} target="_blank" rel="noreferrer">
+              <CreditCard className="size-3.5" />
+              <span className="sr-only">View transactions</span>
+            </a>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="left">View transactions</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };

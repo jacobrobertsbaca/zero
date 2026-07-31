@@ -1,24 +1,10 @@
-import { Children } from 'react';
-import Document, { Head, Html, Main, NextScript } from 'next/document';
-import createEmotionServer from '@emotion/server/create-instance';
-import { createEmotionCache } from 'src/utils/create-emotion-cache';
+import Document, { Head, Html, Main, NextScript } from "next/document";
 
 const Favicon = () => (
   <>
-    <link
-      rel="apple-touch-icon"
-      sizes="180x180"
-      href="/apple-touch-icon.png"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      href="/favicon.png"
-    />
-    <link
-      rel="manifest"
-      href="manifest.json"
-      />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="manifest" href="manifest.json" />
   </>
 );
 
@@ -29,18 +15,10 @@ class CustomDocument extends Document {
         <Head>
           <Favicon />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link
             rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
-          />
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400&display=swap"
-          />
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap"
           />
         </Head>
         <body>
@@ -51,36 +29,5 @@ class CustomDocument extends Document {
     );
   }
 }
-
-CustomDocument.getInitialProps = async (ctx) => {
-  const originalRenderPage = ctx.renderPage;
-  const cache = createEmotionCache();
-  const { extractCriticalToChunks } = createEmotionServer(cache);
-
-  ctx.renderPage = () => originalRenderPage({
-    enhanceApp: (App) => (props) => (
-      <App
-        emotionCache={cache}
-        {...props}
-      />
-    )
-  });
-
-  const initialProps = await Document.getInitialProps(ctx);
-  const emotionStyles = extractCriticalToChunks(initialProps.html);
-  const emotionStyleTags = emotionStyles.styles.map((style) => (
-    <style
-      data-emotion={`${style.key} ${style.ids.join(' ')}`}
-      key={style.key}
-      // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: style.css }}
-    />
-  ));
-
-  return {
-    ...initialProps,
-    styles: [...Children.toArray(initialProps.styles), ...emotionStyleTags]
-  };
-};
 
 export default CustomDocument;

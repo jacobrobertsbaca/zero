@@ -1,12 +1,11 @@
-import { Stack } from "@mui/material";
-import { FormikProps, useFormikContext } from "formik";
+import { useFormikContext } from "formik";
 import { SelectField } from "src/components/form/select-field";
 import { Category, RolloverMode } from "src/types/category/types";
 
 const ROLLOVER_OPTIONS = [
   { value: RolloverMode.None, label: "None" },
   { value: RolloverMode.Average, label: "Average" },
-  { value: RolloverMode.Next, label: "Next" }
+  { value: RolloverMode.Next, label: "Next" },
 ];
 
 const helperText = (surplus: boolean, mode: RolloverMode): string | undefined => {
@@ -40,5 +39,5 @@ export const RolloverPicker = () => {
         helperText={helperText(false, form.values.rollover.loss)}
       />
     </>
-  )
+  );
 };

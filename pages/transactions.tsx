@@ -1,4 +1,3 @@
-import { Box, IconButton, Stack, SvgIcon, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
 import { PageTitle } from "src/components/page-title";
 import { TransactionSidebar } from "src/sections/transactions/transaction-sidebar";
@@ -6,8 +5,9 @@ import { useCallback, useMemo, useState } from "react";
 import { Transaction, TransactionQuery } from "src/types/transaction/types";
 import { moneyFormat, moneyZero } from "src/types/money/methods";
 import { useBudgets, useTransactionsSearch } from "src/hooks/use-api";
+import { useMediaQuery } from "src/hooks/use-media-query";
 
-import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
+import { Loader2, Plus, Star } from "lucide-react";
 import { Budget } from "src/types/budget/types";
 import { asDateString, dateFormatShort } from "src/types/utils/methods";
 import { Money } from "src/types/money/types";
@@ -22,11 +22,9 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import StarIconOutlined from "@heroicons/react/24/outline/StarIcon";
-import StarIconSolid from "@heroicons/react/24/solid/StarIcon";
 import { Category } from "src/types/category/types";
 import { TransactionList } from "src/sections/transactions/transaction-list";
-import { LoadingButton } from "@mui/lab";
+import { Button } from "src/components/ui/button";
 import { Loading } from "src/components/loading";
 import { SearchModelOptions, useSearchModel } from "src/hooks/use-search";
 import { TransactionSearchColumnSchema } from "src/types/transaction/schema";
@@ -119,8 +117,7 @@ const Page = () => {
   const { budgets, error: budgetsError } = useBudgets();
   const { search, sorting, filter, setSearch, setSort, setFilter, model } = useTransactionsModel({ budgets });
 
-  const theme = useTheme();
-  const mobile = !useMediaQuery(theme.breakpoints.up("sm"));
+  const mobile = !useMediaQuery("(min-width: 640px)");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTrx, setSidebarTrx] = useState<Transaction>({
@@ -166,17 +163,18 @@ const Page = () => {
       {
         id: "star",
         cell: ({ row }) => (
-          <IconButton
-            sx={{ padding: 0 }}
+          <button
+            type="button"
+            className="flex items-center justify-center p-0"
             onClick={(evt) => {
               starTransaction(row.original, !row.original.starred);
               evt.stopPropagation();
             }}
           >
-            <SvgIcon color={row.original.starred ? "primary" : "inherit"} sx={{ fontSize: "0.8em" }}>
-              {row.original.starred ? <StarIconSolid /> : <StarIconOutlined />}
-            </SvgIcon>
-          </IconButton>
+            <Star
+              className={row.original.starred ? "size-3.5 fill-primary text-primary" : "size-3.5 text-muted-foreground"}
+            />
+          </button>
         ),
         enableSorting: false,
         maxSize: mobile ? 10 : 5,
@@ -200,6 +198,7 @@ const Page = () => {
       {
         id: "name",
         accessorKey: "name",
+        header: "Name",
         meta: { ellipsis: true },
         maxSize: mobile ? 30 : 35,
       },
@@ -210,6 +209,7 @@ const Page = () => {
             {
               id: "budgetName", // Use "budgetName" instead of "budget" for correct remote sorting
               accessorKey: "budget",
+              header: "Budget",
               cell: ({ row }) => getBudget(row, budgets)?.name,
               maxSize: 17.5,
               meta: { ellipsis: true },
@@ -217,6 +217,7 @@ const Page = () => {
             {
               id: "categoryName", // Use "categoryName" instead of "category" for correct remote sorting
               accessorKey: "category",
+              header: "Category",
               cell: ({ row }) => getCategory(row, getBudget(row, budgets))?.name,
               maxSize: 17.5,
               meta: { ellipsis: true },
@@ -242,17 +243,14 @@ const Page = () => {
   const count = transactions?.[0].meta?.count;
 
   return (
-    <Stack spacing={2}>
-      <Stack direction="row" alignItems="normal" spacing={0.5}>
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-1">
         <PageTitle title="Transactions" />
         {budgets && budgets.length > 0 && (
-          <Box>
-            <IconButton color="inherit" onClick={() => addTransaction(budgets)}>
-              <SvgIcon>
-                <PlusIcon />
-              </SvgIcon>
-            </IconButton>
-          </Box>
+          <Button type="button" variant="ghost" size="icon" onClick={() => addTransaction(budgets)}>
+            <Plus className="size-4" />
+            <span className="sr-only">New Transaction</span>
+          </Button>
         )}
         <TransactionSidebar
           budgets={budgets ?? []}
@@ -268,15 +266,15 @@ const Page = () => {
             setSidebarOpen(false);
           }}
         />
-      </Stack>
+      </div>
 
       <Loading error={budgetsError || trxError} loading={false}>
-        <Stack direction="row" justifyContent="space-between" spacing={1}>
+        <div className="flex items-center justify-between gap-2">
           <TransactionSearch fullWidth search={search} setSearch={setSearch} />
           <TransactionFilterButton filter={filter} setFilter={setFilter} budgets={budgets} />
-        </Stack>
+        </div>
         <TransactionFilterChips filter={filter} setFilter={setFilter} budgets={budgets} />
-        {count ? <Typography variant="caption">Found {count} transactions</Typography> : null}
+        {count ? <p className="text-xs text-muted-foreground">Found {count} transactions</p> : null}
         <TransactionList
           table={table}
           setSidebarTrx={(trx) => {
@@ -284,16 +282,16 @@ const Page = () => {
             setSidebarOpen(true);
           }}
           isLoading={isLoading}
-          isValidating={isValidating}
         />
 
         {canFetch && (
-          <LoadingButton disabled={isValidating} loading={isValidating} fullWidth onClick={fetchMore}>
+          <Button variant="outline" disabled={isValidating} className="w-full" onClick={fetchMore}>
+            {isValidating && <Loader2 className="size-4 animate-spin" />}
             Load more
-          </LoadingButton>
+          </Button>
         )}
       </Loading>
-    </Stack>
+    </div>
   );
 };
 

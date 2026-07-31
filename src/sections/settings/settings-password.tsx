@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, Divider, Stack } from "@mui/material";
 import * as Yup from "yup";
 import { useAuth } from "src/hooks/use-auth";
 import { enqueueSnackbar } from "notistack";
@@ -6,6 +5,8 @@ import { TextField } from "src/components/form/text-field";
 import { SubmitButton } from "src/components/form/submit-button";
 import { Form } from "src/components/form/form";
 import { AuthProviders } from "src/contexts/auth-context";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
+import { Separator } from "src/components/ui/separator";
 
 export const SettingsPassword = () => {
   const auth = useAuth();
@@ -30,26 +31,27 @@ export const SettingsPassword = () => {
       }}
     >
       {(formik) => (
-        <Card>
-          <CardHeader
-            subheader="Update password"
-            title="Password"
-            action={
-              <SubmitButton
-                disabled={
-                  Object.keys(formik.errors).length > 0 || !formik.values.password || !formik.values.passwordConfirmed
-                }
-              >
-                Update
-              </SubmitButton>
-            }
-          />
-          <Divider />
-          <CardContent>
-            <Stack spacing={3} sx={{ maxWidth: 400 }}>
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-3">
+            <div className="space-y-1">
+              <CardTitle className="text-base">Password</CardTitle>
+              <CardDescription>Update password</CardDescription>
+            </div>
+            <SubmitButton
+              size="sm"
+              disabled={
+                Object.keys(formik.errors).length > 0 || !formik.values.password || !formik.values.passwordConfirmed
+              }
+            >
+              Update
+            </SubmitButton>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-4">
+            <div className="flex max-w-sm flex-col gap-3">
               <TextField fullWidth label="Password" name="password" type="password" />
               <TextField fullWidth label="Confirm Password" name="passwordConfirmed" type="password" />
-            </Stack>
+            </div>
           </CardContent>
         </Card>
       )}

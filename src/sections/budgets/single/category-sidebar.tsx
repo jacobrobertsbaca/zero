@@ -1,6 +1,3 @@
-import { Stack, Typography } from "@mui/material";
-
-import { Scrollbar } from "src/components/scrollbar";
 import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
 import { categoryActual, categoryDirty, categoryNominal, categoryTitle } from "src/types/category/methods";
 import { PeriodList } from "./period-list";
@@ -47,12 +44,10 @@ const recurrenceSummary = (category: Category): string => {
 };
 
 const SidebarItem = ({ title, children }: { title: React.ReactNode; children: React.ReactNode }) => (
-  <Stack>
-    <Typography variant="subtitle1">{title}</Typography>
-    <Typography variant="subtitle2" color="text.secondary">
-      {children}
-    </Typography>
-  </Stack>
+  <div className="flex flex-col">
+    <span className="text-sm">{title}</span>
+    <span className="text-sm text-muted-foreground">{children}</span>
+  </div>
 );
 
 /* ================================================================================================================= *
@@ -86,13 +81,13 @@ const CategoryDetailsView = ({ category }: { category: Category }) => (
   <>
     <SidebarItem title="Type">{categoryTitle(category.type)}</SidebarItem>
     <SidebarItem title="Amount">
-      <MoneyText variant="inherit" amount={categoryActual(category)} />
+      <MoneyText amount={categoryActual(category)} />
       &nbsp;of&nbsp;
-      <MoneyText variant="inherit" amount={categoryNominal(category)} />
+      <MoneyText amount={categoryNominal(category)} />
     </SidebarItem>
     {category.recurrence.type !== RecurrenceType.None && (
       <SidebarItem title="Recurrence">
-        <MoneyText variant="inherit" amount={category.recurrence.amount} />
+        <MoneyText amount={category.recurrence.amount} />
         &nbsp;
         {recurrenceSummary(category)}
       </SidebarItem>
@@ -139,14 +134,14 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
       open={open}
       onClose={onClose}
       title={(formik) => (
-        <Stack direction="row" alignItems="center">
+        <div className="flex items-center gap-1.5">
           {editState !== EditState.Edit && <TransactionsLink category={category} />}
           {editState !== EditState.Edit
             ? category.name
             : category.id
             ? formik.values.name
             : formik.values.name || "New Category"}
-        </Stack>
+        </div>
       )}
       FormProps={{
         enableReinitialize: true,

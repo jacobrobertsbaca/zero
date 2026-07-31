@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { route, routes } from "../route";
-import { deleteTransaction } from "../common";
+import { route, routes } from "src/server/route";
+import { deleteTransaction } from "src/server/common";
 
 const router = routes();
 

@@ -1,30 +1,27 @@
-import { Box, Card, IconButton, Stack, SvgIcon, Unstable_Grid2 as Grid } from "@mui/material";
+import { Plus } from "lucide-react";
 import { Loading } from "src/components/loading";
 import { PageTitle } from "src/components/page-title";
 import { useBudgets } from "src/hooks/use-api";
 import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
 import BudgetCard from "src/sections/budgets/overview/budget-card";
 
-import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
 import { useState } from "react";
 import { BudgetSidebar } from "src/sections/budgets/common/budget-sidebar";
 import { useRouter } from "next/router";
 import { Dates } from "src/types/utils/types";
+import { Button } from "src/components/ui/button";
+import { Card, CardContent } from "src/components/ui/card";
 
 const NoBudgetsOverlay = () => (
-  <Grid xs={12}>
-    <Card>
-      <Stack alignItems="center" justifyContent="center" height="200px">
-        <Stack alignItems="center" direction="row">
-          Click&nbsp;
-          <SvgIcon sx={{ display: "inline" }}>
-            <PlusIcon />
-          </SvgIcon>
-          &nbsp;to create a budget
-        </Stack>
-      </Stack>
-    </Card>
-  </Grid>
+  <Card className="col-span-full">
+    <CardContent className="flex h-[200px] items-center justify-center p-4">
+      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+        Click
+        <Plus className="inline size-4" />
+        to create a budget
+      </div>
+    </CardContent>
+  </Card>
 );
 
 const Page = () => {
@@ -33,25 +30,22 @@ const Page = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <Stack spacing={1}>
-      <Stack direction="row" alignItems="normal" spacing={0.5}>
+    <div className="flex flex-col gap-2">
+      <div className="mb-3 flex items-center gap-1">
         <PageTitle title="Budgets" />
-        <Box>
-          <IconButton color="inherit" onClick={() => setSidebarOpen(true)}>
-            <SvgIcon>
-              <PlusIcon />
-            </SvgIcon>
-          </IconButton>
-        </Box>
-      </Stack>
+        <Button type="button" variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+          <Plus className="size-4" />
+          <span className="sr-only">New Budget</span>
+        </Button>
+      </div>
       <Loading value={budgets} error={error}>
         {(budgets) => (
-          <Grid container spacing={4}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {budgets.length === 0 && <NoBudgetsOverlay />}
             {budgets.map((b) => (
               <BudgetCard key={b.id} budget={b} />
             ))}
-          </Grid>
+          </div>
         )}
       </Loading>
       <BudgetSidebar
@@ -68,7 +62,7 @@ const Page = () => {
           return false;
         }}
       />
-    </Stack>
+    </div>
   );
 };
 

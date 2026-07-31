@@ -1,20 +1,18 @@
-import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import { useFormikContext } from "formik";
+import { Loader2 } from "lucide-react";
+import { Button, ButtonProps } from "src/components/ui/button";
 
-export const SubmitButton = (props: { disableIfInvalid?: boolean } & LoadingButtonProps) => {
-  const { disableIfInvalid, children } = props;
+export const SubmitButton = ({
+  disableIfInvalid,
+  children,
+  disabled,
+  ...props
+}: { disableIfInvalid?: boolean } & ButtonProps) => {
   const { isSubmitting, isValid } = useFormikContext();
-  return <LoadingButton 
-    variant="contained"
-    type="submit"
-    loading={isSubmitting}
-    disabled={disableIfInvalid && !isValid}
-    {...props}
-  >
-    {
-      /* Wrapping strings in <span/> to prevent Chrome crash.
-       * See MUI docs: https://mui.com/material-ui/react-button/#loading-button */
-      typeof children === "string" ? <span>{children}</span> : children 
-    }
-  </LoadingButton>
+  return (
+    <Button type="submit" disabled={disabled || isSubmitting || (disableIfInvalid && !isValid)} {...props}>
+      {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+      {children}
+    </Button>
+  );
 };

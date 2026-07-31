@@ -1,6 +1,4 @@
 import { Budget } from "src/types/budget/types";
-import { useCallback } from "react";
-import { Collapse, Stack, Typography } from "@mui/material";
 import { categoryTitle } from "src/types/category/methods";
 import { useFormikContext } from "formik";
 import { Transaction } from "src/types/transaction/types";
@@ -18,20 +16,15 @@ export const CategorySelector = ({ budgets }: CategorySelectorProps) => {
     budget.categories.map((c) => ({
       value: c.id,
       label: (
-        <Stack>
-          <Typography variant="body2">{c.name}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            {categoryTitle(c.type)}
-          </Typography>
-        </Stack>
+        <div className="flex flex-col">
+          <span className="text-sm">{c.name}</span>
+          <span className="text-xs text-muted-foreground">{categoryTitle(c.type)}</span>
+        </div>
       ),
+      textValue: c.name,
     }));
 
-  const show = !!options && options.length > 0;
+  if (!options || options.length === 0) return null;
 
-  return (
-    <Collapse in={show} sx={{ mt: show ? undefined : "0 !important" }}>
-      <SelectField fullWidth label="Category" name="category" values={options ?? []} />
-    </Collapse>
-  );
+  return <SelectField fullWidth label="Category" name="category" values={options} />;
 };

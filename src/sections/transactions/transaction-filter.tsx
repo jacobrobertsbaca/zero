@@ -1,8 +1,5 @@
-import { Chip, IconButton, SvgIcon, TextField } from "@mui/material";
+import { X, SlidersHorizontal } from "lucide-react";
 
-import { neutral } from "src/theme/colors";
-
-import FilterIcon from "@heroicons/react/24/solid/AdjustmentsHorizontalIcon";
 import { DateString } from "src/types/utils/types";
 import { Money } from "src/types/money/types";
 import { Budget } from "src/types/budget/types";
@@ -10,7 +7,6 @@ import { ReadonlyURLSearchParams } from "next/navigation";
 import { moneyFormat, MoneyFormatOptions, moneyParse } from "src/types/money/methods";
 import { DateStringSchema, IdSchema } from "src/types/utils/schema";
 import { useMemo, useState } from "react";
-import { Stack } from "@mui/system";
 import { dateFormatShort } from "src/types/utils/methods";
 import { TransactionFilter } from "src/types/transaction/types";
 import { Sidebar } from "src/components/sidebar/sidebar";
@@ -22,6 +18,8 @@ import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { isEqual } from "lodash";
 import { DateField } from "src/components/form/date-field";
 import { TransactionGroupSelector } from "./transaction-group-selector";
+import { Badge } from "src/components/ui/badge";
+import { Button } from "src/components/ui/button";
 
 export type TransactionFilterModel = {
   dateMin: DateString | null /* start in URL */;
@@ -135,21 +133,17 @@ export const TransactionFilterButton = ({ budgets, ...rest }: TransactionFilterB
   const [open, setOpen] = useState(false);
   return (
     <>
-      <IconButton
-        sx={{
-          /** We want the button style to match the MuiFilledInput style so it matches
-           * the search bar. These styles are copied from the MuiFilledInput style.
-           */
-          borderRadius: "8px",
-          border: `1px solid ${neutral[200]}`,
-        }}
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="shrink-0 border-border bg-muted/40"
         disabled={!budgets}
         onClick={() => setOpen(true)}
       >
-        <SvgIcon>
-          <FilterIcon />
-        </SvgIcon>
-      </IconButton>
+        <SlidersHorizontal className="size-4" />
+        <span className="sr-only">Filters</span>
+      </Button>
       {budgets !== undefined && (
         <TransactionFilterSidebar {...rest} budgets={budgets} open={open} onClose={() => setOpen(false)} />
       )}
@@ -190,17 +184,17 @@ const TransactionFilterSidebar = ({ budgets, open, onClose, filter, setFilter }:
     >
       {(form) => (
         <>
-          <Stack direction="row" spacing={1}>
+          <div className="flex gap-2">
             <FormMoneyField fullWidth name="amountMin" label="Minimum" />
             <FormMoneyField fullWidth name="amountMax" label="Maximum" />
-          </Stack>
-          <Stack direction="row" spacing={1}>
+          </div>
+          <div className="flex gap-2">
             <DateField name="dateMin" label="From" />
             <DateField name="dateMax" label="Until" />
-          </Stack>
+          </div>
           <TransactionGroupSelector
             options={budgets}
-            renderInput={(params) => <TextField label="Category" {...params} />}
+            label="Category"
             budgets={form.values.budget}
             categories={form.values.category}
             onChange={(categories, budgets) => {
@@ -224,7 +218,7 @@ const TransactionFilterSidebar = ({ budgets, open, onClose, filter, setFilter }:
             }}
             ButtonProps={{
               submit: { children: "Apply Filters" },
-              delete: { children: "Clear Filters", startIcon: null },
+              delete: { children: "Clear Filters" },
             }}
           />
         </>
@@ -323,16 +317,17 @@ export const TransactionFilterChips = ({ filter, setFilter, budgets }: Transacti
   const chips = useMemo(() => getFilterChips(4, filter, budgets), [filter, budgets]);
   if (chips.length === 0) return null;
   return (
-    <Stack direction="row" spacing={1} flexWrap="wrap" rowGap={1}>
+    <div className="flex flex-wrap gap-1.5">
       {chips.map((chip) => (
-        <Chip
-          key={chip.id ?? chip.label}
-          variant="outlined"
-          size="small"
-          onDelete={chip.onDelete ? () => chip.onDelete && setFilter(chip.onDelete(filter)) : undefined}
-          label={chip.label}
-        />
+        <Badge key={chip.id ?? chip.label} variant="outline" className="gap-1 font-normal">
+          {chip.label}
+          {chip.onDelete && (
+            <button type="button" onClick={() => chip.onDelete && setFilter(chip.onDelete(filter))}>
+              <X className="size-3" />
+            </button>
+          )}
+        </Badge>
       ))}
-    </Stack>
+    </div>
   );
 };

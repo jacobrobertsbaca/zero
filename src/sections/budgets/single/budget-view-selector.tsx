@@ -1,85 +1,58 @@
-import ChevronDownIcon from "@heroicons/react/24/solid/ChevronDownIcon";
-import ChevronUpIcon from "@heroicons/react/24/solid/ChevronUpIcon";
-import { Button, Menu, MenuItem, SvgIcon, Typography } from "@mui/material";
-import { SyntheticEvent, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import { Button } from "src/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "src/components/ui/dropdown-menu";
 
 export enum BudgetView {
   Current = "current",
-  Total = "total"
-};
+  Total = "total",
+}
 
 const OPTIONS = [
-  { value: BudgetView.Current, label: 'Current' },
-  { value: BudgetView.Total, label: 'Total' },
+  { value: BudgetView.Current, label: "Current" },
+  { value: BudgetView.Total, label: "Total" },
 ];
 
 type BudgetViewSelectorProps = {
   value: BudgetView;
   onChange: (state: BudgetView) => void;
-  anchor?: Element | null;
-  onAnchorChange?: (anchor: Element | null) => void;
 };
 
-export const BudgetViewSelector = ({ value, onChange, anchor, onAnchorChange }: BudgetViewSelectorProps) => {
-  const [ownAnchor, setOwnAnchor] = useState<Element | null>(null);
-  if (!anchor) anchor = ownAnchor;
-  if (!onAnchorChange) onAnchorChange = setOwnAnchor;
-
-  const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
-    event.stopPropagation();
-    event.preventDefault();
-    onAnchorChange!(event.currentTarget);
-  };
-
-  const handleMenuItemClick = (
-    event: React.MouseEvent<HTMLElement>,
-    index: number,
-  ) => {
-    event.stopPropagation();
-    event.preventDefault();
-    onChange(OPTIONS[index].value);
-    onAnchorChange!(null);
-  };
-
-  const handleClose = () => {
-    onAnchorChange!(null);
-  };
+export const BudgetViewSelector = ({ value, onChange }: BudgetViewSelectorProps) => {
+  const [open, setOpen] = useState(false);
 
   return (
-    <>
-      <Button
-        color="inherit"
-        disableRipple
-        onClick={handleOpen}
-        onTouchStart={event => event.stopPropagation()}
-        onMouseDown={event => event.stopPropagation()}
-        endIcon={<SvgIcon>{anchor ? <ChevronUpIcon /> : <ChevronDownIcon />}</SvgIcon>}
-      >
-        <Typography component="span" variant="subtitle2" color="text.secondary">
-          {OPTIONS.find(o => o.value === value)?.label}
-        </Typography>
-      </Button>
-      <Menu
-        keepMounted
-        anchorEl={anchor}
-        open={!!anchor}
-        onClose={handleClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        {OPTIONS.map((option, index) => (
-          <MenuItem
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-auto gap-1 px-1.5 py-0 text-xs font-medium text-muted-foreground shadow-none hover:bg-transparent hover:text-muted-foreground data-[state=open]:bg-transparent"
+          onClick={(event) => event.stopPropagation()}
+          onTouchStart={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          {OPTIONS.find((o) => o.value === value)?.label}
+          {open ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {OPTIONS.map((option) => (
+          <DropdownMenuItem
             key={option.value}
-            selected={option.value === value}
-            onClick={(event) => handleMenuItemClick(event, index)}
-            onTouchStart={event => event.stopPropagation()}
-            onMouseDown={event => event.stopPropagation()}
-            sx={{ typography: 'body2' }}
+            onClick={(event) => {
+              event.stopPropagation();
+              onChange(option.value);
+            }}
+            onTouchStart={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+            className={option.value === value ? "bg-accent" : undefined}
           >
             {option.label}
-          </MenuItem>
+          </DropdownMenuItem>
         ))}
-      </Menu>
-    </>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
-}
+};

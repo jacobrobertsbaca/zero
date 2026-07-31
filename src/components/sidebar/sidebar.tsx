@@ -1,9 +1,10 @@
 import { FormikValues } from "formik";
+import { X } from "lucide-react";
 import { Form, FormProps } from "../form/form";
-
-import { Box, Divider, IconButton, Drawer, Stack, SvgIcon, Typography } from "@mui/material";
-import XMarkIcon from "@heroicons/react/24/solid/XMarkIcon";
-import { Scrollbar } from "../scrollbar";
+import { Button } from "src/components/ui/button";
+import { Separator } from "src/components/ui/separator";
+import { Sheet, SheetContent, SheetTitle } from "src/components/ui/sheet";
+import { cn } from "src/lib/utils";
 
 type SidebarHeaderProps = {
   onClose: () => void;
@@ -11,20 +12,16 @@ type SidebarHeaderProps = {
 };
 
 const SidebarHeader = ({ onClose, children }: SidebarHeaderProps) => (
-  <Box>
-    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 2 }}>
-      <Typography variant="subtitle1" sx={{ ml: 1 }}>
-        {children}
-      </Typography>
-      <IconButton onClick={onClose}>
-        <SvgIcon>
-          <XMarkIcon />
-        </SvgIcon>
-      </IconButton>
-    </Stack>
-
-    <Divider />
-  </Box>
+  <div>
+    <div className="flex items-center justify-between px-3 py-3">
+      <SheetTitle className="ml-1 text-base font-medium">{children}</SheetTitle>
+      <Button type="button" variant="ghost" size="icon" className="size-8" onClick={onClose}>
+        <X className="size-4" />
+        <span className="sr-only">Close</span>
+      </Button>
+    </div>
+    <Separator />
+  </div>
 );
 
 type SidebarProps<T extends FormikValues> = {
@@ -36,33 +33,33 @@ type SidebarProps<T extends FormikValues> = {
 };
 
 export const Sidebar = <T extends FormikValues>({ open, onClose, children, FormProps, title }: SidebarProps<T>) => {
-  FormProps = FormProps
-    ? { sx: { height: 1, overflow: "hidden", ...FormProps.sx }, ...FormProps }
+  const formProps = FormProps
+    ? { className: cn("flex h-full flex-col overflow-hidden", FormProps.className), ...FormProps }
     : {
         initialValues: {} as T,
-        onSubmit(values: T) {},
+        onSubmit(_values: T) {},
+        className: "flex h-full flex-col overflow-hidden",
       };
+
   return (
-    <Drawer
-      anchor="right"
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        sx: { width: { xs: 1, sm: 500 }, border: "none", overflow: "hidden" },
-      }}
-    >
-      <Form {...FormProps}>
-        {(formik) => (
-          <Stack height={1} sx={{ overflow: "hidden" }}>
-            <SidebarHeader onClose={onClose}>{typeof title === "function" ? title(formik) : title}</SidebarHeader>
-            <Scrollbar sx={{ flexGrow: 1 }}>
-              <Stack spacing={2} sx={{ p: 3 }}>
-                {typeof children === "function" ? children(formik) : children}
-              </Stack>
-            </Scrollbar>
-          </Stack>
-        )}
-      </Form>
-    </Drawer>
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 p-0 sm:max-w-[500px] [&>button]:hidden"
+      >
+        <Form {...formProps}>
+          {(formik) => (
+            <div className="flex h-full flex-col overflow-hidden">
+              <SidebarHeader onClose={onClose}>{typeof title === "function" ? title(formik) : title}</SidebarHeader>
+              <div className="flex-1 overflow-y-auto overscroll-contain">
+                <div className="flex flex-col gap-4 p-5">
+                  {typeof children === "function" ? children(formik) : children}
+                </div>
+              </div>
+            </div>
+          )}
+        </Form>
+      </SheetContent>
+    </Sheet>
   );
 };

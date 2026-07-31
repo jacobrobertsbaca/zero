@@ -1,5 +1,5 @@
-import { deleteCategory } from "pages/api/common";
-import { route, routes } from "pages/api/route";
+import { deleteCategory } from "src/server/common";
+import { route, routes } from "src/server/route";
 import { z } from "zod";
 
 const router = routes();

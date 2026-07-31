@@ -1,4 +1,3 @@
-import { Typography, Stack, IconButton, SvgIcon, Box } from "@mui/material";
 import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
 import { Loading } from "src/components/loading";
@@ -11,8 +10,9 @@ import { CategorySidebar } from "src/sections/budgets/single/category-sidebar";
 import { categoryDefault } from "src/types/category/methods";
 import { Category } from "src/types/category/types";
 import { dateFormat } from "src/types/utils/methods";
+import { Button } from "src/components/ui/button";
 
-import PencilSquareIcon from "@heroicons/react/20/solid/PencilSquareIcon";
+import { Pencil } from "lucide-react";
 import { BudgetSidebar } from "src/sections/budgets/common/budget-sidebar";
 
 const Page = () => {
@@ -33,23 +33,20 @@ const Page = () => {
 
   return (
     <>
-      <Stack direction="row" alignItems="normal" spacing={0.5}>
+      <div className="mb-3 flex items-center gap-1">
         <PageTitle title={budget.name} />
-        <Box>
-          <IconButton color="inherit" onClick={() => setDetailsSidebarOpen(true)}>
-            <SvgIcon>
-              <PencilSquareIcon />
-            </SvgIcon>
-          </IconButton>
-        </Box>
-      </Stack>
-      <Stack spacing={3}>
-        <Typography variant="subtitle1" color="text.secondary">
+        <Button type="button" variant="ghost" size="icon" onClick={() => setDetailsSidebarOpen(true)}>
+          <Pencil className="size-4" />
+          <span className="sr-only">Edit Budget</span>
+        </Button>
+      </div>
+      <div className="flex flex-col gap-6">
+        <p className="text-sm text-muted-foreground">
           {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
-        </Typography>
+        </p>
         <BudgetSummaryList budget={budget} />
         <CategoryList budget={budget} onCategoryClicked={onCategoryClicked} />
-      </Stack>
+      </div>
       <CategorySidebar
         open={sidebarOpen}
         budget={budget}

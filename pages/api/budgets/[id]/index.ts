@@ -1,7 +1,7 @@
-import { route, routes } from "../../route";
-import { NotFound } from "../../errors";
+import { route, routes } from "src/server/route";
+import { NotFound } from "src/server/errors";
 import { z } from "zod";
-import { deleteBudget, getBudgets } from "pages/api/common";
+import { deleteBudget, getBudgets } from "src/server/common";
 
 const router = routes();
 

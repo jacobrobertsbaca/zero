@@ -1,7 +1,8 @@
-import { Button, Card, CardHeader } from "@mui/material";
 import { useCallback } from "react";
 import { useAuth } from "src/hooks/use-auth";
 import { wrapAsync } from "src/utils/wrap-errors";
+import { Button } from "src/components/ui/button";
+import { Card, CardHeader, CardTitle } from "src/components/ui/card";
 
 export const SettingsSignOut = () => {
   const { signOut } = useAuth();
@@ -11,15 +12,11 @@ export const SettingsSignOut = () => {
   }, [signOut]);
 
   return (
-    <Card sx={{ pb: 2 }}>
-      <CardHeader
-        title="Sign Out"
-        action={
-          <Button variant="contained" onClick={onClick}>
-            Sign Out
-          </Button>
-        }
-      />
+    <Card className="shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 py-4">
+        <CardTitle className="text-base">Sign Out</CardTitle>
+        <Button onClick={onClick}>Sign Out</Button>
+      </CardHeader>
     </Card>
   );
 };

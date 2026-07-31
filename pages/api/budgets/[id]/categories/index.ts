@@ -1,7 +1,7 @@
-import { route, routes } from "pages/api/route";
+import { route, routes } from "src/server/route";
 import { CategorySchema } from "src/types/category/schema";
 import { z } from "zod";
-import { putCategory } from "pages/api/common";
+import { putCategory } from "src/server/common";
 
 const router = routes();
 

@@ -1,34 +1,19 @@
-import ChartBarIcon from '@heroicons/react/24/solid/ChartBarIcon';
-import CogIcon from '@heroicons/react/24/solid/CogIcon';
-import CreditCardIcon from '@heroicons/react/24/solid/CreditCardIcon';
-import { SvgIcon } from '@mui/material';
+import { ChartBar, CreditCard, Settings } from "lucide-react";
 
 export const items = [
   {
-    title: 'Budgets',
-    path: '/budgets',
-    icon: (
-      <SvgIcon fontSize="small">
-        <ChartBarIcon />
-      </SvgIcon>
-    )
+    title: "Budgets",
+    path: "/budgets",
+    icon: <ChartBar className="size-4" />,
   },
   {
-    title: 'Transactions',
-    path: '/transactions',
-    icon: (
-      <SvgIcon fontSize="small">
-        <CreditCardIcon />
-      </SvgIcon>
-    )
+    title: "Transactions",
+    path: "/transactions",
+    icon: <CreditCard className="size-4" />,
   },
   {
-    title: 'Settings',
-    path: '/settings',
-    icon: (
-      <SvgIcon fontSize="small">
-        <CogIcon />
-      </SvgIcon>
-    )
-  }
+    title: "Settings",
+    path: "/settings",
+    icon: <Settings className="size-4" />,
+  },
 ];

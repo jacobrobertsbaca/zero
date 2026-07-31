@@ -1,10 +1,11 @@
 import * as Yup from "yup";
-import { Button, Divider, Stack, Typography } from "@mui/material";
 import { useAuth } from "src/hooks/use-auth";
 import { Layout as AuthLayout } from "src/layouts/auth/layout";
 import { TextField } from "src/components/form/text-field";
 import { SubmitButton } from "src/components/form/submit-button";
 import { Form } from "src/components/form/form";
+import { Button } from "src/components/ui/button";
+import { Separator } from "src/components/ui/separator";
 import Image from "next/image";
 
 const Page = () => {
@@ -24,27 +25,22 @@ const Page = () => {
         await auth.signIn(values.email, values.password);
       }}
     >
-      <Stack spacing={3}>
+      <div className="flex flex-col gap-3">
         <TextField label="Email Address" name="email" type="email" fullWidth />
         <TextField label="Password" name="password" type="password" fullWidth />
-        <SubmitButton fullWidth size="large" sx={{ mt: 3 }}>
+        <SubmitButton className="mt-1 w-full" size="lg">
           Continue
         </SubmitButton>
-        <Divider>
-          <Typography variant="caption" color="text.secondary">
-            OR
-          </Typography>
-        </Divider>
-        <Button
-          variant="outlined"
-          size="large"
-          fullWidth
-          startIcon={<Image alt="Google Logo" width={20} height={20} src="/assets/google-logo.svg" />}
-          onClick={auth.signInWithGoogle}
-        >
+        <div className="relative flex items-center py-1">
+          <Separator className="flex-1" />
+          <span className="px-3 text-xs text-muted-foreground">OR</span>
+          <Separator className="flex-1" />
+        </div>
+        <Button type="button" variant="outline" size="lg" className="w-full" onClick={auth.signInWithGoogle}>
+          <Image alt="Google Logo" width={20} height={20} src="/assets/google-logo.svg" />
           Continue with Google
         </Button>
-      </Stack>
+      </div>
     </Form>
   );
 };

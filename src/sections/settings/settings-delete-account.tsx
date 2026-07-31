@@ -1,15 +1,16 @@
-import { Button, Card, CardHeader } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { useCallback, useState } from "react";
 import { DeleteDialog } from "src/components/delete-dialog";
 import { useAuth } from "src/hooks/use-auth";
 import { wrapAsync } from "src/utils/wrap-errors";
+import { Button } from "src/components/ui/button";
+import { Card, CardHeader, CardTitle } from "src/components/ui/card";
 
 export const SettingsDeleteAccount = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const openModal = useCallback(() => setDeleteModal(true), []);
   const closeModal = useCallback(() => setDeleteModal(false), []);
-  const { deleteAccount, user } = useAuth();
+  const { deleteAccount } = useAuth();
   const onDelete = async () => {
     await wrapAsync(async () => {
       await deleteAccount();
@@ -18,15 +19,13 @@ export const SettingsDeleteAccount = () => {
   };
 
   return (
-    <Card sx={{ pb: 2 }}>
-      <CardHeader
-        title="Delete Account"
-        action={
-          <Button variant="contained" color="error" onClick={openModal}>
-            Delete
-          </Button>
-        }
-      />
+    <Card className="shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 py-4">
+        <CardTitle className="text-base">Delete Account</CardTitle>
+        <Button variant="destructive" onClick={openModal}>
+          Delete
+        </Button>
+      </CardHeader>
       <DeleteDialog
         open={deleteModal}
         title={`Delete account?`}

@@ -1,10 +1,10 @@
-import { Link, Stack, Tooltip, Typography } from "@mui/material";
 import { RecurrenceType } from "src/types/category/types";
 import { dateFormat } from "src/types/utils/methods";
 import { Dates } from "src/types/utils/types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "src/components/ui/tooltip";
 
 type PeriodTooltipProps = {
-  recurrence: RecurrenceType; 
+  recurrence: RecurrenceType;
   dates: Dates;
   under?: boolean;
 };
@@ -22,24 +22,28 @@ export const PeriodTooltip = ({ recurrence, dates, under }: PeriodTooltipProps) 
 
   if (under)
     return (
-      <Stack>
-        <Typography variant="subtitle2">{title}</Typography>
-        <Typography variant="caption" color="text.secondary">{activeDates}</Typography>
-      </Stack>
+      <div className="flex flex-col">
+        <span className="text-sm font-medium">{title}</span>
+        <span className="text-xs text-muted-foreground">{activeDates}</span>
+      </div>
     );
 
   return (
-    <Tooltip
-      title={activeDates}
-      enterTouchDelay={0}
-      onClick={(event) => event.stopPropagation()}
-      onMouseDown={(event) => event.stopPropagation()}
-      placement="top"
-      arrow
-    >
-      <Link color="inherit" underline="hover" onTouchStart={(event) => event.stopPropagation()}>
-        {title}
-      </Link>
-    </Tooltip>
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="text-sm font-medium underline-offset-4 hover:underline"
+            onClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+            onTouchStart={(event) => event.stopPropagation()}
+          >
+            {title}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top">{activeDates}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };

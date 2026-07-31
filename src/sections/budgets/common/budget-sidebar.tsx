@@ -1,7 +1,6 @@
-import { Alert, Stack } from "@mui/material";
+import { AlertTriangle } from "lucide-react";
 import { DateField } from "src/components/form/date-field";
 import { TextField } from "src/components/form/text-field";
-import { Scrollbar } from "src/components/scrollbar";
 import { Sidebar } from "src/components/sidebar/sidebar";
 import { Budget } from "src/types/budget/types";
 import * as Yup from "yup";
@@ -77,10 +76,13 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
           <DateField label="Begin" name="dates.begin" />
           <DateField label="End" name="dates.end" />
           {isExisting && !isEqual(form.values.dates, budget.dates) && (
-            <Alert severity="warning">
-              Changing budget dates will preserve the total planned amount of existing categories, but their recurring
-              amounts may change as a result.
-            </Alert>
+            <div className="flex gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+              <span>
+                Changing budget dates will preserve the total planned amount of existing categories, but their
+                recurring amounts may change as a result.
+              </span>
+            </div>
           )}
           <EditActions
             dirty={!isEqual(form.values, budget)}

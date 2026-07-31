@@ -1,4 +1,3 @@
-import { Stack } from "@mui/material";
 import { useFormikContext } from "formik";
 import { useCallback, useState } from "react";
 import { MoneyField } from "src/components/form/money-field";
@@ -98,23 +97,22 @@ export const RecurrencePicker = ({ budget }: { budget: Budget }) => {
         onChange={(e) => onChange({ type: e.target.value as RecurrenceType })}
       />
       {form.values.recurrence.type !== RecurrenceType.None && (
-        <Stack direction="row" spacing={2}>
-          <MoneyField
-            fullWidth
-            sx={{ flex: 1.5 }}
-            inputProps={{ sx: { height: 1 } }}
-            InputProps={{ sx: { height: 1 } }}
-            label="Amount"
-            value={form.values.recurrence.amount}
-            onChange={(amount) => {
-              if (!amount) return;
-              setRecurringModified(new Date());
-              onChange({ amount });
-            }}
-          />
+        <div className="flex gap-2">
+          <div className="flex-[1.5]">
+            <MoneyField
+              fullWidth
+              label="Amount"
+              value={form.values.recurrence.amount}
+              onChange={(amount) => {
+                if (!amount) return;
+                setRecurringModified(new Date());
+                onChange({ amount });
+              }}
+            />
+          </div>
           <SelectField
             fullWidth
-            sx={{ flex: 1 }}
+            className="flex-1"
             label="Every"
             name="recurrence.day"
             values={form.values.recurrence.type === RecurrenceType.Weekly ? WEEKLY_OPTIONS : MONTHLY_OPTIONS}
@@ -126,7 +124,8 @@ export const RecurrencePicker = ({ budget }: { budget: Budget }) => {
               else onChange({ day });
             }}
           />
-        </Stack>
+        </div>
+
       )}
     </>
   );

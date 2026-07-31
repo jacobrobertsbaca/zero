@@ -1,28 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Box, Container, Stack, Typography } from "@mui/material";
 import { usePathname } from "next/navigation";
-import { styled } from "@mui/material/styles";
 import { withAuthGuard } from "src/components/with-auth-guard";
 import { SideNav } from "./side-nav";
 import { TopNav } from "./top-nav";
 
-const SIDE_NAV_WIDTH = 280;
-
-const LayoutRoot = styled("div")(({ theme }) => ({
-  display: "flex",
-  flex: "1 1 auto",
-  maxWidth: "100%",
-  [theme.breakpoints.up("lg")]: {
-    paddingLeft: SIDE_NAV_WIDTH,
-  },
-}));
-
-const LayoutContainer = styled("div")({
-  display: "flex",
-  flex: "1 1 auto",
-  flexDirection: "column",
-  width: "100%",
-});
+const SIDE_NAV_WIDTH = 240;
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -33,38 +15,25 @@ export const Layout = withAuthGuard(true, ({ children }: LayoutProps) => {
   const [openNav, setOpenNav] = useState(false);
 
   const handlePathnameChange = useCallback(() => {
-    if (openNav) {
-      setOpenNav(false);
-    }
+    if (openNav) setOpenNav(false);
   }, [openNav]);
 
-  useEffect(
-    () => {
-      handlePathnameChange();
-    },
+  useEffect(() => {
+    handlePathnameChange();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pathname]
-  );
+  }, [pathname]);
 
   return (
     <>
       <TopNav onNavOpen={() => setOpenNav(true)} />
       <SideNav onClose={() => setOpenNav(false)} open={openNav} />
-      <LayoutRoot>
-        <LayoutContainer>
-          <Box
-            component="main"
-            sx={{
-              flexGrow: 1,
-              py: 8,
-            }}
-          >
-            <Container maxWidth="lg">
-              {children}
-            </Container>
-          </Box>
-        </LayoutContainer>
-      </LayoutRoot>
+      <div className="flex max-w-full flex-1 lg:pl-[240px]" style={{ ["--side-nav-width" as string]: `${SIDE_NAV_WIDTH}px` }}>
+        <div className="flex w-full flex-1 flex-col">
+          <main className="flex-1 py-6 md:py-8">
+            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">{children}</div>
+          </main>
+        </div>
+      </div>
     </>
   );
 });

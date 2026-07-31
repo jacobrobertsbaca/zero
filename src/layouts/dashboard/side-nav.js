@@ -1,129 +1,69 @@
-import NextLink from 'next/link';
-import { usePathname } from 'next/navigation';
-import PropTypes from 'prop-types';
-import ArrowTopRightOnSquareIcon from '@heroicons/react/24/solid/ArrowTopRightOnSquareIcon';
-import ChevronUpDownIcon from '@heroicons/react/24/solid/ChevronUpDownIcon';
-import {
-  Box,
-  Button,
-  Divider,
-  Drawer,
-  Stack,
-  SvgIcon,
-  Typography,
-  useMediaQuery
-} from '@mui/material';
-import { LogoLink } from 'src/components/logo';
-import { Scrollbar } from 'src/components/scrollbar';
-import { items } from './config';
-import { SideNavItem } from './side-nav-item';
+import { usePathname } from "next/navigation";
+import { LogoLink } from "src/components/logo";
+import { Scrollbar } from "src/components/scrollbar";
+import { Separator } from "src/components/ui/separator";
+import { Sheet, SheetContent, SheetTitle } from "src/components/ui/sheet";
+import { items } from "./config";
+import { SideNavItem } from "./side-nav-item";
+import { useEffect, useState } from "react";
 
-export const SideNav = (props) => {
-  const { open, onClose } = props;
+const NavContent = ({ pathname }) => (
+  <div className="flex h-full flex-col">
+    <div className="px-5 py-4 [&_span]:text-sidebar-active">
+      <LogoLink />
+    </div>
+    <Separator className="bg-sidebar-border" />
+    <nav className="flex-1 px-3 py-4">
+      <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
+        {items.map((item) => {
+          const active = item.path ? pathname === item.path || pathname?.startsWith(`${item.path}/`) : false;
+          return (
+            <SideNavItem
+              active={active}
+              disabled={item.disabled}
+              external={item.external}
+              icon={item.icon}
+              key={item.title}
+              path={item.path}
+              title={item.title}
+            />
+          );
+        })}
+      </ul>
+    </nav>
+  </div>
+);
+
+export const SideNav = ({ open, onClose }) => {
   const pathname = usePathname();
-  const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
+  const [lgUp, setLgUp] = useState(false);
 
-  const content = (
-    <Scrollbar
-      sx={{
-        height: '100%',
-        '& .simplebar-content': {
-          height: '100%'
-        },
-        '& .simplebar-scrollbar:before': {
-          background: 'neutral.400'
-        }
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%'
-        }}
-      >
-        <Box sx={{ p: 3 }}>
-          <LogoLink />
-        </Box>
-        <Divider sx={{ borderColor: 'neutral.700' }} />
-        <Box
-          component="nav"
-          sx={{
-            flexGrow: 1,
-            px: 2,
-            py: 3
-          }}
-        >
-          <Stack
-            component="ul"
-            spacing={0.5}
-            sx={{
-              listStyle: 'none',
-              p: 0,
-              m: 0
-            }}
-          >
-            {items.map((item) => {
-              const active = item.path ? (pathname === item.path) : false;
-
-              return (
-                <SideNavItem
-                  active={active}
-                  disabled={item.disabled}
-                  external={item.external}
-                  icon={item.icon}
-                  key={item.title}
-                  path={item.path}
-                  title={item.title}
-                />
-              );
-            })}
-          </Stack>
-        </Box>
-      </Box>
-    </Scrollbar>
-  );
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setLgUp(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   if (lgUp) {
     return (
-      <Drawer
-        anchor="left"
-        open
-        PaperProps={{
-          sx: {
-            backgroundColor: 'neutral.800',
-            color: 'common.white',
-            width: 280
-          }
-        }}
-        variant="permanent"
-      >
-        {content}
-      </Drawer>
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 bg-sidebar text-sidebar-foreground lg:block">
+        <Scrollbar className="h-full">
+          <NavContent pathname={pathname} />
+        </Scrollbar>
+      </aside>
     );
   }
 
   return (
-    <Drawer
-      anchor="left"
-      onClose={onClose}
-      open={open}
-      PaperProps={{
-        sx: {
-          backgroundColor: 'neutral.800',
-          color: 'common.white',
-          width: 280
-        }
-      }}
-      sx={{ zIndex: (theme) => theme.zIndex.appBar + 100 }}
-      variant="temporary"
-    >
-      {content}
-    </Drawer>
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent side="left" className="w-60 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden">
+        <SheetTitle className="sr-only">Navigation</SheetTitle>
+        <Scrollbar className="h-full">
+          <NavContent pathname={pathname} />
+        </Scrollbar>
+      </SheetContent>
+    </Sheet>
   );
-};
-
-SideNav.propTypes = {
-  onClose: PropTypes.func,
-  open: PropTypes.bool
 };

@@ -1,7 +1,7 @@
-import { route, routes } from "../route";
+import { route, routes } from "src/server/route";
 import { z } from "zod";
 import { TransactionSchema } from "src/types/transaction/schema";
-import { getTransactions, putTransaction } from "../common";
+import { getTransactions, putTransaction } from "src/server/common";
 
 const router = routes();
 

@@ -1,15 +1,4 @@
-import {
-  Stack,
-  SvgIcon,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
+import { Plus } from "lucide-react";
 import { Budget, BudgetStatus } from "src/types/budget/types";
 import { BudgetViewSelector, BudgetView } from "./budget-view-selector";
 import { useCallback, useState } from "react";
@@ -27,7 +16,6 @@ import { budgetStatus } from "src/types/budget/methods";
 import { PeriodTooltip } from "../common/period-tooltip";
 import { moneySum } from "src/types/money/methods";
 
-import PlusIcon from "@heroicons/react/24/solid/PlusIcon";
 import { produce } from "immer";
 
 type CategoryRowProps = {
@@ -45,24 +33,26 @@ const CategoryRow = ({ state, category, onClick }: CategoryRowProps) => {
     state === BudgetView.Current ? moneySum(activePeriod!.nominal, rollovers[activeIndex]) : categoryNominal(category);
 
   return (
-    <TableRow hover key={category.id} onClick={() => onClick(category)} sx={{ cursor: "pointer" }}>
-      <TableCell>
-        <Stack direction="column">
-          <Typography variant="subtitle2">{category.name}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            {categoryTitle(category.type)}
-          </Typography>
-        </Stack>
-      </TableCell>
+    <tr
+      key={category.id}
+      onClick={() => onClick(category)}
+      className="cursor-pointer border-b last:border-b-0 hover:bg-muted/40"
+    >
+      <td className="px-2 py-2.5 align-top">
+        <div className="flex flex-col">
+          <span className="text-sm font-medium">{category.name}</span>
+          <span className="text-xs text-muted-foreground">{categoryTitle(category.type)}</span>
+        </div>
+      </td>
       {state === BudgetView.Current && (
-        <TableCell>
+        <td className="px-2 py-2.5 align-top">
           <PeriodTooltip recurrence={category.recurrence.type} dates={activePeriod!.dates} under />
-        </TableCell>
+        </td>
       )}
-      <TableCell>
+      <td className="px-2 py-2.5 align-middle">
         <SpendingBar actual={actual} nominal={nominal} remaining warn={category.type !== CategoryType.Income} />
-      </TableCell>
-    </TableRow>
+      </td>
+    </tr>
   );
 };
 
@@ -89,32 +79,31 @@ export const CategoryList = ({ budget, onCategoryClicked }: CategoryListProps) =
   }, [budget, onCategoryClicked]);
 
   return (
-    <Stack>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6">Categories</Typography>
-        {active && <BudgetViewSelector value={state} onChange={setState} />}
-      </Stack>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ minWidth: { xs: 100, sm: 200 } }}>Name</TableCell>
-            {state === BudgetView.Current && <TableCell sx={{ minWidth: { xs: 100, sm: 200 } }}>Period</TableCell>}
-            <TableCell sx={{ width: 0.99 }}>Progress</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {budget.categories.map((category) => (
-            <CategoryRow key={category.id} state={state} category={category} onClick={onCategoryClicked} />
-          ))}
-          <TableRow hover sx={{ cursor: "pointer" }} onClick={onAddCategory}>
-            <TableCell colSpan={3} align="center">
-              <SvgIcon color="disabled">
-                <PlusIcon />
-              </SvgIcon>
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    </Stack>
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b text-left text-xs text-muted-foreground">
+          <th className="min-w-[100px] px-2 py-2 font-medium sm:min-w-[200px]">Name</th>
+          {state === BudgetView.Current && (
+            <th className="min-w-[100px] px-2 py-2 font-medium sm:min-w-[200px]">Period</th>
+          )}
+          <th className="w-full px-2 py-2 font-medium">
+            <div className="flex items-center justify-between gap-2">
+              <span>Progress</span>
+              {active && <BudgetViewSelector value={state} onChange={setState} />}
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {budget.categories.map((category) => (
+          <CategoryRow key={category.id} state={state} category={category} onClick={onCategoryClicked} />
+        ))}
+        <tr className="cursor-pointer hover:bg-muted/40" onClick={onAddCategory}>
+          <td colSpan={3} className="py-3 text-center">
+            <Plus className="mx-auto size-4 text-muted-foreground/50" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
   );
 };

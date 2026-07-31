@@ -1,13 +1,13 @@
-import { Stack, styled, Typography } from "@mui/material";
 import { isEqual } from "lodash";
 import { useCallback, useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { DateField } from "src/components/form/date-field";
 import { FormMoneyField } from "src/components/form/money-field";
 import { SelectField } from "src/components/form/select-field";
 import { TextField } from "src/components/form/text-field";
-import { Scrollbar } from "src/components/scrollbar";
 import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { Sidebar } from "src/components/sidebar/sidebar";
+import { Button } from "src/components/ui/button";
 import { Budget } from "src/types/budget/types";
 import { Transaction } from "src/types/transaction/types";
 import { dateFormat } from "src/types/utils/methods";
@@ -15,7 +15,6 @@ import * as Yup from "yup";
 import { CategorySelector } from "./category-selector";
 import { closeSnackbar, enqueueSnackbar, SnackbarKey } from "notistack";
 import { produce } from "immer";
-import { LoadingButton, loadingButtonClasses } from "@mui/lab";
 import { wrapAsync } from "src/utils/wrap-errors";
 
 type UndoDeleteButtonProps = {
@@ -24,18 +23,15 @@ type UndoDeleteButtonProps = {
   update: (trx: Transaction) => void | Promise<void>;
 };
 
-const StyledLoadingButton = styled(LoadingButton)(({ theme }) => ({
-  [`.${loadingButtonClasses.loadingIndicator}`]: {
-    color: theme.palette.primary.main,
-  },
-}));
-
 const UndoDeleteButton = ({ snackbar, transaction, update }: UndoDeleteButtonProps) => {
   const [loading, setLoading] = useState(false);
 
   return (
-    <StyledLoadingButton
-      loading={loading}
+    <Button
+      variant="ghost"
+      size="sm"
+      className="text-primary"
+      disabled={loading}
       onClick={async () => {
         // Must set id to empty to re-create new transaction
         setLoading(true);
@@ -51,8 +47,9 @@ const UndoDeleteButton = ({ snackbar, transaction, update }: UndoDeleteButtonPro
         setLoading(false);
       }}
     >
-      <span>Undo</span>
-    </StyledLoadingButton>
+      {loading && <Loader2 className="size-4 animate-spin" />}
+      Undo
+    </Button>
   );
 };
 
@@ -80,13 +77,14 @@ export const TransactionSidebar = ({
       budgets.map((b) => ({
         value: b.id,
         label: (
-          <Stack>
-            <Typography variant="body2">{b.name}</Typography>
-            <Typography variant="caption" color="text.secondary">
+          <div className="flex flex-col">
+            <span className="text-sm">{b.name}</span>
+            <span className="text-xs text-muted-foreground">
               {`${dateFormat(b.dates.begin)} — ${dateFormat(b.dates.end)}`}
-            </Typography>
-          </Stack>
+            </span>
+          </div>
         ),
+        textValue: b.name,
       })),
     [budgets]
   );
@@ -139,16 +137,7 @@ export const TransactionSidebar = ({
           <CategorySelector budgets={budgets} />
           <FormMoneyField label="Amount" name="amount" />
           <TextField label="Name" name="name" placeholder="Optional" max={120} autoComplete="off" />
-          <TextField
-            label="Note"
-            name="note"
-            placeholder="Optional"
-            max={1000}
-            multiline
-            rows={5}
-            inputProps={{ style: { resize: "vertical" } }}
-            autoComplete="off"
-          />
+          <TextField label="Note" name="note" placeholder="Optional" max={1000} multiline rows={5} autoComplete="off" />
 
           <EditActions
             dirty={!isEqual(form.values, transaction)}

@@ -1,9 +1,9 @@
-import { Box, LinearProgress, Stack, Typography, linearProgressClasses } from "@mui/material";
 import { useCallback } from "react";
 import { InfoTooltip } from "src/components/info-tooltip";
 import { MoneyText } from "src/components/money-text";
 import { ActualNominal } from "src/types/budget/types";
 import { moneyAbs, moneyFactor, moneySub, RoundingMode } from "src/types/money/methods";
+import { cn } from "src/lib/utils";
 
 type SpendingBarProps = ActualNominal & {
   remaining?: boolean | React.ReactNode;
@@ -37,11 +37,11 @@ export const SpendingBar = ({ actual, nominal, remaining, warn }: SpendingBarPro
     })();
 
     return (
-      <Typography variant="caption">
-        <MoneyText variant="inherit" amount={amount} round={RoundingMode.RoundZero} fontWeight={700} />
+      <span className="text-xs text-muted-foreground">
+        <MoneyText amount={amount} round={RoundingMode.RoundZero} className="font-bold" />
         &nbsp;
         {suffix}
-      </Typography>
+      </span>
     );
   }, [actual, nominal]);
 
@@ -50,25 +50,25 @@ export const SpendingBar = ({ actual, nominal, remaining, warn }: SpendingBarPro
     return actual.amount - nominal.amount < 0;
   })();
 
+  const value = getValue();
+
   return (
-    <Box>
-      <LinearProgress
-        variant="determinate"
-        value={getValue()}
-        sx={{
-          [`& .${linearProgressClasses.barColorPrimary}`]: {
-            backgroundColor: warn && shouldWarn ? (theme) => theme.palette.error.main : undefined,
-          },
-        }}
-      />
-      <Stack direction="row" flexWrap="wrap" mt={0.5} justifyContent="space-between">
-        <Typography variant="caption">
-          <MoneyText variant="inherit" fontWeight={700} amount={actual} round={RoundingMode.RoundZero} /> of&nbsp;
-          <MoneyText variant="inherit" amount={nominal} round={RoundingMode.RoundZero} />
-        </Typography>
+    <div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
+        <div
+          className={cn("h-full rounded-full transition-all", warn && shouldWarn ? "bg-destructive" : "bg-primary")}
+          style={{ width: `${value}%` }}
+        />
+      </div>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2">
+        <span className="text-xs text-muted-foreground">
+          <MoneyText className="font-bold" amount={actual} round={RoundingMode.RoundZero} />
+          &nbsp;of&nbsp;
+          <MoneyText amount={nominal} round={RoundingMode.RoundZero} />
+        </span>
         {remaining && (typeof remaining === "boolean" ? getRemaining() : remaining)}
-      </Stack>
-    </Box>
+      </div>
+    </div>
   );
 };
 
@@ -79,18 +79,14 @@ type TitledSpendingBarProps = SpendingBarProps & {
 };
 
 export const TitledSpendingBar = (props: TitledSpendingBarProps) => (
-  <Box>
-    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-      <Stack direction="row" alignItems="center" spacing={0.25}>
-        <Typography variant="subtitle1" color="text.secondary">
-          {props.title}
-        </Typography>
+  <div>
+    <div className="mb-0.5 flex items-center justify-between">
+      <div className="flex items-center gap-1">
+        <span className="text-sm text-muted-foreground">{props.title}</span>
         {props.tooltip && <InfoTooltip title={props.tooltip} />}
-      </Stack>
-      <Typography variant="subtitle2" color="text.secondary">
-        {props.subtitle}
-      </Typography>
-    </Stack>
+      </div>
+      <span className="text-sm text-muted-foreground">{props.subtitle}</span>
+    </div>
     <SpendingBar {...props} />
-  </Box>
+  </div>
 );
