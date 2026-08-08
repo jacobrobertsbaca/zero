@@ -72,14 +72,21 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
             onDelete={handleDelete}
           />
 
-          <TextField fullWidth label="Name" name="name" type="text" max={60} />
+          <TextField
+            fullWidth
+            label="Name"
+            name="name"
+            type="text"
+            placeholder="Spring, Summer Trip, Wedding…"
+            max={60}
+          />
           <DateRangeField label="Dates" name="dates" />
           {isExisting && !isEqual(form.values.dates, budget.dates) && (
             <div className="flex gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
               <span>
-                Changing budget dates will preserve the total planned amount of existing categories, but their
-                recurring amounts may change as a result.
+                Changing budget dates will preserve the total planned amount of existing categories, but their recurring
+                amounts may change as a result.
               </span>
             </div>
           )}

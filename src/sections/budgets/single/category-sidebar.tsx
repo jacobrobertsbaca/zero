@@ -68,7 +68,7 @@ const CategoryEditView = ({ budget }: { budget: Budget }) => {
 
   return (
     <>
-      <TextField fullWidth label="Name" name="name" type="text" max={60} />
+      <TextField fullWidth label="Name" name="name" type="text" placeholder="Groceries, Coffee, Fun…" max={60} />
       <SelectField fullWidth label="Type" name="type" values={TYPE_OPTIONS} />
       <RecurrencePicker budget={budget} />
       <PeriodListMutable />
