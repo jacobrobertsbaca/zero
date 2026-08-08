@@ -1,10 +1,19 @@
 import { FormikValues } from "formik";
 import { X } from "lucide-react";
+import { createContext, useContext, useState } from "react";
 import { Form, FormProps } from "../form/form";
 import { Button } from "src/components/ui/button";
 import { Separator } from "src/components/ui/separator";
 import { Sheet, SheetContent, SheetTitle } from "src/components/ui/sheet";
 import { cn } from "src/lib/utils";
+
+type SidebarFooterContextValue = {
+  el: HTMLElement | null;
+};
+
+const SidebarFooterContext = createContext<SidebarFooterContextValue>({ el: null });
+
+export const useSidebarFooter = () => useContext(SidebarFooterContext);
 
 type SidebarHeaderProps = {
   onClose: () => void;
@@ -33,6 +42,7 @@ type SidebarProps<T extends FormikValues> = {
 };
 
 export const Sidebar = <T extends FormikValues>({ open, onClose, children, FormProps, title }: SidebarProps<T>) => {
+  const [footerEl, setFooterEl] = useState<HTMLElement | null>(null);
   const formProps = FormProps
     ? { className: cn("flex h-full flex-col overflow-hidden", FormProps.className), ...FormProps }
     : {
@@ -43,20 +53,20 @@ export const Sidebar = <T extends FormikValues>({ open, onClose, children, FormP
 
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
-      <SheetContent
-        side="right"
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-[500px] [&>button]:hidden"
-      >
+      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-[500px] [&>button]:hidden">
         <Form {...formProps}>
           {(formik) => (
-            <div className="flex h-full flex-col overflow-hidden">
-              <SidebarHeader onClose={onClose}>{typeof title === "function" ? title(formik) : title}</SidebarHeader>
-              <div className="flex-1 overflow-y-auto overscroll-contain">
-                <div className="flex flex-col gap-4 p-5">
-                  {typeof children === "function" ? children(formik) : children}
+            <SidebarFooterContext.Provider value={{ el: footerEl }}>
+              <div className="flex h-full flex-col overflow-hidden">
+                <SidebarHeader onClose={onClose}>{typeof title === "function" ? title(formik) : title}</SidebarHeader>
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                  <div className="flex flex-col gap-4 p-5">
+                    {typeof children === "function" ? children(formik) : children}
+                  </div>
                 </div>
+                <div ref={setFooterEl} className="empty:hidden" />
               </div>
-            </div>
+            </SidebarFooterContext.Provider>
           )}
         </Form>
       </SheetContent>

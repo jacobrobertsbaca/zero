@@ -1,9 +1,11 @@
 import { Trash2, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSnackbar } from "notistack";
 import { SubmitButton } from "../form/submit-button";
 import { Button, ButtonProps } from "src/components/ui/button";
 import { cn } from "src/lib/utils";
+import { useSidebarFooter } from "./sidebar";
 
 export enum EditState {
   View,
@@ -26,6 +28,7 @@ export const EditActions = (props: EditActionsProps) => {
   const { submit: submitProps, delete: deleteProps } = ButtonProps ?? {};
   const { enqueueSnackbar } = useSnackbar();
   const [deleting, setDeleting] = useState(false);
+  const footer = useSidebarFooter();
 
   const handleDelete = useCallback(async () => {
     if (!onDelete) return;
@@ -38,37 +41,40 @@ export const EditActions = (props: EditActionsProps) => {
     setDeleting(false);
   }, [onDelete, enqueueSnackbar]);
 
-  return (
-    <div className={cn("flex flex-col gap-2", className)} {...divProps}>
+  const actions = (
+    <div
+      className={cn("flex items-center justify-end gap-2 border-t bg-background px-4 py-3", className)}
+      {...divProps}
+    >
       {state === EditState.View && (
-        <Button type="button" variant="outline" onClick={() => onStateChanged?.(EditState.Edit)}>
+        <Button type="button" variant="outline" size="sm" onClick={() => onStateChanged?.(EditState.Edit)}>
           Edit
         </Button>
       )}
       {state === EditState.Edit && (
         <>
-          <SubmitButton variant="outline" disabled={!dirty} {...submitProps}>
-            {submitProps?.children ?? "Save"}
-          </SubmitButton>
           {onDelete && (
             <Button
               type="button"
               variant="outline"
+              size="sm"
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               {...deleteProps}
               disabled={deleting || deleteProps?.disabled}
               onClick={handleDelete}
             >
-              {deleting ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : deleteProps?.children ? null : (
-                <Trash2 className="size-4" />
-              )}
+              {deleting ? <Loader2 className="animate-spin" /> : deleteProps?.children ? null : <Trash2 />}
               {deleteProps?.children ?? "Delete"}
             </Button>
           )}
+          <SubmitButton size="sm" disabled={!dirty} {...submitProps}>
+            {submitProps?.children ?? "Save"}
+          </SubmitButton>
         </>
       )}
     </div>
   );
+
+  if (footer.el) return createPortal(actions, footer.el);
+  return actions;
 };
