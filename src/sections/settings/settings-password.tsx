@@ -1,6 +1,6 @@
 import * as Yup from "yup";
 import { useAuth } from "src/hooks/use-auth";
-import { enqueueSnackbar } from "notistack";
+import { toast } from "sonner";
 import { TextField } from "src/components/form/text-field";
 import { SubmitButton } from "src/components/form/submit-button";
 import { Form } from "src/components/form/form";
@@ -26,7 +26,7 @@ export const SettingsPassword = () => {
       })}
       onSubmit={async (values, helpers) => {
         await auth.updatePassword(values.password);
-        enqueueSnackbar("Updated your password!", { variant: "success" });
+        toast.success("Updated your password!");
         helpers.resetForm();
       }}
     >

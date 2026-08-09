@@ -8,7 +8,7 @@ import { Transaction, TransactionPage, TransactionQuery } from "src/types/transa
 import { http } from "src/utils/http";
 import useSWRInfinite from "swr/infinite";
 import { isEqual } from "lodash";
-import { enqueueSnackbar } from "notistack";
+import { toast } from "sonner";
 
 const fetcher = (token?: string) => (path: string) => http(path, "GET", { token }) as any;
 
@@ -281,7 +281,7 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
           /* Note: starring a transaction shouldn't change any other app state, so no need to invalidate them */
           http(ApiTransactions, "PUT", { token, data: { transaction: newTransaction } }).catch((err) => {
             console.error(err);
-            enqueueSnackbar(`Couldn't ${newTransaction.starred ? "star" : "unstar"} transaction`, { variant: "error" });
+            toast.error(`Couldn't ${newTransaction.starred ? "star" : "unstar"} transaction`);
             mutate((cache) => mutateTransactions(cache, transaction.id, () => transaction));
           });
           invalidateQueries();

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Toaster } from "src/components/ui/sonner";
 import "src/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +23,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

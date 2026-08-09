@@ -3,7 +3,6 @@
 import * as Yup from "yup";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SnackbarProvider } from "notistack";
 import { Form } from "src/components/form/form";
 import { TextField } from "src/components/form/text-field";
 import { SubmitButton } from "src/components/form/submit-button";
@@ -12,7 +11,7 @@ import { Separator } from "src/components/ui/separator";
 import { wrapAsync } from "src/utils/wrap-errors";
 import { createClient } from "@/lib/supabase/client";
 
-function LoginFormFields() {
+export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams?.get("url") ?? "/";
@@ -68,13 +67,5 @@ function LoginFormFields() {
         </Button>
       </div>
     </Form>
-  );
-}
-
-export function LoginForm() {
-  return (
-    <SnackbarProvider>
-      <LoginFormFields />
-    </SnackbarProvider>
   );
 }

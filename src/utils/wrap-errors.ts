@@ -1,8 +1,8 @@
-import { enqueueSnackbar } from "notistack";
+import { toast } from "sonner";
 
 const onError = (err: any) => {
   console.log(err);
-  enqueueSnackbar(err.message, { variant: "error" });
+  toast.error(err.message);
 };
 
 /**

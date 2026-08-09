@@ -14,38 +14,36 @@ import { Transaction } from "src/types/transaction/types";
 import { dateFormat } from "src/types/utils/methods";
 import * as Yup from "yup";
 import { CategorySelector } from "./category-selector";
-import { closeSnackbar, enqueueSnackbar, SnackbarKey } from "notistack";
+import { toast } from "sonner";
 import { produce } from "immer";
 import { wrapAsync } from "src/utils/wrap-errors";
 
 type UndoDeleteButtonProps = {
-  snackbar: SnackbarKey;
+  toastId: string | number;
   transaction: Transaction;
   update: (trx: Transaction) => void | Promise<void>;
 };
 
-const UndoDeleteButton = ({ snackbar, transaction, update }: UndoDeleteButtonProps) => {
+const UndoDeleteButton = ({ toastId, transaction, update }: UndoDeleteButtonProps) => {
   const [loading, setLoading] = useState(false);
 
   return (
     <Button
-      variant="ghost"
+      variant="outline"
       size="sm"
-      className="text-primary"
       disabled={loading}
-      onClick={async () => {
-        // Must set id to empty to re-create new transaction
+      onClick={() => {
         setLoading(true);
-        await wrapAsync(async () => {
+        void wrapAsync(async () => {
+          // Must set id to empty to re-create new transaction
           await update(
             produce(transaction, (draft) => {
               draft.id = "";
             })
           );
-          closeSnackbar(snackbar);
-          enqueueSnackbar({ message: "Restored transaction", variant: "success" });
-        });
-        setLoading(false);
+          toast.dismiss(toastId);
+          toast.success("Restored transaction");
+        }).finally(() => setLoading(false));
       }}
     >
       {loading && <Loader2 className="size-4 animate-spin" />}
@@ -92,10 +90,11 @@ export const TransactionSidebar = ({
 
   const handleDelete = useCallback(async () => {
     await onDelete(transaction);
-    enqueueSnackbar({
-      message: "Transaction deleted",
-      autoHideDuration: 10000,
-      action: (key) => <UndoDeleteButton snackbar={key} transaction={transaction} update={onUpdate} />,
+    const toastId = crypto.randomUUID();
+    toast("Transaction deleted", {
+      id: toastId,
+      duration: 10000,
+      action: <UndoDeleteButton toastId={toastId} transaction={transaction} update={onUpdate} />,
     });
   }, [transaction, onDelete, onUpdate]);
 

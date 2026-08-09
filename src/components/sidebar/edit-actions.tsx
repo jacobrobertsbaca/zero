@@ -1,7 +1,7 @@
 import { Trash2, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
-import { useSnackbar } from "notistack";
+import { toast } from "sonner";
 import { SubmitButton } from "../form/submit-button";
 import { Button, ButtonProps } from "src/components/ui/button";
 import { cn } from "src/lib/utils";
@@ -26,7 +26,6 @@ type EditActionsProps = React.HTMLAttributes<HTMLDivElement> & {
 export const EditActions = (props: EditActionsProps) => {
   const { dirty, state, onStateChanged, onDelete, ButtonProps, className, ...divProps } = props;
   const { submit: submitProps, delete: deleteProps } = ButtonProps ?? {};
-  const { enqueueSnackbar } = useSnackbar();
   const [deleting, setDeleting] = useState(false);
   const footer = useSidebarFooter();
 
@@ -36,10 +35,10 @@ export const EditActions = (props: EditActionsProps) => {
     try {
       await onDelete();
     } catch (err: any) {
-      enqueueSnackbar(err.message, { variant: "error" });
+      toast.error(err.message);
     }
     setDeleting(false);
-  }, [onDelete, enqueueSnackbar]);
+  }, [onDelete]);
 
   const actions = (
     <div

@@ -1,4 +1,4 @@
-import { enqueueSnackbar } from "notistack";
+import { toast } from "sonner";
 import { useCallback, useState } from "react";
 import { DeleteDialog } from "src/components/delete-dialog";
 import { useAuth } from "src/hooks/use-auth";
@@ -14,7 +14,7 @@ export const SettingsDeleteAccount = () => {
   const onDelete = async () => {
     await wrapAsync(async () => {
       await deleteAccount();
-      enqueueSnackbar("Successfully deleted your account.", { variant: "success" });
+      toast.success("Successfully deleted your account.");
     });
   };
 
