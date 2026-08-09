@@ -40,9 +40,7 @@ function LoginFormFields() {
       <div className="flex flex-col gap-3">
         <TextField label="Email Address" name="email" type="email" fullWidth />
         <TextField label="Password" name="password" type="password" fullWidth />
-        <SubmitButton className="mt-1 w-full" size="lg">
-          Continue
-        </SubmitButton>
+        <SubmitButton className="mt-1 w-full">Continue</SubmitButton>
         <div className="relative flex items-center py-1">
           <Separator className="flex-1" />
           <span className="px-3 text-xs text-muted-foreground">OR</span>
@@ -51,7 +49,6 @@ function LoginFormFields() {
         <Button
           type="button"
           variant="outline"
-          size="lg"
           className="w-full"
           onClick={() =>
             void wrapAsync(async () => {
