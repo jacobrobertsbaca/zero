@@ -15,8 +15,8 @@ const ignoreQuery = (pathRef: MutableRefObject<string | undefined>, func: () => 
 };
 
 export function useNProgress() {
-  const startPath = useRef<string>();
-  const endPath = useRef<string>();
+  const startPath = useRef<string | undefined>(undefined);
+  const endPath = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const onRouteStart = ignoreQuery(startPath, nProgress.start);

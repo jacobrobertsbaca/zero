@@ -21,7 +21,7 @@ export const useSearchModel = <Query>({
   const searchParams = useSearchParams() ?? new ReadonlyURLSearchParams();
   const router = useRouter();
   const [query, setQuery] = useState<Query>(() => decodeQuery(searchParams));
-  const lastQuery = useRef<Query>();
+  const lastQuery = useRef<Query>(undefined);
 
   useEffect(() => {
     let query: Query;

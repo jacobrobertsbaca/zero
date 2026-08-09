@@ -26,7 +26,7 @@ export const MoneyField = (props: MoneyFieldProps) => {
   const { value, onChange, onBlur, onFocus, label, error, helperText, className, fullWidth, id, name, ...rest } = props;
   const [rawInput, setRawInput] = useState("");
   const [focused, setFocused] = useState(false);
-  const lastValue = useRef<Money | null>();
+  const lastValue = useRef<Money | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mobile = !useMediaQuery("(min-width: 640px)");
   const preview = focused && isExpr(rawInput) ? moneyParseExpression(rawInput) : null;

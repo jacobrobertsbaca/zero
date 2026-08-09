@@ -23,7 +23,7 @@ type PropTypes = {
   onChange?: (event: { target: { value: string } }) => void;
 };
 
-export const SelectField = <T extends FormikValues>(props: PropTypes): JSX.Element => {
+export const SelectField = <T extends FormikValues>(props: PropTypes) => {
   const { name, values, label, fullWidth, className, disabled, helperText, onChange } = props;
   const formik = useFormikContext<T>();
   const error = get(formik.touched, name) && get(formik.errors, name);

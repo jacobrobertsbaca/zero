@@ -16,7 +16,7 @@ export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement | HTMLTex
   helperText?: React.ReactNode;
 };
 
-export const TextField = <T extends FormikValues>(props: TextFieldProps): JSX.Element => {
+export const TextField = <T extends FormikValues>(props: TextFieldProps) => {
   const { name, label, max, multiline, rows, className, fullWidth, helperText: helperTextProp, ...rest } = props;
   const formik = useFormikContext<T>();
   const error = get(formik.touched, name) && get(formik.errors, name);
