@@ -77,7 +77,7 @@ export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: Bud
             label="Name"
             name="name"
             type="text"
-            placeholder="Spring, Summer Trip, Wedding…"
+            placeholder="Spring Budget, Summer Trip, Wedding…"
             max={60}
           />
           <DateRangeField label="Dates" name="dates" />
