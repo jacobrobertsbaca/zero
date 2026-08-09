@@ -29,7 +29,7 @@ import { transactionCompare } from "src/types/transaction/methods";
  * @returns A promise that, when awaited, returns the query's data.
  */
 export const wrap = async <TResult>(
-  query: PostgrestFilterBuilder<any, any, TResult, any> | PostgrestTransformBuilder<any, any, TResult, any>
+  query: PostgrestFilterBuilder<any, any, any, TResult, any> | PostgrestTransformBuilder<any, any, any, TResult, any>
 ): Promise<TResult> => {
   const { data, error } = await query;
   if (error) {
