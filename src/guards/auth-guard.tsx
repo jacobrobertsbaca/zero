@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import PropTypes from "prop-types";
 import { useAuth } from "src/hooks/use-auth";
 import { useSearchParams } from "next/navigation";
 

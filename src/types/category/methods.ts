@@ -174,14 +174,6 @@ export const categoryActiveIndex = (category: Category, today?: Date | DateStrin
 };
 
 /**
- * Returns the currently active period within the given category.
- * @param category A category
- */
-export const categoryActive = (category: Category, today?: Date | DateString): Period => {
-  return category.periods[categoryActiveIndex(category, today)];
-};
-
-/**
  * Checks the category was edited. Does not consider actual amounts.
  * @param prev The old {@link Category}
  * @param next The new {@link Category}
