@@ -1,13 +1,14 @@
+"use client";
+
 import { Plus } from "lucide-react";
 import { Loading } from "src/components/loading";
 import { PageTitle } from "src/components/page-title";
 import { useBudgets } from "src/hooks/use-api";
-import { Layout as DashboardLayout } from "src/layouts/dashboard/layout";
 import BudgetCard from "src/sections/budgets/overview/budget-card";
 
 import { useState } from "react";
 import { BudgetSidebar } from "src/sections/budgets/common/budget-sidebar";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { Dates } from "src/types/utils/types";
 import { Button } from "src/components/ui/button";
 import { Card, CardContent } from "src/components/ui/card";
@@ -24,7 +25,7 @@ const NoBudgetsOverlay = () => (
   </Card>
 );
 
-const Page = () => {
+export default function Page() {
   const router = useRouter();
   const { budgets, error } = useBudgets();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -64,8 +65,4 @@ const Page = () => {
       />
     </div>
   );
-};
-
-Page.getLayout = (page: React.ReactNode) => <DashboardLayout>{page}</DashboardLayout>;
-
-export default Page;
+}
