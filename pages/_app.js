@@ -1,7 +1,7 @@
 import Head from "next/head";
 import { AuthConsumer, AuthProvider } from "src/contexts/auth-context";
 import { useNProgress } from "src/hooks/use-nprogress";
-import "src/styles/globals.css";
+import "src/globals.css";
 import { toast } from "sonner";
 import { Toaster } from "src/components/ui/sonner";
 import { SWRConfig } from "swr";
