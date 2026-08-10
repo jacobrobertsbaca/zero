@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Transaction, TransactionQuery } from "src/types/transaction/types";
 import { moneyFormat, moneyZero } from "src/types/money/methods";
 import { useBudgets, useTransactionsSearch } from "src/hooks/use-api";
-import { useMediaQuery } from "src/hooks/use-media-query";
+import { useIsMobile } from "src/hooks/use-mobile";
 
 import { Loader2, Plus, Star } from "lucide-react";
 import { Budget } from "src/types/budget/types";
@@ -117,7 +117,7 @@ const Page = () => {
   const { budgets, error: budgetsError } = useBudgets();
   const { search, sorting, filter, setSearch, setSort, setFilter, model } = useTransactionsModel({ budgets });
 
-  const mobile = !useMediaQuery("(min-width: 640px)");
+  const mobile = useIsMobile();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTrx, setSidebarTrx] = useState<Transaction>({

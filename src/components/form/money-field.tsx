@@ -4,7 +4,7 @@ import { ChangeEvent, InputHTMLAttributes, useCallback, useEffect, useRef, useSt
 import { Field } from "src/components/ui/field";
 import { Input } from "src/components/ui/input";
 import { Popover, PopoverAnchor, PopoverContent } from "src/components/ui/popover";
-import { useMediaQuery } from "src/hooks/use-media-query";
+import { useIsMobile } from "src/hooks/use-mobile";
 import { cn } from "src/lib/utils";
 import { moneyFormat, moneyParse, moneyParseExpression } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
@@ -28,7 +28,7 @@ export const MoneyField = (props: MoneyFieldProps) => {
   const [focused, setFocused] = useState(false);
   const lastValue = useRef<Money | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const mobile = !useMediaQuery("(min-width: 640px)");
+  const mobile = useIsMobile();
   const preview = focused && isExpr(rawInput) ? moneyParseExpression(rawInput) : null;
 
   const commit = useCallback(

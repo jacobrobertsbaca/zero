@@ -1,11 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
-  content: [
-    "./app/**/*.{js,ts,jsx,tsx}",
-    "./pages/**/*.{js,ts,jsx,tsx}",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./app/**/*.{js,ts,jsx,tsx}", "./pages/**/*.{js,ts,jsx,tsx}", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
@@ -58,7 +54,11 @@ module.exports = {
           foreground: "hsl(var(--sidebar-foreground))",
           active: "hsl(var(--sidebar-active))",
           accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-active))",
           border: "hsl(var(--sidebar-border))",
+          primary: "hsl(var(--primary))",
+          "primary-foreground": "hsl(var(--primary-foreground))",
+          ring: "hsl(var(--ring))",
         },
       },
       keyframes: {
