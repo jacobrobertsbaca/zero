@@ -1,6 +1,6 @@
 import { once } from "lodash";
 import { createContext, useContext, useState } from "react";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 export type PaginatedTableContext<T> = {
   readonly rows: T[];

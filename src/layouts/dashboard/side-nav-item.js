@@ -1,5 +1,5 @@
 import NextLink from "next/link";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 export const SideNavItem = ({ active = false, disabled, external, icon, path, title }) => {
   const className = cn(

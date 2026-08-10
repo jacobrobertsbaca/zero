@@ -9,7 +9,7 @@ import { SubmitButton } from "src/components/form/submit-button";
 import { Button } from "src/components/ui/button";
 import { Separator } from "src/components/ui/separator";
 import { wrapAsync } from "src/utils/wrap-errors";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 export function LoginForm() {
   const router = useRouter();

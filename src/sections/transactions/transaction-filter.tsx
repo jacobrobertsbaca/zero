@@ -19,7 +19,7 @@ import { isEqual } from "lodash";
 import { DateField } from "src/components/form/date-field";
 import { TransactionGroupSelector } from "./transaction-group-selector";
 import { Badge, badgeVariants } from "src/components/ui/badge";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 export type TransactionFilterModel = {
   dateMin: DateString | null /* start in URL */;

@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { SubmitButton } from "../form/submit-button";
 import { Button, ButtonProps } from "src/components/ui/button";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 import { useSidebarFooter } from "./sidebar";
 
 export enum EditState {

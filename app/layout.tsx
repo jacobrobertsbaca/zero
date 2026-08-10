@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "src/components/ui/sonner";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 import "src/globals.css";
 
 const dmSans = DM_Sans({

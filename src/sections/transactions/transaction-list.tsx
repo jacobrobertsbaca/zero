@@ -2,7 +2,7 @@ import { flexRender, RowData, Table } from "@tanstack/react-table";
 import { Transaction } from "src/types/transaction/types";
 
 import { ArrowUp, ArrowDown } from "lucide-react";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {

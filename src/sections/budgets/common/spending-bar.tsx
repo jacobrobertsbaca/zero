@@ -4,7 +4,7 @@ import { MoneyText } from "src/components/money-text";
 import { Progress } from "src/components/ui/progress";
 import { ActualNominal } from "src/types/budget/types";
 import { moneyAbs, moneyFactor, moneySub, RoundingMode } from "src/types/money/methods";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 type SpendingBarProps = ActualNominal & {
   remaining?: boolean | React.ReactNode;

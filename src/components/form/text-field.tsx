@@ -4,7 +4,7 @@ import { InputHTMLAttributes } from "react";
 import { Field } from "src/components/ui/field";
 import { Input } from "src/components/ui/input";
 import { Textarea } from "src/components/ui/textarea";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>, "name"> & {
   name: string;

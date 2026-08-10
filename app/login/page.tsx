@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 import { LoginForm } from "./form";
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ url?: string }> }) {

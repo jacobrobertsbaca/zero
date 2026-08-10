@@ -2,7 +2,7 @@ import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { debounce } from "lodash";
 import { Input } from "src/components/ui/input";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 export type TransactionSearchProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> & {
   search: string | undefined;

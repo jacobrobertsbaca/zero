@@ -5,7 +5,7 @@ import { Form, FormProps } from "../form/form";
 import { Button } from "src/components/ui/button";
 import { Separator } from "src/components/ui/separator";
 import { Sheet, SheetContent, SheetTitle } from "src/components/ui/sheet";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 type SidebarFooterContextValue = {
   el: HTMLElement | null;

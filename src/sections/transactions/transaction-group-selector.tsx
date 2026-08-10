@@ -7,7 +7,7 @@ import { Badge } from "src/components/ui/badge";
 import { Checkbox } from "src/components/ui/checkbox";
 import { Input } from "src/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "src/components/ui/popover";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 type CategoryOption = {
   budget: Budget;

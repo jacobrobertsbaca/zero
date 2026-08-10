@@ -5,7 +5,7 @@ import { Field } from "src/components/ui/field";
 import { Input } from "src/components/ui/input";
 import { Popover, PopoverAnchor, PopoverContent } from "src/components/ui/popover";
 import { useIsMobile } from "src/hooks/use-mobile";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 import { moneyFormat, moneyParse, moneyParseExpression } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
 

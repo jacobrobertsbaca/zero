@@ -4,7 +4,7 @@ import { get } from "lodash";
 import { useCallback, useRef, useState } from "react";
 import { Field } from "src/components/ui/field";
 import { Textarea } from "src/components/ui/textarea";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 type NoteFieldProps = {
   name: string;

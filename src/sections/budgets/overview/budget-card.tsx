@@ -4,7 +4,7 @@ import { Budget, BudgetStatus } from "src/types/budget/types";
 import { dateFormat } from "src/types/utils/methods";
 import { budgetStatus } from "src/types/budget/methods";
 import { BudgetCardDetails } from "./budget-card-details";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 type BudgetCardProps = {
   budget: Budget;

@@ -1,6 +1,6 @@
 import { moneyFormat, MoneyFormatOptions } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
-import { cn } from "src/lib/utils";
+import { cn } from "src/utils";
 
 type MoneyTextProps = MoneyFormatOptions & {
   amount: Money;
