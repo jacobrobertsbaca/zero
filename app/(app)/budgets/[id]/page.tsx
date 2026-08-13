@@ -8,6 +8,10 @@ import { dateFormat } from "src/types/utils/methods";
 import { userId } from "src/utils/supabase/server";
 import { BudgetCategories, EditBudgetButton } from "./components";
 
+export function generateStaticParams() {
+  return [{ id: "_" }];
+}
+
 function BudgetSkeleton() {
   return (
     <div className="flex flex-col gap-6">
