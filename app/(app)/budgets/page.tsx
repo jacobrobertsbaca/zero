@@ -1,9 +1,9 @@
 import { Suspense } from "react";
-import { PageTitle } from "src/components/page-title";
 import { Card, CardContent } from "src/components/ui/card";
 import { Skeleton } from "src/components/ui/skeleton";
-import { getBudgets } from "src/server/common";
+import { listBudgets } from "src/server/common";
 import BudgetCard from "src/sections/budgets/overview/budget-card";
+import { BudgetsOverviewShell } from "src/sections/budgets/overview/budget-metric";
 import { userId } from "src/utils/supabase/server";
 import { NewBudgetButton } from "./components";
 
@@ -19,11 +19,22 @@ const NoBudgetsOverlay = () => (
   </Card>
 );
 
+function BudgetCardSkeleton() {
+  return (
+    <div className="flex h-full flex-col rounded-md border border-input bg-card p-4 shadow-sm">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-7 w-36 bg-muted" />
+        <Skeleton className="h-4 w-44 bg-muted" />
+      </div>
+    </div>
+  );
+}
+
 function BudgetsSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
       {Array.from({ length: 6 }, (_, i) => (
-        <Skeleton key={i} className="h-40 w-full rounded-md bg-muted" />
+        <BudgetCardSkeleton key={i} />
       ))}
     </div>
   );
@@ -31,7 +42,7 @@ function BudgetsSkeleton() {
 
 async function BudgetsGrid() {
   const owner = await userId();
-  const budgets = await getBudgets(owner);
+  const budgets = await listBudgets(owner);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -45,14 +56,10 @@ async function BudgetsGrid() {
 
 export default function Page() {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="mb-3 flex items-center gap-1">
-        <PageTitle title="Budgets" />
-        <NewBudgetButton />
-      </div>
+    <BudgetsOverviewShell actions={<NewBudgetButton />}>
       <Suspense fallback={<BudgetsSkeleton />}>
         <BudgetsGrid />
       </Suspense>
-    </div>
+    </BudgetsOverviewShell>
   );
 }

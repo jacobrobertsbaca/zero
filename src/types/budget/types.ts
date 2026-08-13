@@ -1,7 +1,7 @@
 import { Immutable } from "immer";
 import { Category, CategoryType } from "../category/types";
 import { Money } from "../money/types";
-import { Dates } from "../utils/types";
+import { DateString, Dates } from "../utils/types";
 
 export type Budget = Immutable<{
   id: string;
@@ -15,23 +15,43 @@ export type ActualNominal = Immutable<{
   nominal: Money;
 }>;
 
-export type CategorySummary = Immutable<ActualNominal & {
-  /**
-   * The {@link CategoryType} this summarizes.
-   * If `undefined`, represents leftover amounts in the budget (i.e. unassigned income).
-   */
-  type?: CategoryType;
+export type CategorySummary = Immutable<
+  ActualNominal & {
+    /**
+     * The {@link CategoryType} this summarizes.
+     * If `undefined`, represents leftover amounts in the budget (i.e. unassigned income).
+     */
+    type?: CategoryType;
 
-  /**
-   * A human readable title for this category.
-   */
-  title: string;
-}>;
+    /**
+     * A human readable title for this category.
+     */
+    title: string;
+  }
+>;
 
 export type BudgetSummary = Immutable<CategorySummary[]>;
+
+export type BudgetTimelineAmounts = Immutable<Partial<Record<CategoryType, number>>>;
+
+export type BudgetTimelinePoint = Immutable<{
+  date: DateString;
+  /** Cumulative amounts by category type, in minor currency units. */
+  amounts: BudgetTimelineAmounts;
+  /** Cumulative net (income − spending), in minor currency units. Investments/savings are excluded. */
+  net: number;
+}>;
+
+export type BudgetTimeline = Immutable<{
+  begin: DateString;
+  end: DateString;
+  points: BudgetTimelinePoint[];
+  /** Category types that appear in this budget's timeline, in display order. */
+  types: CategoryType[];
+}>;
 
 export enum BudgetStatus {
   Active = 0,
   Future = 1,
-  Past = 2
-};
+  Past = 2,
+}

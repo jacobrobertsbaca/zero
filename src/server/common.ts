@@ -1,11 +1,11 @@
-import { Budget } from "src/types/budget/types";
+import { Budget, BudgetTimeline, BudgetTimelineAmounts, BudgetTimelinePoint } from "src/types/budget/types";
+import { budgetCompare } from "src/types/budget/methods";
 import { supabase } from "src/utils/supabase/server";
 import { PostgrestFilterBuilder, PostgrestTransformBuilder } from "@supabase/postgrest-js";
 import { HttpError, NotFound } from "./errors";
-import { Category, Period, Recurrence, RecurrenceType } from "src/types/category/types";
+import { Category, CategoryType, Period, Recurrence, RecurrenceType } from "src/types/category/types";
 import { defaultCurrency } from "src/types/money/methods";
-import { budgetCompare } from "src/types/budget/methods";
-import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
+import { categoryNominal, categorySort, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
 import type {
@@ -18,6 +18,8 @@ import type {
   TransactionSort,
 } from "src/types/transaction/types";
 import { transactionCompare } from "src/types/transaction/methods";
+import { DateString } from "src/types/utils/types";
+import { asDateString } from "src/types/utils/methods";
 
 /* ================================================================================================================= *
  * Utility Functions                                                                                                 *
@@ -203,6 +205,24 @@ export const getBudgets = async (owner: string, id?: string): Promise<Budget[]> 
 };
 
 /**
+ * Lightweight budget list for overview cards (no categories/periods).
+ * Timeline details should be fetched separately via {@link getBudgetTimeline}.
+ */
+export const listBudgets = async (owner: string): Promise<Budget[]> => {
+  const rows = await wrap(supabase.from("budgets").select("id, name, begin_date, end_date").eq("owner", owner));
+  return rows
+    .map(
+      (row): Budget => ({
+        id: row.id,
+        name: row.name,
+        dates: { begin: row.begin_date, end: row.end_date },
+        categories: [],
+      })
+    )
+    .sort(budgetCompare);
+};
+
+/**
  * Upserts a budget owned by {@link owner} into the database. Returns the budget as it exists on the database after modification.
  * @param owner The owner of the existing or created budget.
  * @param budget A budget. If `id` is empty, a new budget will be created.
@@ -349,6 +369,120 @@ export const deleteCategory = async (owner: string, bid: string, cid: string): P
 export const getTransactions = async (owner: string): Promise<Transaction[]> => {
   const rows = await retrieveTransactions(owner);
   return rows.map(parseTransaction).sort(transactionCompare);
+};
+
+/**
+ * Builds a cumulative net expense timeline for a single budget.
+ * Intended to be fetched independently (e.g. behind Suspense) per budget id.
+ */
+export const getBudgetTimeline = async (owner: string, budgetId: string): Promise<BudgetTimeline | null> => {
+  const budgets = await wrap(
+    supabase.from("budgets").select("id, begin_date, end_date").eq("owner", owner).eq("id", budgetId)
+  );
+  if (budgets.length === 0) return null;
+
+  const budget = budgets[0];
+  const begin = budget.begin_date as DateString;
+  const end = budget.end_date as DateString;
+  const asOf = timelineAsOf(begin, end);
+
+  const [categories, transactions] = await Promise.all([
+    wrap(supabase.from("categories").select("id, type").eq("owner", owner).eq("budget", budgetId)),
+    wrap(
+      supabase
+        .from("transactions")
+        .select("date, amount, category")
+        .eq("owner", owner)
+        .eq("budget", budgetId)
+    ),
+  ]);
+
+  const typeByCategory = new Map(categories.map((c) => [c.id as string, c.type as CategoryType]));
+  const entries = transactions.flatMap((row) => {
+    const type = typeByCategory.get(row.category as string);
+    if (!type) return [];
+    return [{ date: row.date as DateString, type, amount: row.amount as number }];
+  });
+
+  return buildBudgetTimeline(begin, end, entries, asOf);
+};
+
+const timelineNet = (amounts: BudgetTimelineAmounts) =>
+  (amounts[CategoryType.Income] ?? 0) - (amounts[CategoryType.Spending] ?? 0);
+
+/** Latest date that should appear as data on an in-progress budget timeline. */
+const timelineAsOf = (
+  begin: DateString,
+  end: DateString,
+  today: DateString = asDateString(new Date())
+): DateString => {
+  if (end < begin) return begin;
+  if (today < begin) return begin;
+  if (today < end) return today;
+  return end;
+};
+
+/**
+ * Cumulative income/spending timeline. Investments/savings are ignored.
+ * Out-of-range amounts clamp onto begin/end (after-end also folds into as-of while active).
+ */
+const buildBudgetTimeline = (
+  begin: DateString,
+  end: DateString,
+  entries: readonly { date: DateString; type: CategoryType; amount: number }[],
+  asOf: DateString = end
+): BudgetTimeline => {
+  const pointEnd = asOf < begin ? begin : asOf > end ? end : asOf;
+  const byDate = new Map<DateString, Partial<Record<CategoryType, number>>>();
+
+  for (const entry of entries) {
+    if (entry.type === CategoryType.Investments || entry.type === CategoryType.Savings) continue;
+
+    let date = entry.date;
+    const afterBudget = date > end;
+    if (date < begin) date = begin;
+    else if (afterBudget) date = end;
+
+    if (date > pointEnd) {
+      if (!afterBudget) continue;
+      date = pointEnd;
+    }
+
+    const cur = byDate.get(date) ?? {};
+    byDate.set(date, { ...cur, [entry.type]: (cur[entry.type] ?? 0) + entry.amount });
+  }
+
+  const points: BudgetTimelinePoint[] = [];
+  let cumulative: BudgetTimelineAmounts = {};
+  const seen = new Set<CategoryType>();
+
+  const push = (date: DateString) => {
+    points.push({ date, amounts: cumulative, net: timelineNet(cumulative) });
+  };
+
+  push(begin);
+
+  for (const date of [...byDate.keys()].sort((a, b) => a.localeCompare(b))) {
+    const next = { ...cumulative };
+    for (const [type, delta] of Object.entries(byDate.get(date)!)) {
+      if (delta === undefined) continue;
+      const t = type as CategoryType;
+      next[t] = (next[t] ?? 0) + delta;
+      seen.add(t);
+    }
+    cumulative = next;
+    if (date === begin) points[0] = { date, amounts: cumulative, net: timelineNet(cumulative) };
+    else push(date);
+  }
+
+  if (points.at(-1)?.date !== pointEnd) push(pointEnd);
+
+  return {
+    begin,
+    end,
+    points,
+    types: Object.values(CategoryType).filter((t) => seen.has(t)).sort(categorySort((t) => t)),
+  };
 };
 
 export const putTransaction = async (owner: string, trx: Transaction): Promise<Transaction> => {
