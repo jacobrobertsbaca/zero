@@ -1,5 +1,5 @@
 import { Budget } from "src/types/budget/types";
-import { supabase } from "./supabase";
+import { supabase } from "src/utils/supabase/server";
 import { PostgrestFilterBuilder, PostgrestTransformBuilder } from "@supabase/postgrest-js";
 import { HttpError, NotFound } from "./errors";
 import { Category, Period, Recurrence, RecurrenceType } from "src/types/category/types";

@@ -8,7 +8,7 @@ import { isEqual } from "lodash";
 import { useCallback, useState } from "react";
 import { EditActions, EditState } from "src/components/sidebar/edit-actions";
 import { DeleteDialog } from "src/components/delete-dialog";
-import { useBudgetChanges } from "src/hooks/use-api";
+import { deleteBudget, putBudget } from "src/server/actions";
 import { datesDays } from "src/types/utils/methods";
 import { budgetMaxDays, budgetMaxYears } from "../../../types/budget/methods";
 
@@ -21,7 +21,6 @@ type BudgetSidebarProps = {
 };
 
 export const BudgetSidebar = ({ budget, open, onClose, onUpdate, onDelete }: BudgetSidebarProps) => {
-  const { putBudget, deleteBudget } = useBudgetChanges();
   const [deleteModal, setDeleteModal] = useState(false);
   const openModal = useCallback(() => setDeleteModal(true), []);
   const closeModal = useCallback(() => setDeleteModal(false), []);

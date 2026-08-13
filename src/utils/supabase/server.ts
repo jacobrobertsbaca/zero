@@ -1,7 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { unauthorized } from "next/navigation";
 
-export async function createClient() {
+export const supabase = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVER_KEY!);
+
+/** Cookie-based client for when the user session is needed. */
+export async function createUserClient() {
   const cookieStore = await cookies();
 
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVER_KEY!, {
@@ -20,4 +25,12 @@ export async function createClient() {
       },
     },
   });
+}
+
+export async function userId(): Promise<string> {
+  const client = await createUserClient();
+  const { data, error } = await client.auth.getClaims();
+  const id = data?.claims?.sub;
+  if (error || !id) unauthorized();
+  return id;
 }
