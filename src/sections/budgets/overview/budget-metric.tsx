@@ -39,7 +39,7 @@ export function formatMetricLabel(value: number, metric: BudgetMetric) {
   const round = { round: RoundingMode.RoundZero };
   if (metric === BudgetMetric.Net) {
     const amount = moneyFormat(moneyAbs({ amount: value, currency: defaultCurrency }), round);
-    return value >= 0 ? `${amount} gained` : `${amount} lost`;
+    return value >= 0 ? `${amount} up` : `${amount} down`;
   }
   const amount = moneyFormat({ amount: value, currency: defaultCurrency }, round);
   return metric === BudgetMetric.Income ? `${amount} earned` : `${amount} spent`;

@@ -46,7 +46,7 @@
     clip-path: inset(0 100% 0 0);
   }
   to {
-    clip-path: inset(0 0 0 0);
+    clip-path: none;
   }
 }
 
@@ -67,6 +67,7 @@
   .budget-chart-end-dot {
     animation: none;
     opacity: 1;
+    clip-path: none;
   }
 
   .budget-chart-expand {
