@@ -12,6 +12,8 @@ type BudgetSummaryListProps = {
 export const BudgetSummaryList = ({ budget }: BudgetSummaryListProps) => {
   const summary = budgetSummary(budget);
 
+  if (!summary.length) return null;
+
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
       {summary.map((item, index) => (

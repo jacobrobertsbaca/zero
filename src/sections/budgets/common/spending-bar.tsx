@@ -9,9 +9,10 @@ import { cn } from "src/utils";
 type SpendingBarProps = ActualNominal & {
   remaining?: boolean | React.ReactNode;
   warn?: boolean;
+  bar?: boolean;
 };
 
-export const SpendingBar = ({ actual, nominal, remaining, warn }: SpendingBarProps) => {
+export const SpendingBar = ({ actual, nominal, remaining, warn, bar = true }: SpendingBarProps) => {
   const getValue = useCallback(() => {
     if (nominal.amount === 0) return actual.amount > 0 ? 100 : 0;
     if ((nominal.amount < 0 && actual.amount < 0) || (nominal.amount > 0 && actual.amount > 0))
@@ -38,8 +39,8 @@ export const SpendingBar = ({ actual, nominal, remaining, warn }: SpendingBarPro
     })();
 
     return (
-      <span className="text-xs text-muted-foreground">
-        <MoneyText amount={amount} round={RoundingMode.RoundZero} className="font-bold" />
+      <span className="whitespace-nowrap text-[11px] tabular-nums text-muted-foreground">
+        <MoneyText amount={amount} round={RoundingMode.RoundZero} />
         &nbsp;
         {suffix}
       </span>
@@ -54,16 +55,18 @@ export const SpendingBar = ({ actual, nominal, remaining, warn }: SpendingBarPro
   const value = getValue();
 
   return (
-    <div>
-      <Progress value={value} className={cn(warn && shouldWarn && "bg-destructive/20 [&>div]:bg-destructive")} />
-      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2">
-        <span className="text-xs text-muted-foreground">
-          <MoneyText className="font-bold" amount={actual} round={RoundingMode.RoundZero} />
+    <div className="flex min-w-0 shrink-0 flex-col items-end gap-0.5">
+      <div className="flex items-baseline justify-end gap-2">
+        <span className="whitespace-nowrap text-[11px] tabular-nums text-muted-foreground">
+          <MoneyText className="font-medium text-foreground" amount={actual} round={RoundingMode.RoundZero} />
           &nbsp;of&nbsp;
           <MoneyText amount={nominal} round={RoundingMode.RoundZero} />
         </span>
-        {remaining && (typeof remaining === "boolean" ? getRemaining() : remaining)}
       </div>
+      {remaining && (typeof remaining === "boolean" ? getRemaining() : remaining)}
+      {bar && (
+        <Progress value={value} className={cn("mt-1 h-[3px] w-full", warn && shouldWarn && "bg-destructive/20 [&>div]:bg-destructive")} />
+      )}
     </div>
   );
 };

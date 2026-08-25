@@ -4,9 +4,10 @@ import { PageTitle } from "src/components/page-title";
 import { Skeleton } from "src/components/ui/skeleton";
 import { getBudgets } from "src/server/common";
 import { BudgetSummaryList } from "src/sections/budgets/single/budget-summary-list";
+import { CategoryList } from "src/sections/budgets/single/category-list";
 import { dateFormat } from "src/types/utils/methods";
 import { userId } from "src/utils/supabase/server";
-import { BudgetCategories, EditBudgetButton } from "./components";
+import { EditBudgetButton } from "./components";
 
 export function generateStaticParams() {
   return [{ id: "_" }];
@@ -38,12 +39,12 @@ async function BudgetDetails({ params }: { params: Promise<{ id: string }> }) {
         <PageTitle title={budget.name} />
         <EditBudgetButton budget={budget} />
       </div>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
           {`${dateFormat(budget.dates.begin)} — ${dateFormat(budget.dates.end)}`}
         </p>
         <BudgetSummaryList budget={budget} />
-        <BudgetCategories budget={budget} />
+        <CategoryList budget={budget} />
       </div>
     </>
   );

@@ -45,12 +45,38 @@ const ChartContainer = React.forwardRef<
 >(({ id, className, children, config, ...props }, ref) => {
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
+  const shellRef = React.useRef<HTMLDivElement>(null)
+  const [size, setSize] = React.useState<{ width: number; height: number } | null>(null)
+
+  React.useLayoutEffect(() => {
+    const el = shellRef.current
+    if (!el) return
+    const sync = () => {
+      /* Prefer layout size over getBoundingClientRect so overflow-clipped
+       * parents (budget card expand) don't report a growing visible box and
+       * make the chart look like it's scaling down into place. */
+      const width = Math.round(el.offsetWidth)
+      const height = Math.round(el.offsetHeight)
+      if (width <= 0 || height <= 0) return
+      setSize((prev) =>
+        prev && prev.width === width && prev.height === height ? prev : { width, height }
+      )
+    }
+    sync()
+    const ro = new ResizeObserver(sync)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   return (
     <ChartContext.Provider value={{ config }}>
       <div
         data-chart={chartId}
-        ref={ref}
+        ref={(node) => {
+          shellRef.current = node
+          if (typeof ref === "function") ref(node)
+          else if (ref) ref.current = node
+        }}
         className={cn(
           "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
           className
@@ -58,9 +84,20 @@ const ChartContainer = React.forwardRef<
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        {size ? (
+          <div
+            className="recharts-responsive-container h-full w-full overflow-visible"
+            style={{ width: size.width, height: size.height, minWidth: 0, overflow: "visible" }}
+          >
+            {React.Children.map(children, (child) => {
+              if (!React.isValidElement(child)) return child
+              return React.cloneElement(child as React.ReactElement<{ width?: number; height?: number }>, {
+                width: size.width,
+                height: size.height,
+              })
+            })}
+          </div>
+        ) : null}
       </div>
     </ChartContext.Provider>
   )

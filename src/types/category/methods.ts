@@ -196,7 +196,7 @@ export const categoryDefault = (budget?: Budget): Category => {
     type: CategoryType.Income,
     recurrence: { type: RecurrenceType.None, amount: moneyZero() },
     periods: [],
-    rollover: { loss: RolloverMode.Average, surplus: RolloverMode.Average }
+    rollover: { loss: RolloverMode.None, surplus: RolloverMode.None }
   };
   if (!budget) return category;
   return onRecurrence(budget, category, category.recurrence);

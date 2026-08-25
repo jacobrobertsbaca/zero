@@ -3,7 +3,18 @@ import { categoryActual, categoryNominal, categorySort, categoryTitle } from "..
 import { CategoryType } from "../category/types";
 import { moneySub, moneySum, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
-import { Budget, BudgetStatus, BudgetSummary, CategorySummary } from "./types";
+import {
+  Budget,
+  BudgetStatus,
+  BudgetSummary,
+  BudgetTimeline,
+  BudgetTimelineAmounts,
+  BudgetTimelinePoint,
+  CategorySummary,
+  CumulativeTimeline,
+  CumulativeTimelinePoint,
+} from "./types";
+import { DateString } from "../utils/types";
 import { asDate, asDateString } from "../utils/methods";
 
 const computeLeftovers = (
@@ -79,3 +90,136 @@ export const budgetCompare = (a: Budget, b: Budget): number => {
 
 export const budgetMaxYears = (): number => 10;
 export const budgetMaxDays = (): number => 365 * budgetMaxYears();
+
+/* ================================================================================================================= *
+ * Timeline                                                                                                          *
+ * ================================================================================================================= */
+
+const timelineNet = (amounts: BudgetTimelineAmounts) =>
+  (amounts[CategoryType.Income] ?? 0) - (amounts[CategoryType.Spending] ?? 0);
+
+/** Latest date that should appear as data on an in-progress budget timeline. */
+export const timelineAsOf = (
+  begin: DateString,
+  end: DateString,
+  today: DateString = asDateString(new Date())
+): DateString => {
+  if (end < begin) return begin;
+  if (today < begin) return begin;
+  if (today < end) return today;
+  return end;
+};
+
+/** Clamp a transaction date onto the visible timeline, or skip it. */
+export const timelineBucketDate = (
+  date: DateString,
+  begin: DateString,
+  end: DateString,
+  pointEnd: DateString
+): DateString | null => {
+  const afterBudget = date > end;
+  if (date < begin) date = begin;
+  else if (afterBudget) date = end;
+
+  if (date > pointEnd) {
+    if (!afterBudget) return null;
+    date = pointEnd;
+  }
+  return date;
+};
+
+/**
+ * Cumulative income/spending timeline. Investments/savings are ignored.
+ * Out-of-range amounts clamp onto begin/end (after-end also folds into as-of while active).
+ */
+export const buildBudgetTimeline = (
+  begin: DateString,
+  end: DateString,
+  entries: readonly { date: DateString; type: CategoryType; amount: number }[],
+  asOf: DateString = end
+): BudgetTimeline => {
+  const pointEnd = asOf < begin ? begin : asOf > end ? end : asOf;
+  const byDate = new Map<DateString, Partial<Record<CategoryType, number>>>();
+
+  for (const entry of entries) {
+    if (entry.type === CategoryType.Investments || entry.type === CategoryType.Savings) continue;
+
+    const date = timelineBucketDate(entry.date, begin, end, pointEnd);
+    if (!date) continue;
+
+    const cur = byDate.get(date) ?? {};
+    byDate.set(date, { ...cur, [entry.type]: (cur[entry.type] ?? 0) + entry.amount });
+  }
+
+  const points: BudgetTimelinePoint[] = [];
+  let cumulative: BudgetTimelineAmounts = {};
+  const seen = new Set<CategoryType>();
+
+  const push = (date: DateString) => {
+    points.push({ date, amounts: cumulative, net: timelineNet(cumulative) });
+  };
+
+  push(begin);
+
+  for (const date of [...byDate.keys()].sort((a, b) => a.localeCompare(b))) {
+    const next = { ...cumulative };
+    for (const [type, delta] of Object.entries(byDate.get(date)!)) {
+      if (delta === undefined) continue;
+      const t = type as CategoryType;
+      next[t] = (next[t] ?? 0) + delta;
+      seen.add(t);
+    }
+    cumulative = next;
+    if (date === begin) points[0] = { date, amounts: cumulative, net: timelineNet(cumulative) };
+    else push(date);
+  }
+
+  if (points.at(-1)?.date !== pointEnd) push(pointEnd);
+
+  return {
+    begin,
+    end,
+    points,
+    types: Object.values(CategoryType)
+      .filter((t) => seen.has(t))
+      .sort(categorySort((t) => t)),
+  };
+};
+
+/**
+ * Cumulative amount series for a single category. Same date clamping as {@link buildBudgetTimeline}.
+ */
+export const buildCumulativeSeries = (
+  begin: DateString,
+  end: DateString,
+  entries: readonly { date: DateString; amount: number }[],
+  asOf: DateString = end
+): CumulativeTimeline => {
+  const pointEnd = asOf < begin ? begin : asOf > end ? end : asOf;
+  const byDate = new Map<DateString, number>();
+
+  for (const entry of entries) {
+    const date = timelineBucketDate(entry.date, begin, end, pointEnd);
+    if (!date) continue;
+    byDate.set(date, (byDate.get(date) ?? 0) + entry.amount);
+  }
+
+  const points: CumulativeTimelinePoint[] = [];
+  let value = 0;
+
+  const push = (date: DateString) => {
+    points.push({ date, value });
+  };
+
+  push(begin);
+
+  for (const date of [...byDate.keys()].sort((a, b) => a.localeCompare(b))) {
+    value += byDate.get(date)!;
+    if (date === begin) points[0] = { date, value };
+    else push(date);
+  }
+
+  if (points.at(-1)?.date !== pointEnd) push(pointEnd);
+
+  return { begin, end, points };
+};

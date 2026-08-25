@@ -11,7 +11,7 @@ async function BudgetTimeline({ budgetId }: { budgetId: string }) {
   return (
     <div className="budget-chart-expand">
       <div className="budget-chart-expand-inner">
-        <div className="h-[148px] w-full pt-4 pb-1">
+        <div className="h-[148px] w-full overflow-visible pt-4 pb-1">
           <BudgetTimelineChart timeline={timeline} />
         </div>
       </div>

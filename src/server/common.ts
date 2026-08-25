@@ -1,11 +1,11 @@
-import { Budget, BudgetTimeline, BudgetTimelineAmounts, BudgetTimelinePoint } from "src/types/budget/types";
-import { budgetCompare } from "src/types/budget/methods";
+import { Budget, BudgetTimeline, CumulativeTimeline } from "src/types/budget/types";
+import { budgetCompare, buildBudgetTimeline, buildCumulativeSeries, timelineAsOf } from "src/types/budget/methods";
 import { supabase } from "src/utils/supabase/server";
 import { PostgrestFilterBuilder, PostgrestTransformBuilder } from "@supabase/postgrest-js";
 import { HttpError, NotFound } from "./errors";
 import { Category, CategoryType, Period, Recurrence, RecurrenceType } from "src/types/category/types";
 import { defaultCurrency } from "src/types/money/methods";
-import { categoryNominal, categorySort, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
+import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
 import type {
@@ -19,7 +19,6 @@ import type {
 } from "src/types/transaction/types";
 import { transactionCompare } from "src/types/transaction/methods";
 import { DateString } from "src/types/utils/types";
-import { asDateString } from "src/types/utils/methods";
 
 /* ================================================================================================================= *
  * Utility Functions                                                                                                 *
@@ -407,82 +406,33 @@ export const getBudgetTimeline = async (owner: string, budgetId: string): Promis
   return buildBudgetTimeline(begin, end, entries, asOf);
 };
 
-const timelineNet = (amounts: BudgetTimelineAmounts) =>
-  (amounts[CategoryType.Income] ?? 0) - (amounts[CategoryType.Spending] ?? 0);
-
-/** Latest date that should appear as data on an in-progress budget timeline. */
-const timelineAsOf = (
-  begin: DateString,
-  end: DateString,
-  today: DateString = asDateString(new Date())
-): DateString => {
-  if (end < begin) return begin;
-  if (today < begin) return begin;
-  if (today < end) return today;
-  return end;
-};
-
 /**
- * Cumulative income/spending timeline. Investments/savings are ignored.
- * Out-of-range amounts clamp onto begin/end (after-end also folds into as-of while active).
+ * Builds a cumulative transaction series for one category.
+ * Intended to be fetched independently (e.g. behind Suspense) per category.
  */
-const buildBudgetTimeline = (
+export const getCategoryTimeline = async (
+  owner: string,
+  budgetId: string,
+  categoryId: string,
   begin: DateString,
-  end: DateString,
-  entries: readonly { date: DateString; type: CategoryType; amount: number }[],
-  asOf: DateString = end
-): BudgetTimeline => {
-  const pointEnd = asOf < begin ? begin : asOf > end ? end : asOf;
-  const byDate = new Map<DateString, Partial<Record<CategoryType, number>>>();
+  end: DateString
+): Promise<CumulativeTimeline> => {
+  const asOf = timelineAsOf(begin, end);
+  const transactions = await wrap(
+    supabase
+      .from("transactions")
+      .select("date, amount")
+      .eq("owner", owner)
+      .eq("budget", budgetId)
+      .eq("category", categoryId)
+  );
 
-  for (const entry of entries) {
-    if (entry.type === CategoryType.Investments || entry.type === CategoryType.Savings) continue;
+  const entries = transactions.map((row) => ({
+    date: row.date as DateString,
+    amount: row.amount as number,
+  }));
 
-    let date = entry.date;
-    const afterBudget = date > end;
-    if (date < begin) date = begin;
-    else if (afterBudget) date = end;
-
-    if (date > pointEnd) {
-      if (!afterBudget) continue;
-      date = pointEnd;
-    }
-
-    const cur = byDate.get(date) ?? {};
-    byDate.set(date, { ...cur, [entry.type]: (cur[entry.type] ?? 0) + entry.amount });
-  }
-
-  const points: BudgetTimelinePoint[] = [];
-  let cumulative: BudgetTimelineAmounts = {};
-  const seen = new Set<CategoryType>();
-
-  const push = (date: DateString) => {
-    points.push({ date, amounts: cumulative, net: timelineNet(cumulative) });
-  };
-
-  push(begin);
-
-  for (const date of [...byDate.keys()].sort((a, b) => a.localeCompare(b))) {
-    const next = { ...cumulative };
-    for (const [type, delta] of Object.entries(byDate.get(date)!)) {
-      if (delta === undefined) continue;
-      const t = type as CategoryType;
-      next[t] = (next[t] ?? 0) + delta;
-      seen.add(t);
-    }
-    cumulative = next;
-    if (date === begin) points[0] = { date, amounts: cumulative, net: timelineNet(cumulative) };
-    else push(date);
-  }
-
-  if (points.at(-1)?.date !== pointEnd) push(pointEnd);
-
-  return {
-    begin,
-    end,
-    points,
-    types: Object.values(CategoryType).filter((t) => seen.has(t)).sort(categorySort((t) => t)),
-  };
+  return buildCumulativeSeries(begin, end, entries, asOf);
 };
 
 export const putTransaction = async (owner: string, trx: Transaction): Promise<Transaction> => {
