@@ -1,5 +1,5 @@
-import { Budget, BudgetTimeline, CumulativeTimeline } from "src/types/budget/types";
-import { budgetCompare, buildBudgetTimeline, buildCumulativeSeries, timelineAsOf } from "src/types/budget/methods";
+import { Budget, BudgetTimeline } from "src/types/budget/types";
+import { budgetCompare, buildBudgetTimeline, timelineAsOf } from "src/types/budget/methods";
 import { supabase } from "src/utils/supabase/server";
 import { PostgrestFilterBuilder, PostgrestTransformBuilder } from "@supabase/postgrest-js";
 import { HttpError, NotFound } from "./errors";
@@ -404,35 +404,6 @@ export const getBudgetTimeline = async (owner: string, budgetId: string): Promis
   });
 
   return buildBudgetTimeline(begin, end, entries, asOf);
-};
-
-/**
- * Builds a cumulative transaction series for one category.
- * Intended to be fetched independently (e.g. behind Suspense) per category.
- */
-export const getCategoryTimeline = async (
-  owner: string,
-  budgetId: string,
-  categoryId: string,
-  begin: DateString,
-  end: DateString
-): Promise<CumulativeTimeline> => {
-  const asOf = timelineAsOf(begin, end);
-  const transactions = await wrap(
-    supabase
-      .from("transactions")
-      .select("date, amount")
-      .eq("owner", owner)
-      .eq("budget", budgetId)
-      .eq("category", categoryId)
-  );
-
-  const entries = transactions.map((row) => ({
-    date: row.date as DateString,
-    amount: row.amount as number,
-  }));
-
-  return buildCumulativeSeries(begin, end, entries, asOf);
 };
 
 export const putTransaction = async (owner: string, trx: Transaction): Promise<Transaction> => {

@@ -5,7 +5,7 @@ import { BudgetTimeline } from "src/types/budget/types";
 import { TimelineChart } from "../common/timeline-chart";
 import { BudgetMetric, formatMetricLabel, metricValue, useBudgetMetric } from "./budget-metric";
 
-export function BudgetTimelineChart({ timeline, className }: { timeline: BudgetTimeline; className?: string }) {
+export function BudgetTimelineChart({ timeline }: { timeline: BudgetTimeline }) {
   const metric = useBudgetMetric();
   const mono = metric !== BudgetMetric.Net;
   const { begin, end, points } = timeline;
@@ -20,7 +20,6 @@ export function BudgetTimelineChart({ timeline, className }: { timeline: BudgetT
       begin={begin}
       end={end}
       points={series}
-      className={className}
       mono={mono}
       formatLabel={(value) => formatMetricLabel(value, metric)}
       resetKey={metric}

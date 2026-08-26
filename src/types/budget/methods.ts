@@ -11,8 +11,6 @@ import {
   BudgetTimelineAmounts,
   BudgetTimelinePoint,
   CategorySummary,
-  CumulativeTimeline,
-  CumulativeTimelinePoint,
 } from "./types";
 import { DateString } from "../utils/types";
 import { asDate, asDateString } from "../utils/methods";
@@ -54,10 +52,10 @@ export const budgetSummary = (budget: Budget): BudgetSummary => {
 
   if (leftovers.actual.amount !== 0 || leftovers.nominal.amount !== 0) {
     summariesList.push({
-      title: "Leftovers",
+      title: "Net",
       actual: leftovers.actual,
-      nominal: leftovers.nominal
-    })
+      nominal: leftovers.nominal,
+    });
   }
 
   return summariesList;
@@ -153,7 +151,6 @@ export const buildBudgetTimeline = (
 
   const points: BudgetTimelinePoint[] = [];
   let cumulative: BudgetTimelineAmounts = {};
-  const seen = new Set<CategoryType>();
 
   const push = (date: DateString) => {
     points.push({ date, amounts: cumulative, net: timelineNet(cumulative) });
@@ -167,55 +164,9 @@ export const buildBudgetTimeline = (
       if (delta === undefined) continue;
       const t = type as CategoryType;
       next[t] = (next[t] ?? 0) + delta;
-      seen.add(t);
     }
     cumulative = next;
     if (date === begin) points[0] = { date, amounts: cumulative, net: timelineNet(cumulative) };
-    else push(date);
-  }
-
-  if (points.at(-1)?.date !== pointEnd) push(pointEnd);
-
-  return {
-    begin,
-    end,
-    points,
-    types: Object.values(CategoryType)
-      .filter((t) => seen.has(t))
-      .sort(categorySort((t) => t)),
-  };
-};
-
-/**
- * Cumulative amount series for a single category. Same date clamping as {@link buildBudgetTimeline}.
- */
-export const buildCumulativeSeries = (
-  begin: DateString,
-  end: DateString,
-  entries: readonly { date: DateString; amount: number }[],
-  asOf: DateString = end
-): CumulativeTimeline => {
-  const pointEnd = asOf < begin ? begin : asOf > end ? end : asOf;
-  const byDate = new Map<DateString, number>();
-
-  for (const entry of entries) {
-    const date = timelineBucketDate(entry.date, begin, end, pointEnd);
-    if (!date) continue;
-    byDate.set(date, (byDate.get(date) ?? 0) + entry.amount);
-  }
-
-  const points: CumulativeTimelinePoint[] = [];
-  let value = 0;
-
-  const push = (date: DateString) => {
-    points.push({ date, value });
-  };
-
-  push(begin);
-
-  for (const date of [...byDate.keys()].sort((a, b) => a.localeCompare(b))) {
-    value += byDate.get(date)!;
-    if (date === begin) points[0] = { date, value };
     else push(date);
   }
 

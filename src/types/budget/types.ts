@@ -46,20 +46,6 @@ export type BudgetTimeline = Immutable<{
   begin: DateString;
   end: DateString;
   points: BudgetTimelinePoint[];
-  /** Category types that appear in this budget's timeline, in display order. */
-  types: CategoryType[];
-}>;
-
-export type CumulativeTimelinePoint = Immutable<{
-  date: DateString;
-  /** Cumulative amount in minor currency units. */
-  value: number;
-}>;
-
-export type CumulativeTimeline = Immutable<{
-  begin: DateString;
-  end: DateString;
-  points: CumulativeTimelinePoint[];
 }>;
 
 export enum BudgetStatus {
