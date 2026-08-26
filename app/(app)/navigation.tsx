@@ -33,9 +33,8 @@ function SidebarTriggerButton({
       aria-expanded={open}
       onClick={onClick}
       className={cn(
-        "flex size-7 items-center justify-center rounded-md transition-colors cursor-default",
+        "flex size-7 items-center justify-center rounded-md text-foreground transition-colors cursor-default hover:bg-foreground/5",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-        open ? "text-white hover:bg-white/10" : "text-foreground hover:bg-foreground/5",
         className
       )}
     >
@@ -95,7 +94,7 @@ function DesktopHoverSidebar() {
       <div
         inert={!open ? true : undefined}
         className={cn(
-          "absolute inset-0 flex flex-col border-r border-sidebar-border bg-sidebar shadow-2xl shadow-black/40 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-opacity",
+          "absolute inset-0 flex flex-col border-r border-sidebar-border bg-sidebar shadow-[4px_0_24px_-4px_rgba(0,0,0,0.08)] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-opacity",
           open
             ? "translate-x-0 opacity-100"
             : "pointer-events-none -translate-x-1.5 opacity-0 motion-reduce:translate-x-0"
