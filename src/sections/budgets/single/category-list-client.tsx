@@ -4,13 +4,30 @@ import { Plus } from "lucide-react";
 import { createContext, useCallback, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import { produce } from "immer";
+import { MoneyText } from "src/components/money-text";
 import { TimelineChart } from "../common/timeline-chart";
-import { SpendingBar } from "../common/spending-bar";
 import { CategorySidebar } from "./category-sidebar";
 import { categoryActual, categoryDefault, categoryNominal, categoryTitle } from "src/types/category/methods";
-import { Category, CategoryType } from "src/types/category/types";
+import { Category } from "src/types/category/types";
 import { Budget, CumulativeTimeline } from "src/types/budget/types";
+import { moneyAbs, moneyFactor, moneySub, RoundingMode } from "src/types/money/methods";
+import { Money } from "src/types/money/types";
 import { cn } from "src/utils";
+
+function RemainingLabel({ actual, nominal }: { actual: Money; nominal: Money }) {
+  const delta = moneySub(nominal, actual);
+  const left = nominal.amount >= 0 ? delta.amount >= 0 : delta.amount < 0;
+  const amount =
+    nominal.amount >= 0 ? moneyAbs(delta) : moneyFactor(moneyAbs(delta), -1);
+
+  return (
+    <span className="whitespace-nowrap text-[11px] tabular-nums text-muted-foreground">
+      <MoneyText amount={amount} round={RoundingMode.RoundZero} />
+      &nbsp;
+      {left ? "left" : "over"}
+    </span>
+  );
+}
 
 const CategoryClickContext = createContext<(category: Category) => void>(() => {});
 
@@ -56,13 +73,12 @@ export function CategoryCard({ category, children }: { category: Category; child
           <div className="truncate text-sm font-medium">{category.name}</div>
           <div className="text-xs text-muted-foreground">{categoryTitle(category.type)}</div>
         </div>
-        <SpendingBar
-          actual={actual}
-          nominal={nominal}
-          remaining
-          warn={category.type !== CategoryType.Income}
-          bar={false}
-        />
+        <div className="flex min-w-0 shrink-0 flex-col items-end gap-0.5">
+          <span className="whitespace-nowrap text-[11px] tabular-nums font-medium text-foreground">
+            <MoneyText amount={actual} round={RoundingMode.RoundZero} />
+          </span>
+          <RemainingLabel actual={actual} nominal={nominal} />
+        </div>
       </div>
       <div className="mt-1 w-full px-3 pb-3">
         <div className="h-10 w-full overflow-visible">{children}</div>
