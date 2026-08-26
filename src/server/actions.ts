@@ -5,14 +5,20 @@ import { z } from "zod";
 import {
   deleteBudget as deleteBudgetRecord,
   deleteCategory as deleteCategoryRecord,
+  deleteTransaction as deleteTransactionRecord,
+  getBudgets as getBudgetsRecord,
   putBudget as putBudgetRecord,
   putCategory as putCategoryRecord,
+  putTransaction as putTransactionRecord,
+  searchTransactions as searchTransactionsRecord,
 } from "src/server/common";
 import { budgetMaxDays, budgetMaxYears } from "src/types/budget/methods";
 import { BudgetSchema } from "src/types/budget/schema";
 import type { Budget } from "src/types/budget/types";
 import { CategorySchema } from "src/types/category/schema";
 import type { Category } from "src/types/category/types";
+import { TransactionCursorSchema, TransactionQuerySchema, TransactionSchema } from "src/types/transaction/schema";
+import type { Transaction, TransactionCursor, TransactionPage, TransactionQuery } from "src/types/transaction/types";
 import { datesDays } from "src/types/utils/methods";
 import { userId } from "src/utils/supabase/server";
 
@@ -21,9 +27,20 @@ const PutBudgetSchema = BudgetSchema.omit({ categories: true }).refine(
   `Budget duration cannot exceed ${budgetMaxYears()} years`
 );
 
+const SearchTransactionsSchema = z.object({
+  model: TransactionQuerySchema,
+  cursor: TransactionCursorSchema.optional(),
+  limit: z.number().min(10).max(100).default(25),
+});
+
 const revalidateBudget = (budgetId: string) => {
   revalidatePath("/budgets");
   revalidatePath(`/budgets/${budgetId}`);
+};
+
+const revalidateTransaction = (budgetId: string) => {
+  revalidatePath("/transactions");
+  revalidateBudget(budgetId);
 };
 
 export async function putBudget(budget: Omit<Budget, "categories">): Promise<Budget> {
@@ -56,4 +73,36 @@ export async function deleteCategory(budgetId: string, categoryId: string): Prom
   const owner = await userId();
   await deleteCategoryRecord(owner, bid, cid);
   revalidateBudget(bid);
+}
+
+export async function getBudgets(): Promise<Budget[]> {
+  const owner = await userId();
+  return getBudgetsRecord(owner);
+}
+
+export async function searchTransactions(
+  model: TransactionQuery,
+  cursor?: TransactionCursor,
+  limit = 25
+): Promise<TransactionPage> {
+  const parsed = SearchTransactionsSchema.parse({ model, cursor, limit });
+  const owner = await userId();
+  return searchTransactionsRecord(owner, parsed.model, parsed.cursor, parsed.limit);
+}
+
+export async function putTransaction(transaction: Transaction): Promise<Transaction> {
+  const parsed = TransactionSchema.parse(transaction);
+  const owner = await userId();
+  const result = await putTransactionRecord(owner, parsed);
+  revalidateTransaction(transaction.budget);
+  revalidateTransaction(result.budget);
+  return result;
+}
+
+export async function deleteTransaction(transaction: Transaction): Promise<void> {
+  const id = z.string().min(1).parse(transaction.id);
+  const budgetId = z.string().min(1).parse(transaction.budget);
+  const owner = await userId();
+  await deleteTransactionRecord(owner, id);
+  revalidateTransaction(budgetId);
 }

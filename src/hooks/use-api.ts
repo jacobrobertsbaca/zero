@@ -1,41 +1,31 @@
 import { produce, Draft } from "immer";
 import useSWR, { useSWRConfig } from "swr";
-import { useAuth } from "./use-auth";
-import type { Budget } from "src/types/budget/types";
 import { useCallback, useMemo } from "react";
-import { Category } from "src/types/category/types";
+import {
+  deleteTransaction as deleteTransactionAction,
+  getBudgets,
+  putTransaction as putTransactionAction,
+  searchTransactions,
+} from "src/server/actions";
+import type { Budget } from "src/types/budget/types";
 import { Transaction, TransactionPage, TransactionQuery } from "src/types/transaction/types";
-import { http } from "src/utils/http";
 import useSWRInfinite from "swr/infinite";
 import { isEqual } from "lodash";
 import { toast } from "sonner";
 
-const fetcher = (token?: string) => (path: string) => http(path, "GET", { token }) as any;
-
 /* ================================================================================================================= *
- * API Paths & Cache Keys                                                                                            *
+ * Cache Keys                                                                                                        *
  * ================================================================================================================= */
 
-const ApiBudgets = "/budgets";
-const ApiBudgetsId = (budget: string) => `${ApiBudgets}/${budget}`;
-const ApiBudgetsCategory = (budget: string) => `${ApiBudgetsId(budget)}/categories`;
-const ApiBudgetsCategoryId = (budget: string, category: string) => `${ApiBudgetsCategory(budget)}/${category}`;
-const ApiTransactions = "/transactions";
-const ApiTransactionsId = (trx: string) => `${ApiTransactions}/${trx}`;
-const ApiTransactionsSearch = "/transactions/search";
+export const BudgetsKey = "budgets";
+export const TransactionsSearchKey = "transactions/search";
 
 /* ================================================================================================================= *
- * API Methods                                                                                                       *
+ * Budgets                                                                                                           *
  * ================================================================================================================= */
 
 export const useBudgets = () => {
-  const { token } = useAuth();
-  const { mutate } = useSWRConfig();
-  const { data, error, isLoading } = useSWR<readonly Budget[]>(token ? ApiBudgets : null, async (path: string) => {
-    const result: readonly Budget[] = await fetcher(token)(path);
-    result.forEach((b) => mutate(ApiBudgetsId(b.id), b, { revalidate: false }));
-    return result;
-  });
+  const { data, error, isLoading } = useSWR<readonly Budget[]>(BudgetsKey, () => getBudgets());
   return {
     budgets: data,
     error,
@@ -43,102 +33,9 @@ export const useBudgets = () => {
   };
 };
 
-export const useBudget = (id: string) => {
-  const { token } = useAuth();
-  const { data, error, isLoading } = useSWR<Budget>(token ? ApiBudgetsId(id) : null, fetcher(token));
-  return {
-    budget: data,
-    error,
-    isLoading,
-  };
-};
-
-export const useBudgetChanges = () => {
-  const { token } = useAuth();
-  const { mutate } = useSWRConfig();
-
-  const putBudget = useCallback(
-    async (budget: Budget) => {
-      await mutate(
-        ApiBudgetsId(budget.id),
-        async () => {
-          budget = await http(ApiBudgets, "PUT", { token, data: { budget } });
-          await mutate(ApiBudgets);
-          return budget;
-        },
-        { revalidate: false }
-      );
-      return budget;
-    },
-    [token, mutate]
-  );
-
-  const deleteBudget = useCallback(
-    async (budget: Budget) => {
-      await mutate(
-        ApiBudgetsId(budget.id),
-        async () => {
-          await http(ApiBudgetsId(budget.id), "DELETE", { token });
-          await mutate(ApiBudgets);
-          await mutate(ApiTransactions);
-          return undefined;
-        },
-        { revalidate: false }
-      );
-    },
-    [token, mutate]
-  );
-
-  return { putBudget, deleteBudget };
-};
-
-export const useCategoryChanges = () => {
-  const { token } = useAuth();
-  const { mutate } = useSWRConfig();
-
-  const putCategory = useCallback(
-    async (budget: string, category: Category) => {
-      await mutate(
-        ApiBudgetsId(budget),
-        async (existing?: Budget) => {
-          category = await http(ApiBudgetsCategory(budget), "PUT", { token, data: { category } });
-          await mutate(ApiBudgets);
-          if (!existing) return undefined;
-          return produce(existing, (draft) => {
-            const index = draft.categories.findIndex((c) => c.id === category.id);
-            if (index >= 0) draft.categories[index] = category as Draft<Category>;
-            else draft.categories.push(category as Draft<Category>);
-          });
-        },
-        { revalidate: false }
-      );
-      return category;
-    },
-    [token, mutate]
-  );
-
-  const deleteCategory = useCallback(
-    async (budget: string, category: string) => {
-      await mutate(
-        ApiBudgetsId(budget),
-        async (existing?: Budget) => {
-          await http(ApiBudgetsCategoryId(budget, category), "DELETE", { token });
-          await mutate(ApiBudgets);
-          await mutate(ApiTransactions);
-          if (!existing) return undefined;
-          return produce(existing, (draft) => {
-            const index = draft.categories.findIndex((c) => c.id === category);
-            if (index >= 0) draft.categories.splice(index, 1);
-          });
-        },
-        { revalidate: false }
-      );
-    },
-    [token, mutate]
-  );
-
-  return { putCategory, deleteCategory };
-};
+/* ================================================================================================================= *
+ * Transactions                                                                                                      *
+ * ================================================================================================================= */
 
 /**
  * Returns a copy of the transaction cache with one transaction modified.
@@ -191,17 +88,13 @@ const mutateTransactions = (
 };
 
 export const useTransactionsSearch = (query: TransactionQuery) => {
-  const { token } = useAuth();
   const { mutate: invalidate } = useSWRConfig();
 
   /** Every page key has the format: [TAG, CURSOR, QUERY_MODEL] */
   const { data, isValidating, isLoading, setSize, mutate, error } = useSWRInfinite(
-    (_, previousPage?: TransactionPage) => [ApiTransactionsSearch, previousPage?.cursor, query],
-    ([_, cursor, model]) =>
-      http<TransactionPage>(ApiTransactionsSearch, "POST", {
-        token,
-        data: { cursor, model },
-      }),
+    (_, previousPage?: TransactionPage) => [TransactionsSearchKey, previousPage?.cursor, query],
+    ([_, cursor, model]: [string, TransactionPage["cursor"], TransactionQuery]) =>
+      searchTransactions(model, cursor ?? undefined),
     { keepPreviousData: true }
   );
 
@@ -218,7 +111,7 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
           (key) => {
             if (!Array.isArray(key)) return false;
             if (key.length !== 3) return false;
-            if (key[0] !== ApiTransactionsSearch) return false;
+            if (key[0] !== TransactionsSearchKey) return false;
             if (isEqual(key[2], query)) return false;
             return true;
           },
@@ -228,8 +121,7 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
       ];
 
       if (budget) {
-        promises.push(invalidate(ApiBudgets));
-        promises.push(invalidate(ApiBudgetsId(budget)));
+        promises.push(invalidate(BudgetsKey));
       }
 
       return Promise.all(promises);
@@ -249,27 +141,20 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
   const fetchMore = useMemo(() => {
     if (!canFetchNext) return undefined;
     return () => {
-      console.log("Fetching!!");
       setSize((size) => size + 1);
     };
   }, [canFetchNext, setSize]);
 
-  const putTransaction = useCallback(
+  /** Apply a saved transaction to the local SWR cache (server write already happened). */
+  const applyPut = useCallback(
     async (transaction: Transaction) => {
-      await mutate(
-        async (cache) => {
-          transaction = await http(ApiTransactions, "PUT", { token, data: { transaction } });
-
-          // Changing a transaction may affect what is shown for its budget, so we must invalidate those.
-          await invalidateQueries(transaction.budget);
-          return mutateTransactions(cache, transaction.id, transaction);
-        },
-        { revalidate: false }
-      );
+      await mutate((cache) => mutateTransactions(cache, transaction.id, transaction), { revalidate: false });
+      await invalidateQueries(transaction.budget);
     },
-    [mutate, token, invalidateQueries]
+    [mutate, invalidateQueries]
   );
 
+  /** Optimistically stars a transaction and persists via server action. */
   const starTransaction = useCallback(
     async (transaction: Transaction, starred: boolean) => {
       const newTransaction = produce(transaction, (draft) => {
@@ -278,8 +163,7 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
 
       await mutate(
         async (cache) => {
-          /* Note: starring a transaction shouldn't change any other app state, so no need to invalidate them */
-          http(ApiTransactions, "PUT", { token, data: { transaction: newTransaction } }).catch((err) => {
+          putTransactionAction(newTransaction).catch((err) => {
             console.error(err);
             toast.error(`Couldn't ${newTransaction.starred ? "star" : "unstar"} transaction`);
             mutate((cache) => mutateTransactions(cache, transaction.id, () => transaction));
@@ -290,23 +174,16 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
         { revalidate: false }
       );
     },
-    [invalidateQueries, mutate, token]
+    [invalidateQueries, mutate]
   );
 
-  const deleteTransaction = useCallback(
+  /** Apply a deleted transaction to the local SWR cache (server write already happened). */
+  const applyDelete = useCallback(
     async (transaction: Transaction) => {
-      await mutate(
-        async (cache) => {
-          await http(ApiTransactionsId(transaction.id), "DELETE", { token });
-
-          // Deleting a transaction may affect what is shown for its budget, so we must invalidate those.
-          await invalidateQueries(transaction.budget);
-          return mutateTransactions(cache, transaction.id, () => undefined);
-        },
-        { revalidate: false }
-      );
+      await mutate((cache) => mutateTransactions(cache, transaction.id, () => undefined), { revalidate: false });
+      await invalidateQueries(transaction.budget);
     },
-    [mutate, token, invalidateQueries]
+    [mutate, invalidateQueries]
   );
 
   return {
@@ -322,14 +199,14 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
     /** `true` when there is an ongoing request and data is not loaded yet */
     isValidating,
 
-    /** Upserts a transaction */
-    putTransaction,
+    /** Apply an upserted transaction to the cache */
+    applyPut,
 
     /** Optimistically stars a transaction */
     starTransaction,
 
-    /** Deletes a transaction */
-    deleteTransaction,
+    /** Apply a deleted transaction to the cache */
+    applyDelete,
 
     /** Fetches the next page of transaction data. `undefined` if fetching is currently not allowed */
     fetchMore,
