@@ -4,6 +4,8 @@
 
 ## Getting started
 
-- Recommended `node.js 16.14` and `npm 6+`. (suggestion v16.15.0)
+> Requires `[node v22+](https://nodejs.org/en)`. For local Supabase, [Docker Desktop](https://docs.docker.com/desktop/).
+
 - Install dependencies: `npm install`
 - Start the project: `npm run dev`
+- Use `user@example.com` and `password` to login locally. See the [Supabase docs]() for how to manage the local database.
