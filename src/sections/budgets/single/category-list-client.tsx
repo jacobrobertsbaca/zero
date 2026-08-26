@@ -7,7 +7,7 @@ import { produce } from "immer";
 import { MoneyText } from "src/components/money-text";
 import { CategorySidebar } from "./category-sidebar";
 import { categoryActual, categoryDefault, categoryNominal, categoryTitle } from "src/types/category/methods";
-import { Category, CategoryType } from "src/types/category/types";
+import { Category } from "src/types/category/types";
 import { Budget } from "src/types/budget/types";
 import { moneyAbs, moneyFactor, moneySub, RoundingMode } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
@@ -28,15 +28,19 @@ function RemainingLabel({ actual, nominal }: { actual: Money; nominal: Money }) 
 }
 
 function utilization(actual: Money, nominal: Money) {
-  const limit = Math.abs(nominal.amount);
-  const used = Math.abs(actual.amount);
-  if (limit === 0) return used > 0 ? 1 : 0;
-  return used / limit;
+  const a = actual.amount;
+  const n = nominal.amount;
+  if (n === 0) return a !== 0 ? 1 : 0;
+  if (a === 0 || Math.sign(a) !== Math.sign(n)) return 0;
+  return Math.min(1, Math.abs(a) / Math.abs(n));
 }
 
-function isOverBudget(category: Category, actual: Money, nominal: Money) {
-  if (category.type !== CategoryType.Spending) return false;
-  return Math.abs(actual.amount) > Math.abs(nominal.amount);
+function isOverBudget(actual: Money, nominal: Money) {
+  const a = actual.amount;
+  const n = nominal.amount;
+  if (n === 0) return a !== 0;
+  if (a === 0 || Math.sign(a) !== Math.sign(n)) return false;
+  return Math.abs(a) > Math.abs(n);
 }
 
 const CategoryClickContext = createContext<(category: Category) => void>(() => {});
@@ -47,7 +51,7 @@ export function CategoryCard({ category }: { category: Category }) {
   const nominal = categoryNominal(category);
   const ratio = utilization(actual, nominal);
   const pct = Math.min(100, ratio * 100);
-  const over = isOverBudget(category, actual, nominal);
+  const over = isOverBudget(actual, nominal);
 
   return (
     <button

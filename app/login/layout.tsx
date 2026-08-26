@@ -7,8 +7,8 @@ export const metadata = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <main className="flex min-h-screen flex-1">
-      <header className="fixed left-0 top-0 z-10 w-full p-5">
-        <LogoLink />
+      <header className="fixed left-0 top-0 z-10 w-full px-5 pt-3 pb-5">
+        <LogoLink className="text-black" />
       </header>
       <div className="flex flex-1 items-center justify-center bg-background">
         <div className="w-full max-w-[440px] px-6 py-16 sm:py-20">
