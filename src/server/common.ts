@@ -1,3 +1,5 @@
+import { cacheLife, cacheTag } from "next/cache";
+import { tags } from "src/server/tags";
 import { Budget, BudgetTimeline } from "src/types/budget/types";
 import { budgetCompare, buildBudgetTimeline, timelineAsOf } from "src/types/budget/methods";
 import { supabase } from "src/utils/supabase/server";
@@ -370,11 +372,19 @@ export const getTransactions = async (owner: string): Promise<Transaction[]> => 
   return rows.map(parseTransaction).sort(transactionCompare);
 };
 
-/**
- * Builds a cumulative net expense timeline for a single budget.
- * Intended to be fetched independently (e.g. behind Suspense) per budget id.
- */
-export const getBudgetTimeline = async (owner: string, budgetId: string): Promise<BudgetTimeline | null> => {
+type BudgetTimelineEntry = { date: DateString; type: CategoryType; amount: number };
+
+type BudgetTimelineData = {
+  begin: DateString;
+  end: DateString;
+  entries: BudgetTimelineEntry[];
+};
+
+const getBudgetTimelineData = async (owner: string, budgetId: string): Promise<BudgetTimelineData | null> => {
+  "use cache";
+  cacheTag(tags.budget(budgetId));
+  cacheLife("max");
+
   const budgets = await wrap(
     supabase.from("budgets").select("id, begin_date, end_date").eq("owner", owner).eq("id", budgetId)
   );
@@ -383,17 +393,10 @@ export const getBudgetTimeline = async (owner: string, budgetId: string): Promis
   const budget = budgets[0];
   const begin = budget.begin_date as DateString;
   const end = budget.end_date as DateString;
-  const asOf = timelineAsOf(begin, end);
 
   const [categories, transactions] = await Promise.all([
     wrap(supabase.from("categories").select("id, type").eq("owner", owner).eq("budget", budgetId)),
-    wrap(
-      supabase
-        .from("transactions")
-        .select("date, amount, category")
-        .eq("owner", owner)
-        .eq("budget", budgetId)
-    ),
+    wrap(supabase.from("transactions").select("date, amount, category").eq("owner", owner).eq("budget", budgetId)),
   ]);
 
   const typeByCategory = new Map(categories.map((c) => [c.id as string, c.type as CategoryType]));
@@ -403,7 +406,18 @@ export const getBudgetTimeline = async (owner: string, budgetId: string): Promis
     return [{ date: row.date as DateString, type, amount: row.amount as number }];
   });
 
-  return buildBudgetTimeline(begin, end, entries, asOf);
+  return { begin, end, entries };
+};
+
+/**
+ * Builds a cumulative net expense timeline for a single budget.
+ */
+export const getBudgetTimeline = async (owner: string, budgetId: string): Promise<BudgetTimeline | null> => {
+  const data = await getBudgetTimelineData(owner, budgetId);
+  if (!data) return null;
+
+  const asOf = timelineAsOf(data.begin, data.end);
+  return buildBudgetTimeline(data.begin, data.end, data.entries, asOf);
 };
 
 export const putTransaction = async (owner: string, trx: Transaction): Promise<Transaction> => {

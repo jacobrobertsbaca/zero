@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { tags } from "src/server/tags";
 import { z } from "zod";
 import {
   deleteBudget as deleteBudgetRecord,
@@ -36,6 +37,7 @@ const SearchTransactionsSchema = z.object({
 const revalidateBudget = (budgetId: string) => {
   revalidatePath("/budgets");
   revalidatePath(`/budgets/${budgetId}`);
+  updateTag(tags.budget(budgetId));
 };
 
 const revalidateTransaction = (budgetId: string) => {
