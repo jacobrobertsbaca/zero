@@ -1,23 +1,10 @@
 import { Suspense } from "react";
-import { Card, CardContent } from "src/components/ui/card";
 import { Skeleton } from "src/components/ui/skeleton";
 import { listBudgets } from "src/server/common";
 import BudgetCard from "src/sections/budgets/overview/budget-card";
 import { BudgetsOverviewShell } from "src/sections/budgets/overview/budget-metric";
 import { userId } from "src/utils/supabase/server";
-import { NewBudgetButton } from "./components";
-
-const NoBudgetsOverlay = () => (
-  <Card className="col-span-full">
-    <CardContent className="flex h-[200px] items-center justify-center p-4">
-      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-        Click
-        <NewBudgetButton />
-        to create a budget
-      </div>
-    </CardContent>
-  </Card>
-);
+import { AddBudgetCard, NewBudgetButton } from "./components";
 
 function BudgetCardSkeleton() {
   return (
@@ -40,26 +27,34 @@ function BudgetsSkeleton() {
   );
 }
 
-async function BudgetsGrid() {
+async function BudgetsContent() {
   const owner = await userId();
   const budgets = await listBudgets(owner);
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-      {budgets.length === 0 && <NoBudgetsOverlay />}
-      {budgets.map((b) => (
-        <BudgetCard key={b.id} budget={b} />
-      ))}
-    </div>
+    <BudgetsOverviewShell actions={<NewBudgetButton />} showDropdown={budgets.length > 0}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        {budgets.length === 0 && <AddBudgetCard />}
+        {budgets.map((b) => (
+          <BudgetCard key={b.id} budget={b} />
+        ))}
+      </div>
+    </BudgetsOverviewShell>
+  );
+}
+
+function BudgetsLoading() {
+  return (
+    <BudgetsOverviewShell actions={<NewBudgetButton />} showDropdown={false}>
+      <BudgetsSkeleton />
+    </BudgetsOverviewShell>
   );
 }
 
 export default function Page() {
   return (
-    <BudgetsOverviewShell actions={<NewBudgetButton />}>
-      <Suspense fallback={<BudgetsSkeleton />}>
-        <BudgetsGrid />
-      </Suspense>
-    </BudgetsOverviewShell>
+    <Suspense fallback={<BudgetsLoading />}>
+      <BudgetsContent />
+    </Suspense>
   );
 }

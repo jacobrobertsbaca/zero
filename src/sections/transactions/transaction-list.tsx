@@ -14,11 +14,11 @@ declare module "@tanstack/react-table" {
 export type TransactionListProps = {
   table: Table<Transaction>;
   setSidebarTrx: (trx: Transaction) => void;
-  isLoading: boolean;
 };
 
-export const TransactionList = ({ table, setSidebarTrx, isLoading }: TransactionListProps) => {
+export const TransactionList = ({ table, setSidebarTrx }: TransactionListProps) => {
   const { rows } = table.getRowModel();
+  if (rows.length === 0) return null;
 
   return (
     <table className="w-full table-fixed whitespace-nowrap text-sm">
@@ -36,12 +36,7 @@ export const TransactionList = ({ table, setSidebarTrx, isLoading }: Transaction
                 )}
                 onClick={header.column.getToggleSortingHandler()}
               >
-                <div
-                  className={cn(
-                    "flex items-center",
-                    header.column.columnDef.meta?.center && "justify-center"
-                  )}
-                >
+                <div className={cn("flex items-center", header.column.columnDef.meta?.center && "justify-center")}>
                   <span>{flexRender(header.column.columnDef.header, header.getContext())}</span>
                   {header.column.getCanSort() && (
                     <span
@@ -92,13 +87,6 @@ export const TransactionList = ({ table, setSidebarTrx, isLoading }: Transaction
             ))}
           </tr>
         ))}
-        {!isLoading && rows.length === 0 && (
-          <tr>
-            <td colSpan={table.getVisibleFlatColumns().length} className="h-[200px] text-center">
-              <span className="text-xs text-muted-foreground">No transactions found</span>
-            </td>
-          </tr>
-        )}
       </tbody>
     </table>
   );

@@ -45,7 +45,15 @@ export function formatMetricLabel(value: number, metric: BudgetMetric) {
   return metric === BudgetMetric.Income ? `${amount} earned` : `${amount} spent`;
 }
 
-export function BudgetsOverviewShell({ children, actions }: { children: ReactNode; actions?: ReactNode }) {
+export function BudgetsOverviewShell({
+  children,
+  actions,
+  showDropdown = true,
+}: {
+  children: ReactNode;
+  actions?: ReactNode;
+  showDropdown?: boolean;
+}) {
   const [metric, setMetric] = useState(BudgetMetric.Net);
   const [open, setOpen] = useState(false);
 
@@ -55,30 +63,32 @@ export function BudgetsOverviewShell({ children, actions }: { children: ReactNod
         <div className="mb-3 flex items-center gap-1">
           <PageTitle title="Budgets" />
           {actions}
-          <DropdownMenu open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="ml-auto h-auto gap-1 px-1.5 py-0 text-sm font-medium text-muted-foreground shadow-none hover:bg-transparent hover:text-foreground data-[state=open]:bg-transparent"
-              >
-                {OPTIONS.find((o) => o.value === metric)?.label}
-                {open ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {OPTIONS.map((o) => (
-                <DropdownMenuItem
-                  key={o.value}
-                  onClick={() => setMetric(o.value)}
-                  className={o.value === metric ? "bg-accent" : undefined}
+          {showDropdown && (
+            <DropdownMenu open={open} onOpenChange={setOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto h-auto gap-1 px-1.5 py-0 text-sm font-medium text-muted-foreground shadow-none hover:bg-transparent hover:text-foreground data-[state=open]:bg-transparent"
                 >
-                  {o.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  {OPTIONS.find((o) => o.value === metric)?.label}
+                  {open ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {OPTIONS.map((o) => (
+                  <DropdownMenuItem
+                    key={o.value}
+                    onClick={() => setMetric(o.value)}
+                    className={o.value === metric ? "bg-accent" : undefined}
+                  >
+                    {o.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
         {children}
       </div>

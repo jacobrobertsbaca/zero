@@ -106,8 +106,8 @@ export function TransactionsPage() {
     applyDelete,
     starTransaction,
     fetchMore,
-    isValidating,
     isLoading,
+    isValidating,
   } = useTransactionsSearch(model);
 
   const columns = useMemo<ColumnDef<Transaction>[]>(() => {
@@ -188,7 +188,7 @@ export function TransactionsPage() {
     manualSorting: true,
   });
 
-  const canFetch = !!fetchMore || isValidating;
+  const showLoadMore = !!fetchMore || (isValidating && !isLoading);
   const count = transactions?.[0]?.meta?.count;
   const error = budgetsError || trxError;
 
@@ -265,9 +265,8 @@ export function TransactionsPage() {
               setSidebarTrx(trx);
               setSidebarOpen(true);
             }}
-            isLoading={isLoading}
           />
-          {canFetch && (
+          {showLoadMore && (
             <Button variant="outline" disabled={isValidating} className="w-full" onClick={fetchMore}>
               {isValidating && <Loader2 className="size-4 animate-spin" />}
               Load more
