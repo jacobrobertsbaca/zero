@@ -1,0 +1,51 @@
+name: Supabase CI
+
+on:
+  push:
+    paths:
+      - 'supabase/migrations/**'
+      - '.github/workflows/supabase-ci.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'supabase/migrations/**'
+      - '.github/workflows/supabase-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate migrations locally
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        run: supabase db start
+
+      - name: Apply migrations
+        run: supabase db reset
+
+  dryrun:
+    name: Dry-run production push
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: validate
+
+    env:
+      PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Preview pending migrations
+        run: supabase db push --dry-run --db-url "$PRODUCTION_DB_URL"

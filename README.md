@@ -8,4 +8,4 @@
 
 - Install dependencies: `npm install`
 - Start the project: `npm run dev`
-- Use `user@example.com` and `password` to login locally. See the [Supabase docs]() for how to manage the local database.
+- Use `user@example.com` and `password` to login locally. See the [Supabase docs](https://supabase.com/docs/reference/cli/supabase-db) for how to manage the local database.
