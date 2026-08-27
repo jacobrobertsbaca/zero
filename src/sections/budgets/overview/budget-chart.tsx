@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { BudgetTimeline } from "src/types/budget/types";
 import { TimelineChart } from "../common/timeline-chart";
-import { BudgetMetric, formatMetricLabel, metricValue, useBudgetMetric } from "./budget-metric";
+import { BudgetMetric, formatMetricLabel, metricValue, useBudgetMetric } from "./budget-grid";
 
 export function BudgetTimelineChart({ timeline }: { timeline: BudgetTimeline }) {
   const metric = useBudgetMetric();

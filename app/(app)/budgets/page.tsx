@@ -1,60 +1,32 @@
 import { Suspense } from "react";
-import { Skeleton } from "src/components/ui/skeleton";
 import { listBudgets } from "src/server/common";
 import BudgetCard from "src/sections/budgets/overview/budget-card";
-import { BudgetsOverviewShell } from "src/sections/budgets/overview/budget-metric";
+import { BudgetGrid } from "src/sections/budgets/overview/budget-grid";
 import { userId } from "src/utils/supabase/server";
 import { AddBudgetCard, NewBudgetButton } from "./components";
 
-function BudgetCardSkeleton() {
-  return (
-    <div className="flex h-full flex-col rounded-md border border-input bg-card p-4 shadow-sm">
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-7 w-36 bg-muted" />
-        <Skeleton className="h-4 w-44 bg-muted" />
-      </div>
-    </div>
-  );
-}
+export const metadata = {
+  title: "Budgets",
+};
 
-function BudgetsSkeleton() {
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-      {Array.from({ length: 6 }, (_, i) => (
-        <BudgetCardSkeleton key={i} />
-      ))}
-    </div>
-  );
-}
-
-async function BudgetsContent() {
+async function BudgetsList() {
   const owner = await userId();
   const budgets = await listBudgets(owner);
 
   return (
-    <BudgetsOverviewShell actions={<NewBudgetButton />} showDropdown={budgets.length > 0}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        {budgets.length === 0 && <AddBudgetCard />}
-        {budgets.map((b) => (
-          <BudgetCard key={b.id} budget={b} />
-        ))}
-      </div>
-    </BudgetsOverviewShell>
-  );
-}
-
-function BudgetsLoading() {
-  return (
-    <BudgetsOverviewShell actions={<NewBudgetButton />} showDropdown={false}>
-      <BudgetsSkeleton />
-    </BudgetsOverviewShell>
+    <BudgetGrid actions={<NewBudgetButton />} dropdown={budgets.length > 0}>
+      {budgets.length === 0 && <AddBudgetCard />}
+      {budgets.map((b) => (
+        <BudgetCard key={b.id} budget={b} />
+      ))}
+    </BudgetGrid>
   );
 }
 
 export default function Page() {
   return (
-    <Suspense fallback={<BudgetsLoading />}>
-      <BudgetsContent />
+    <Suspense fallback={<BudgetGrid actions={<NewBudgetButton />} dropdown={false} loading />}>
+      <BudgetsList />
     </Suspense>
   );
 }

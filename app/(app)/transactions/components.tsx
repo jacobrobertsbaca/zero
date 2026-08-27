@@ -38,6 +38,7 @@ import { Money } from "src/types/money/types";
 import { Transaction, TransactionQuery } from "src/types/transaction/types";
 import { asDateString, dateFormatShort } from "src/types/utils/methods";
 import { Separator } from "src/components/ui/separator";
+import { cn } from "@/utils";
 
 /* ================================================================================================================= *
  * URL model                                                                                                         *
@@ -195,7 +196,7 @@ export function TransactionsPage() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-1">
-        <PageTitle title="Transactions" />
+        <PageTitle title="Transactions" className={cn(isLoading && "text-shimmer")} />
         {/* Fixed-size slot avoids a layout shift when budgets finish loading */}
         <div className="flex size-9 items-center justify-center">
           {budgets && budgets.length > 0 ? (
@@ -216,8 +217,6 @@ export function TransactionsPage() {
               <Plus className="size-4" />
               <span className="sr-only">New Transaction</span>
             </Button>
-          ) : budgetsLoading ? (
-            <Loader2 className="size-4 animate-spin text-muted-foreground" />
           ) : null}
         </div>
       </div>
@@ -251,9 +250,7 @@ export function TransactionsPage() {
           <TransactionSearch fullWidth search={search} setSearch={setSearch} />
           <Collapsible open={typeof count === "number"}>
             <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-              {typeof count === "number" && (
-                <p className="text-xs text-muted-foreground">Found {count} transactions</p>
-              )}
+              {typeof count === "number" && <p className="text-xs text-muted-foreground">Found {count} transactions</p>}
             </CollapsibleContent>
           </Collapsible>
           <TransactionFilterChips filter={filter} setFilter={setFilter} budgets={budgets}>
