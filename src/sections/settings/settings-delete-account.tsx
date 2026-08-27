@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { DeleteDialog } from "src/components/delete-dialog";
 import { Button } from "src/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
-import { useAuth } from "src/hooks/use-auth";
+import { deleteAccount } from "src/server/actions";
+import { supabase } from "src/utils/supabase/client";
 import { wrapAsync } from "src/utils/wrap-errors";
 
 export function SettingsDeleteAccount() {
@@ -14,11 +15,11 @@ export function SettingsDeleteAccount() {
   const [deleteModal, setDeleteModal] = useState(false);
   const openModal = useCallback(() => setDeleteModal(true), []);
   const closeModal = useCallback(() => setDeleteModal(false), []);
-  const { deleteAccount } = useAuth();
 
   const onDelete = async () => {
     await wrapAsync(async () => {
       await deleteAccount();
+      await supabase.auth.signOut();
       toast.success("Successfully deleted your account.");
       router.replace("/login");
     });

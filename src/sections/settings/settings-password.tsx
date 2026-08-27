@@ -7,27 +7,9 @@ import { SubmitButton } from "src/components/form/submit-button";
 import { TextField } from "src/components/form/text-field";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import { Separator } from "src/components/ui/separator";
-import { AuthProviders } from "src/contexts/auth-context";
-import { useAuth } from "src/hooks/use-auth";
+import { supabase } from "src/utils/supabase/client";
 
-export function SettingsPassword() {
-  const auth = useAuth();
-
-  if (auth.loading && !auth.user) {
-    return (
-      <Card>
-        <CardHeader className="space-y-1 pb-3">
-          <CardTitle className="text-base">Password</CardTitle>
-          <CardDescription>Loading…</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  if (auth.user?.provider !== AuthProviders.Email) {
-    return null;
-  }
-
+export function SettingsPassword({ className }: { className?: string }) {
   return (
     <Form
       initialValues={{
@@ -39,13 +21,14 @@ export function SettingsPassword() {
         passwordConfirmed: Yup.string().oneOf([Yup.ref("password")], "Passwords must match!"),
       })}
       onSubmit={async (values, helpers) => {
-        await auth.updatePassword(values.password);
+        const { error } = await supabase.auth.updateUser({ password: values.password });
+        if (error) throw new Error(error.message);
         toast.success("Updated your password!");
         helpers.resetForm();
       }}
     >
       {(formik) => (
-        <Card>
+        <Card className={className}>
           <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-3">
             <div className="space-y-1">
               <CardTitle className="text-base">Password</CardTitle>

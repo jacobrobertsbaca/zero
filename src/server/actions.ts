@@ -20,7 +20,7 @@ import type { Category } from "src/types/category/types";
 import { TransactionCursorSchema, TransactionQuerySchema, TransactionSchema } from "src/types/transaction/schema";
 import type { Transaction, TransactionCursor, TransactionPage, TransactionQuery } from "src/types/transaction/types";
 import { datesDays } from "src/types/utils/methods";
-import { userId } from "src/utils/supabase/server";
+import { supabase, userId } from "src/utils/supabase/server";
 
 const PutBudgetSchema = BudgetSchema.omit({ categories: true }).refine(
   (value) => datesDays(value.dates) <= budgetMaxDays(),
@@ -105,4 +105,10 @@ export async function deleteTransaction(transaction: Transaction): Promise<void>
   const owner = await userId();
   await deleteTransactionRecord(owner, id);
   revalidateTransaction(budgetId);
+}
+
+export async function deleteAccount(): Promise<void> {
+  const owner = await userId();
+  const { error } = await supabase.auth.admin.deleteUser(owner);
+  if (error) throw new Error(error.message);
 }

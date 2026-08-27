@@ -4,19 +4,19 @@ import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { Button } from "src/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
-import { useAuth } from "src/hooks/use-auth";
+import { supabase } from "src/utils/supabase/client";
 import { wrapAsync } from "src/utils/wrap-errors";
 
 export function SettingsSignOut() {
   const router = useRouter();
-  const { signOut } = useAuth();
 
   const onClick = useCallback(async () => {
     await wrapAsync(async () => {
-      await signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw new Error(error.message);
       router.replace("/login");
     });
-  }, [router, signOut]);
+  }, [router]);
 
   return (
     <Card>

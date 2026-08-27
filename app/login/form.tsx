@@ -9,7 +9,7 @@ import { SubmitButton } from "src/components/form/submit-button";
 import { Button } from "src/components/ui/button";
 import { Separator } from "src/components/ui/separator";
 import { wrapAsync } from "src/utils/wrap-errors";
-import { createClient } from "@/utils/supabase/client";
+import { supabase } from "@/utils/supabase/client";
 
 export function LoginForm() {
   const router = useRouter();
@@ -27,7 +27,6 @@ export function LoginForm() {
         password: Yup.string().max(255).required("Password is required"),
       })}
       onSubmit={async (values) => {
-        const supabase = createClient();
         const { error } = await supabase.auth.signInWithPassword({
           email: values.email,
           password: values.password,
@@ -51,7 +50,6 @@ export function LoginForm() {
           className="w-full"
           onClick={() =>
             void wrapAsync(async () => {
-              const supabase = createClient();
               const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
                 options: {

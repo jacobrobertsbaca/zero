@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageTitle } from "src/components/page-title";
 import { Skeleton } from "src/components/ui/skeleton";
@@ -11,6 +12,13 @@ import { EditBudgetButton } from "./components";
 
 export function generateStaticParams() {
   return [{ id: "_" }];
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const owner = await userId();
+  const budgets = await getBudgets(owner, id);
+  return { title: budgets[0]?.name ?? "Budget" };
 }
 
 function BudgetSkeleton() {
