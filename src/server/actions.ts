@@ -21,6 +21,14 @@ import type { Category } from "src/types/category/types";
 import { TransactionCursorSchema, TransactionQuerySchema, TransactionSchema } from "src/types/transaction/schema";
 import type { Transaction, TransactionCursor, TransactionPage, TransactionQuery } from "src/types/transaction/types";
 import { datesDays } from "src/types/utils/methods";
+import {
+  cancelSubscription,
+  createCheckoutSession as createCheckoutSessionRecord,
+  createPortalSession as createPortalSessionRecord,
+  getSubscription as getSubscriptionRecord,
+} from "src/server/billing";
+import type { PriceLookupKey } from "src/types/subscription/types";
+import type { Subscription } from "src/types/subscription/types";
 import { supabase, userId } from "src/utils/supabase/server";
 
 const PutBudgetSchema = BudgetSchema.omit({ categories: true }).refine(
@@ -109,8 +117,24 @@ export async function deleteTransaction(transaction: Transaction): Promise<void>
   revalidateTransaction(budgetId);
 }
 
+export async function getSubscription(): Promise<Subscription> {
+  const owner = await userId();
+  return getSubscriptionRecord(owner);
+}
+
+export async function createCheckoutSession(lookupKey: PriceLookupKey): Promise<string> {
+  const owner = await userId();
+  return createCheckoutSessionRecord(owner, lookupKey);
+}
+
+export async function createPortalSession(): Promise<string> {
+  const owner = await userId();
+  return createPortalSessionRecord(owner);
+}
+
 export async function deleteAccount(): Promise<void> {
   const owner = await userId();
+  await cancelSubscription(owner);
   const { error } = await supabase.auth.admin.deleteUser(owner);
   if (error) throw new Error(error.message);
 }
