@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import { toast } from "sonner";
 import { DeleteDialog } from "src/components/delete-dialog";
+import { ConnectDialog } from "src/sections/settings/accounts/connect-dialog";
 import { Button } from "src/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import {
@@ -46,6 +47,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
   const [redirectUri, setRedirectUri] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [disconnectId, setDisconnectId] = useState<string | null>(null);
+  const [connectOpen, setConnectOpen] = useState(false);
   const [linkMode, setLinkMode] = useState<LinkMode | null>(null);
   const [manageConnectionId, setManageConnectionId] = useState<string | null>(null);
 
@@ -136,6 +138,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
   }, [token, ready, open]);
 
   const onConnect = useCallback(async () => {
+    setConnectOpen(false);
     setToken(null);
     setRedirectUri(undefined);
     setLinkMode("connect");
@@ -194,10 +197,10 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
             variant="outline"
             size="sm"
             className="shrink-0"
-            onClick={onConnect}
-            disabled={!canConnect || loading}
+            onClick={() => setConnectOpen(true)}
+            disabled={!canConnect || (loading && linkMode === "connect")}
           >
-            {loading ? (
+            {loading && linkMode === "connect" ? (
               <Spinner className="size-3.5" />
             ) : (
               <>
@@ -226,6 +229,13 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
           </>
         )}
       </Card>
+
+      <ConnectDialog
+        open={connectOpen}
+        loading={loading && linkMode === "connect"}
+        onOpenChange={setConnectOpen}
+        onConfirm={onConnect}
+      />
 
       <DeleteDialog
         open={disconnectId !== null}

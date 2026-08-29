@@ -8,6 +8,7 @@ import { Button } from "src/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -190,32 +191,31 @@ export function SettingsPlusClient({ subscription }: Props) {
       </Card>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="gap-0 overflow-hidden border-primary/20 p-0 sm:max-w-[420px]">
-          <div className="relative overflow-hidden px-6 pb-5 pt-6">
-            <DialogHeader className="relative space-y-2 text-left">
-              <DialogTitle className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight">
-                Upgrade to
-                <span className="plus-title-gradient inline-flex items-center gap-1.5">
-                  <Sprout className="size-5 shrink-0 text-primary" strokeWidth={1.75} />
-                  Plus
-                </span>
-              </DialogTitle>
-            </DialogHeader>
-          </div>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight">
+              Upgrade to
+              <span className="plus-title-gradient inline-flex items-center gap-1.5">
+                <Sprout className="size-5 shrink-0 text-primary" strokeWidth={1.75} />
+                Plus
+              </span>
+            </DialogTitle>
+          </DialogHeader>
 
-          <ul className="space-y-2 px-6 pb-5">
-            {benefits.map((text) => (
-              <li key={text} className="flex items-start gap-2.5">
-                <CircleCheck
-                  className="mt-0.5 size-3.5 shrink-0 fill-primary text-primary-foreground"
-                  strokeWidth={1.5}
-                />
-                <span className="text-sm leading-snug text-foreground/80">{text}</span>
-              </li>
-            ))}
-          </ul>
+          <DialogBody className="gap-5 pb-5">
+            <ul className="space-y-2">
+              {benefits.map((text) => (
+                <li key={text} className="flex items-start gap-2.5">
+                  <CircleCheck
+                    className="mt-0.5 size-3.5 shrink-0 fill-primary text-primary-foreground"
+                    strokeWidth={1.5}
+                  />
+                  <span className="text-sm leading-snug text-foreground/80">{text}</span>
+                </li>
+              ))}
+            </ul>
 
-          <div className="grid grid-cols-2 gap-3 px-6 pb-6">
+            <div className="grid grid-cols-2 gap-3">
             {(Object.keys(plans) as Plan[]).map((key) => {
               const selected = plan === key;
 
@@ -258,14 +258,11 @@ export function SettingsPlusClient({ subscription }: Props) {
                 </button>
               );
             })}
-          </div>
+            </div>
+          </DialogBody>
 
-          <DialogFooter className="flex-col gap-2 border-t border-primary/10 bg-primary/[0.03] px-6 py-4 sm:flex-col sm:space-x-0">
-            <Button
-              className="w-full shadow-[0_2px_10px_-4px_hsl(var(--primary)/0.5)]"
-              onClick={onUpgrade}
-              disabled={loading}
-            >
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button className="w-full" onClick={onUpgrade} disabled={loading}>
               {loading ? (
                 <Spinner className="size-4 text-foreground" />
               ) : subscription.trialEligible ? (
