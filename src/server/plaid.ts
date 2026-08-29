@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
-import { Configuration, CountryCode, PlaidApi, PlaidEnvironments, Products } from "plaid";
+import { Configuration, CountryCode, PlaidApi, PlaidEnvironments, Products, type AccountBase } from "plaid";
 import { wrap } from "src/server/common";
 import { HttpError } from "src/server/errors";
 import { getSubscription } from "src/server/billing";
@@ -45,6 +45,74 @@ const requirePlus = async (owner: string) => {
   if (!subscription.active) throw new HttpError("forbidden", "Plus subscription required to connect accounts.");
 };
 
+const fetchInstitution = async (institutionId: string) => {
+  const response = await plaid().institutionsGetById({
+    institution_id: institutionId,
+    country_codes: [CountryCode.Us],
+    options: { include_optional_metadata: true },
+  });
+  return response.data.institution;
+};
+
+const mapConnection = (
+  item: {
+    id: string;
+    item_id: string;
+    institution_id: string;
+    institution_name: string;
+    institution_logo: string | null;
+    created_at: string;
+  },
+  accounts: PlaidAccount[]
+): PlaidConnection => ({
+  id: item.id,
+  itemId: item.item_id,
+  institutionId: item.institution_id,
+  institutionName: item.institution_name,
+  institutionLogo: item.institution_logo,
+  createdAt: item.created_at,
+  accounts,
+});
+
+type PlaidAccountRow = {
+  id: string;
+  owner: string;
+  item_id: string | null;
+  account_id: string;
+  persistent_account_id: string | null;
+  name: string;
+  official_name: string | null;
+  type: string;
+  subtype: string | null;
+  mask: string | null;
+  status: string;
+};
+
+const findExistingAccount = (
+  upstream: AccountBase,
+  institutionId: string,
+  existing: PlaidAccountRow[],
+  institutionByItemId: Map<string, string>
+): PlaidAccountRow | undefined => {
+  const byAccountId = existing.find((row) => row.account_id === upstream.account_id);
+  if (byAccountId) return byAccountId;
+
+  if (upstream.persistent_account_id) {
+    const byPersistent = existing.find(
+      (row) => row.persistent_account_id && row.persistent_account_id === upstream.persistent_account_id
+    );
+    if (byPersistent) return byPersistent;
+  }
+
+  const subtype = upstream.subtype ?? null;
+  const mask = upstream.mask ?? null;
+  return existing.find((row) => {
+    if (!row.item_id) return false;
+    const rowInstitutionId = institutionByItemId.get(row.item_id);
+    return rowInstitutionId === institutionId && row.subtype === subtype && row.mask === mask;
+  });
+};
+
 const mapAccount = (row: {
   id: string;
   account_id: string;
@@ -53,6 +121,7 @@ const mapAccount = (row: {
   type: string;
   subtype: string | null;
   mask: string | null;
+  status: string;
 }): PlaidAccount => ({
   id: row.id,
   accountId: row.account_id,
@@ -61,7 +130,79 @@ const mapAccount = (row: {
   type: row.type,
   subtype: row.subtype,
   mask: row.mask,
+  status: row.status,
 });
+
+const syncPlaidAccountsForItem = async (
+  owner: string,
+  item: { id: string; access_token: string; institution_id: string }
+): Promise<PlaidAccount[]> => {
+  const accountsResponse = await plaid().accountsGet({ access_token: item.access_token });
+  const upstreamAccounts = accountsResponse.data.accounts;
+  const now = new Date().toISOString();
+
+  const { data: existingRows, error: fetchError } = await supabase
+    .from("plaid_accounts")
+    .select("id, owner, item_id, account_id, persistent_account_id, name, official_name, type, subtype, mask, status")
+    .eq("owner", owner);
+  if (fetchError) throw new HttpError(fetchError.code, fetchError.message);
+
+  const { data: itemRows, error: itemsError } = await supabase
+    .from("plaid_items")
+    .select("id, institution_id")
+    .eq("owner", owner);
+  if (itemsError) throw new HttpError(itemsError.code, itemsError.message);
+
+  const institutionByItemId = new Map((itemRows ?? []).map((row) => [row.id, row.institution_id]));
+  const existing = existingRows ?? [];
+  const matchedIds = new Set<string>();
+
+  for (const upstream of upstreamAccounts) {
+    const match = findExistingAccount(upstream, item.institution_id, existing, institutionByItemId);
+    const row = {
+      owner,
+      item_id: item.id,
+      account_id: upstream.account_id,
+      persistent_account_id: upstream.persistent_account_id ?? null,
+      name: upstream.name,
+      official_name: upstream.official_name ?? null,
+      type: upstream.type,
+      subtype: upstream.subtype ?? null,
+      mask: upstream.mask ?? null,
+      status: "active",
+      updated_at: now,
+    };
+
+    if (match) {
+      matchedIds.add(match.id);
+      const { error } = await supabase.from("plaid_accounts").update(row).eq("id", match.id);
+      if (error) throw new HttpError(error.code, error.message);
+    } else {
+      const { data: inserted, error } = await supabase.from("plaid_accounts").insert(row).select("id").single();
+      if (error) throw new HttpError(error.code, error.message);
+      matchedIds.add(inserted.id);
+    }
+  }
+
+  for (const row of existing.filter((account) => account.item_id === item.id)) {
+    if (matchedIds.has(row.id)) continue;
+    const { error } = await supabase
+      .from("plaid_accounts")
+      .update({ status: "disabled", updated_at: now })
+      .eq("id", row.id);
+    if (error) throw new HttpError(error.code, error.message);
+  }
+
+  const { data: accounts, error: accountsError } = await supabase
+    .from("plaid_accounts")
+    .select("id, account_id, name, official_name, type, subtype, mask, status")
+    .eq("item_id", item.id)
+    .eq("status", "active")
+    .order("name", { ascending: true });
+  if (accountsError) throw new HttpError(accountsError.code, accountsError.message);
+
+  return (accounts ?? []).map(mapAccount);
+};
 
 export const getPlaidConnections = async (owner: string): Promise<PlaidConnections> => {
   "use cache";
@@ -70,7 +211,7 @@ export const getPlaidConnections = async (owner: string): Promise<PlaidConnectio
 
   const { data: items, error: itemsError } = await supabase
     .from("plaid_items")
-    .select("id, item_id, institution_id, institution_name, status, created_at")
+    .select("id, item_id, institution_id, institution_name, institution_logo, created_at")
     .eq("owner", owner)
     .order("created_at", { ascending: true });
   if (itemsError) throw new HttpError(itemsError.code, itemsError.message);
@@ -80,29 +221,23 @@ export const getPlaidConnections = async (owner: string): Promise<PlaidConnectio
   const itemIds = items.map((item) => item.id);
   const { data: accounts, error: accountsError } = await supabase
     .from("plaid_accounts")
-    .select("id, plaid_item_id, account_id, name, official_name, type, subtype, mask")
+    .select("id, item_id, account_id, name, official_name, type, subtype, mask, status")
     .eq("owner", owner)
-    .in("plaid_item_id", itemIds)
+    .eq("status", "active")
+    .in("item_id", itemIds)
     .order("name", { ascending: true });
   if (accountsError) throw new HttpError(accountsError.code, accountsError.message);
 
   const accountsByItem = new Map<string, PlaidAccount[]>();
   for (const account of accounts ?? []) {
+    if (!account.item_id) continue;
     const mapped = mapAccount(account);
-    const list = accountsByItem.get(account.plaid_item_id) ?? [];
+    const list = accountsByItem.get(account.item_id) ?? [];
     list.push(mapped);
-    accountsByItem.set(account.plaid_item_id, list);
+    accountsByItem.set(account.item_id, list);
   }
 
-  const connections: PlaidConnection[] = items.map((item) => ({
-    id: item.id,
-    itemId: item.item_id,
-    institutionId: item.institution_id,
-    institutionName: item.institution_name,
-    status: item.status,
-    createdAt: item.created_at,
-    accounts: accountsByItem.get(item.id) ?? [],
-  }));
+  const connections: PlaidConnection[] = items.map((item) => mapConnection(item, accountsByItem.get(item.id) ?? []));
 
   return { connections, limit: MAX_PLAID_ITEMS };
 };
@@ -126,6 +261,31 @@ export const createLinkToken = async (owner: string): Promise<string> => {
   return response.data.link_token;
 };
 
+export const createUpdateLinkToken = async (owner: string, connectionId: string): Promise<string> => {
+  await requirePlus(owner);
+
+  const id = z.string().uuid().parse(connectionId);
+  const { data: item, error } = await supabase
+    .from("plaid_items")
+    .select("id, access_token")
+    .eq("owner", owner)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new HttpError(error.code, error.message);
+  if (!item) throw new HttpError("not_found", "Connection not found.");
+
+  const response = await plaid().linkTokenCreate({
+    user: { client_user_id: owner },
+    client_name: "Zero",
+    country_codes: [CountryCode.Us],
+    language: "en",
+    access_token: item.access_token,
+    update: { account_selection_enabled: true },
+  });
+
+  return response.data.link_token;
+};
+
 export const exchangePublicToken = async (
   owner: string,
   input: z.infer<typeof ExchangePlaidPublicTokenSchema>
@@ -144,21 +304,12 @@ export const exchangePublicToken = async (
   const { data: existing } = await supabase.from("plaid_items").select("id").eq("item_id", itemId).maybeSingle();
   if (existing) throw new HttpError("conflict", "This institution is already connected.");
 
-  const [itemResponse, accountsResponse] = await Promise.all([
-    plaid().itemGet({ access_token: accessToken }),
-    plaid().accountsGet({ access_token: accessToken }),
-  ]);
+  const itemResponse = await plaid().itemGet({ access_token: accessToken });
 
   const institutionId = itemResponse.data.item.institution_id;
   if (!institutionId) throw new HttpError("invalid_item", "Institution could not be determined.");
 
-  const institutionResponse = await plaid().institutionsGetById({
-    institution_id: institutionId,
-    country_codes: [CountryCode.Us],
-  });
-  const institutionName = institutionResponse.data.institution.name;
-  const plaidAccounts = accountsResponse.data.accounts;
-  if (!plaidAccounts.length) throw new HttpError("no_accounts", "No accounts were found for this institution.");
+  const institution = await fetchInstitution(institutionId);
 
   const now = new Date().toISOString();
   const { data: item, error: itemError } = await supabase
@@ -168,43 +319,39 @@ export const exchangePublicToken = async (
       item_id: itemId,
       access_token: accessToken,
       institution_id: institutionId,
-      institution_name: institutionName,
-      status: "active",
+      institution_name: institution.name,
+      institution_logo: institution.logo ?? null,
       updated_at: now,
     })
-    .select("id, item_id, institution_id, institution_name, status, created_at")
+    .select("id, item_id, institution_id, institution_name, institution_logo, created_at, access_token")
     .single();
   if (itemError) throw new HttpError(itemError.code, itemError.message);
 
-  const accountRows = plaidAccounts.map((account) => ({
-    owner,
-    plaid_item_id: item.id,
-    account_id: account.account_id,
-    name: account.name,
-    official_name: account.official_name ?? null,
-    type: account.type,
-    subtype: account.subtype ?? null,
-    mask: account.mask ?? null,
-    updated_at: now,
-  }));
-
-  const { data: insertedAccounts, error: accountsError } = await supabase
-    .from("plaid_accounts")
-    .insert(accountRows)
-    .select("id, account_id, name, official_name, type, subtype, mask");
-  if (accountsError) throw new HttpError(accountsError.code, accountsError.message);
+  const accounts = await syncPlaidAccountsForItem(owner, item);
+  if (!accounts.length) throw new HttpError("no_accounts", "No accounts were found for this institution.");
 
   revalidateTag(tags.plaid(owner), { expire: 0 });
 
-  return {
-    id: item.id,
-    itemId: item.item_id,
-    institutionId: item.institution_id,
-    institutionName: item.institution_name,
-    status: item.status,
-    createdAt: item.created_at,
-    accounts: (insertedAccounts ?? []).map(mapAccount),
-  };
+  return mapConnection(item, accounts);
+};
+
+export const syncPlaidItemAccounts = async (owner: string, connectionId: string): Promise<PlaidConnection> => {
+  await requirePlus(owner);
+
+  const id = z.string().uuid().parse(connectionId);
+  const { data: item, error } = await supabase
+    .from("plaid_items")
+    .select("id, item_id, institution_id, institution_name, institution_logo, access_token, created_at")
+    .eq("owner", owner)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new HttpError(error.code, error.message);
+  if (!item) throw new HttpError("not_found", "Connection not found.");
+
+  const accounts = await syncPlaidAccountsForItem(owner, item);
+  revalidateTag(tags.plaid(owner), { expire: 0 });
+
+  return mapConnection(item, accounts);
 };
 
 export const removePlaidItem = async (owner: string, connectionId: string): Promise<void> => {

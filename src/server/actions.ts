@@ -29,11 +29,17 @@ import {
 } from "src/server/billing";
 import {
   createLinkToken as createLinkTokenRecord,
+  createUpdateLinkToken as createUpdateLinkTokenRecord,
   exchangePublicToken as exchangePublicTokenRecord,
   getPlaidConnections as getPlaidConnectionsRecord,
   removePlaidItem as removePlaidItemRecord,
+  syncPlaidItemAccounts as syncPlaidItemAccountsRecord,
 } from "src/server/plaid";
-import { ExchangePlaidPublicTokenSchema } from "src/types/plaid/schema";
+import {
+  CreatePlaidUpdateLinkTokenSchema,
+  ExchangePlaidPublicTokenSchema,
+  SyncPlaidAccountsSchema,
+} from "src/types/plaid/schema";
 import type { PlaidConnection, PlaidConnections } from "src/types/plaid/types";
 import type { PriceLookupKey } from "src/types/subscription/types";
 import type { Subscription } from "src/types/subscription/types";
@@ -157,11 +163,29 @@ export async function createPlaidLinkToken(): Promise<string> {
   return createLinkTokenRecord(owner);
 }
 
+export async function createPlaidUpdateLinkToken(
+  input: z.infer<typeof CreatePlaidUpdateLinkTokenSchema>
+): Promise<string> {
+  const owner = await userId();
+  const parsed = CreatePlaidUpdateLinkTokenSchema.parse(input);
+  return createUpdateLinkTokenRecord(owner, parsed.connectionId);
+}
+
 export async function exchangePlaidPublicToken(
   input: z.infer<typeof ExchangePlaidPublicTokenSchema>
 ): Promise<PlaidConnection> {
   const owner = await userId();
   const result = await exchangePublicTokenRecord(owner, input);
+  revalidatePath("/settings");
+  return result;
+}
+
+export async function syncPlaidAccounts(
+  input: z.infer<typeof SyncPlaidAccountsSchema>
+): Promise<PlaidConnection> {
+  const owner = await userId();
+  const parsed = SyncPlaidAccountsSchema.parse(input);
+  const result = await syncPlaidItemAccountsRecord(owner, parsed.connectionId);
   revalidatePath("/settings");
   return result;
 }

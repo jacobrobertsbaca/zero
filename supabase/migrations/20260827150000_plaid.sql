@@ -5,7 +5,7 @@ CREATE TABLE "public"."plaid_items" (
   "access_token"      text        NOT NULL,
   "institution_id"    text        NOT NULL,
   "institution_name"  text        NOT NULL,
-  "status"            text        NOT NULL DEFAULT 'active',
+  "institution_logo"  text,
   "transactions_cursor" text,
   "created_at"        timestamptz NOT NULL DEFAULT now(),
   "updated_at"        timestamptz NOT NULL DEFAULT now(),
@@ -17,23 +17,22 @@ CREATE TABLE "public"."plaid_items" (
 CREATE TABLE "public"."plaid_accounts" (
   "id"              uuid        NOT NULL DEFAULT gen_random_uuid(),
   "owner"           uuid        NOT NULL,
-  "plaid_item_id"   uuid        NOT NULL,
+  "item_id"         uuid,
   "account_id"      text        NOT NULL,
+  "persistent_account_id" text,
   "name"            text        NOT NULL,
   "official_name"   text,
   "type"            text        NOT NULL,
   "subtype"         text,
   "mask"            text,
+  "status"          text        NOT NULL DEFAULT 'active',
   "created_at"      timestamptz NOT NULL DEFAULT now(),
   "updated_at"      timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT "plaid_accounts_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "plaid_accounts_owner_fkey" FOREIGN KEY ("owner") REFERENCES "auth"."users"("id") ON DELETE CASCADE,
-  CONSTRAINT "plaid_accounts_plaid_item_id_fkey" FOREIGN KEY ("plaid_item_id") REFERENCES "public"."plaid_items"("id") ON DELETE CASCADE,
+  CONSTRAINT "plaid_accounts_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "public"."plaid_items"("id") ON DELETE CASCADE,
   CONSTRAINT "plaid_accounts_account_id_key" UNIQUE ("account_id")
 );
-
-CREATE INDEX "plaid_items_owner_idx" ON "public"."plaid_items" ("owner");
-CREATE INDEX "plaid_accounts_plaid_item_id_idx" ON "public"."plaid_accounts" ("plaid_item_id");
 
 ALTER TABLE "public"."plaid_items" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."plaid_accounts" ENABLE ROW LEVEL SECURITY;

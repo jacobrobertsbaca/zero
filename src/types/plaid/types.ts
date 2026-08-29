@@ -8,6 +8,7 @@ export type PlaidAccount = Immutable<{
   type: string;
   subtype: string | null;
   mask: string | null;
+  status: string;
 }>;
 
 export type PlaidConnection = Immutable<{
@@ -15,7 +16,7 @@ export type PlaidConnection = Immutable<{
   itemId: string;
   institutionId: string;
   institutionName: string;
-  status: string;
+  institutionLogo: string | null;
   accounts: PlaidAccount[];
   createdAt: string;
 }>;

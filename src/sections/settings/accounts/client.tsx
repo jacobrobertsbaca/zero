@@ -16,7 +16,13 @@ import {
 } from "src/components/ui/dropdown-menu";
 import { Separator } from "src/components/ui/separator";
 import { Spinner } from "src/components/ui/spinner";
-import { createPlaidLinkToken, exchangePlaidPublicToken, removePlaidItem } from "src/server/actions";
+import {
+  createPlaidLinkToken,
+  createPlaidUpdateLinkToken,
+  exchangePlaidPublicToken,
+  removePlaidItem,
+  syncPlaidAccounts,
+} from "src/server/actions";
 import type { PlaidAccount, PlaidConnection, PlaidConnections } from "src/types/plaid/types";
 import type { Subscription } from "src/types/subscription/types";
 import { cn } from "src/utils";
@@ -32,12 +38,16 @@ const formatSubtype = (account: PlaidAccount) => {
   return label.replaceAll("_", " ");
 };
 
+type LinkMode = "connect" | "manage";
+
 export function SettingsAccountsClient({ connections, subscription }: Props) {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [redirectUri, setRedirectUri] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [disconnectId, setDisconnectId] = useState<string | null>(null);
+  const [linkMode, setLinkMode] = useState<LinkMode | null>(null);
+  const [manageConnectionId, setManageConnectionId] = useState<string | null>(null);
 
   const count = connections.connections.length;
   const atLimit = count >= connections.limit;
@@ -48,19 +58,27 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
     setToken(null);
     setRedirectUri(undefined);
     setLoading(false);
+    setLinkMode(null);
+    setManageConnectionId(null);
   }, []);
 
   const onSuccess = useCallback(
     async (publicToken: string | null) => {
-      if (!publicToken) return;
-
       setLoading(true);
       try {
-        await wrapAsync(async () => {
-          const connection = await exchangePlaidPublicToken({ publicToken });
-          toast.success(`Connected ${connection.institutionName}`);
-          router.refresh();
-        });
+        if (linkMode === "manage" && manageConnectionId) {
+          await wrapAsync(async () => {
+            const connection = await syncPlaidAccounts({ connectionId: manageConnectionId });
+            toast.success(`Updated ${connection.institutionName} accounts`);
+            router.refresh();
+          });
+        } else if (publicToken) {
+          await wrapAsync(async () => {
+            const connection = await exchangePlaidPublicToken({ publicToken });
+            toast.success(`Connected ${connection.institutionName}`);
+            router.refresh();
+          });
+        }
       } finally {
         resetLink();
 
@@ -69,18 +87,24 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
         }
       }
     },
-    [resetLink, router]
+    [linkMode, manageConnectionId, resetLink, router]
   );
 
   const onExit = useCallback(
     (error: { error_code?: string } | null) => {
       if (error?.error_code === "INVALID_LINK_TOKEN") {
-        void wrapAsync(async () => setToken(await createPlaidLinkToken()));
+        void wrapAsync(async () => {
+          if (linkMode === "manage" && manageConnectionId) {
+            setToken(await createPlaidUpdateLinkToken({ connectionId: manageConnectionId }));
+          } else {
+            setToken(await createPlaidLinkToken());
+          }
+        });
         return;
       }
       resetLink();
     },
-    [resetLink]
+    [linkMode, manageConnectionId, resetLink]
   );
 
   const onEvent = useCallback((eventName: string) => {
@@ -114,12 +138,31 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
   const onConnect = useCallback(async () => {
     setToken(null);
     setRedirectUri(undefined);
+    setLinkMode("connect");
+    setManageConnectionId(null);
     setLoading(true);
     const newToken = await wrapAsync(async () => createPlaidLinkToken());
     if (newToken) {
       setToken(newToken);
     } else {
       setLoading(false);
+      setLinkMode(null);
+    }
+  }, []);
+
+  const onManage = useCallback(async (connectionId: string) => {
+    setToken(null);
+    setRedirectUri(undefined);
+    setLinkMode("manage");
+    setManageConnectionId(connectionId);
+    setLoading(true);
+    const newToken = await wrapAsync(async () => createPlaidUpdateLinkToken({ connectionId }));
+    if (newToken) {
+      setToken(newToken);
+    } else {
+      setLoading(false);
+      setLinkMode(null);
+      setManageConnectionId(null);
     }
   }, []);
 
@@ -174,6 +217,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
                   <ConnectionGroup
                     key={connection.id}
                     connection={connection}
+                    onManage={() => onManage(connection.id)}
                     onDisconnect={() => setDisconnectId(connection.id)}
                   />
                 ))}
@@ -196,17 +240,19 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
 
 function ConnectionGroup({
   connection,
+  onManage,
   onDisconnect,
 }: {
   connection: PlaidConnection;
+  onManage: () => void;
   onDisconnect: () => void;
 }) {
-  const needsAttention = connection.status !== "active";
+  const needsAttention = connection.accounts.some((account) => account.status !== "active");
 
   return (
     <li>
       <div className="flex items-center gap-3 px-4 py-2.5">
-        <InstitutionMark name={connection.institutionName} />
+        <InstitutionMark name={connection.institutionName} logo={connection.institutionLogo} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium leading-none">{connection.institutionName}</p>
           {needsAttention && (
@@ -221,6 +267,7 @@ function ConnectionGroup({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onSelect={() => onManage()}>Manage</DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onSelect={() => onDisconnect()}
@@ -240,7 +287,17 @@ function ConnectionGroup({
   );
 }
 
-function InstitutionMark({ name }: { name: string }) {
+function InstitutionMark({ name, logo }: { name: string; logo: string | null }) {
+  if (logo) {
+    return (
+      <img
+        src={`data:image/png;base64,${logo}`}
+        alt=""
+        className="size-7 shrink-0 rounded-full object-cover"
+      />
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -258,10 +315,10 @@ function AccountRow({ account }: { account: PlaidAccount }) {
     <li className="flex items-center justify-between gap-4 py-2 pl-[3.25rem] pr-4 text-sm">
       <span className="min-w-0 truncate text-foreground/90">{account.name}</span>
       <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+        <span className="capitalize">{formatSubtype(account)}</span>
         {account.mask && (
           <span className="font-mono tabular-nums tracking-tight text-foreground/55">··{account.mask}</span>
         )}
-        <span className="capitalize">{formatSubtype(account)}</span>
       </span>
     </li>
   );

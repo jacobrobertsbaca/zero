@@ -16,7 +16,7 @@ export default function Page() {
     <div className="flex flex-col gap-8">
       <PageTitle title="Settings" />
 
-      <SettingsSection title="Synced Accounts">
+      <SettingsSection title="External Accounts">
         <Suspense>
           <SettingsPlus />
         </Suspense>
