@@ -27,6 +27,14 @@ import {
   createPortalSession as createPortalSessionRecord,
   getSubscription as getSubscriptionRecord,
 } from "src/server/billing";
+import {
+  createLinkToken as createLinkTokenRecord,
+  exchangePublicToken as exchangePublicTokenRecord,
+  getPlaidConnections as getPlaidConnectionsRecord,
+  removePlaidItem as removePlaidItemRecord,
+} from "src/server/plaid";
+import { ExchangePlaidPublicTokenSchema } from "src/types/plaid/schema";
+import type { PlaidConnection, PlaidConnections } from "src/types/plaid/types";
 import type { PriceLookupKey } from "src/types/subscription/types";
 import type { Subscription } from "src/types/subscription/types";
 import { supabase, userId } from "src/utils/supabase/server";
@@ -137,4 +145,29 @@ export async function deleteAccount(): Promise<void> {
   await cancelSubscription(owner);
   const { error } = await supabase.auth.admin.deleteUser(owner);
   if (error) throw new Error(error.message);
+}
+
+export async function getPlaidConnections(): Promise<PlaidConnections> {
+  const owner = await userId();
+  return getPlaidConnectionsRecord(owner);
+}
+
+export async function createPlaidLinkToken(): Promise<string> {
+  const owner = await userId();
+  return createLinkTokenRecord(owner);
+}
+
+export async function exchangePlaidPublicToken(
+  input: z.infer<typeof ExchangePlaidPublicTokenSchema>
+): Promise<PlaidConnection> {
+  const owner = await userId();
+  const result = await exchangePublicTokenRecord(owner, input);
+  revalidatePath("/settings");
+  return result;
+}
+
+export async function removePlaidItem(connectionId: string): Promise<void> {
+  const owner = await userId();
+  await removePlaidItemRecord(owner, connectionId);
+  revalidatePath("/settings");
 }
