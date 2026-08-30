@@ -46,7 +46,7 @@ const subscriptionCopy = (subscription: Subscription) => {
     return {
       description: (
         <>
-          Sync transactions from connected accounts <span className="text-primary">automatically</span>.
+          Sync transactions from connected accounts <span className="text-primary">automatically</span>
         </>
       ),
       action: "upgrade" as const,

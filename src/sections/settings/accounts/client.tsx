@@ -67,7 +67,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
     subscription.active && hasConnections
       ? `${count} of ${connections.limit} institutions`
       : !subscription.active && hasConnections
-      ? "Transaction syncing is paused without Plus."
+      ? "Transaction syncing is paused"
       : null;
 
   const resetLink = useCallback(() => {
