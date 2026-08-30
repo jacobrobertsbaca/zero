@@ -36,9 +36,7 @@ export function ConnectDialog({ open, loading, onOpenChange, onConfirm }: Props)
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Connect an external account</DialogTitle>
-          <DialogDescription className="sr-only">
-            Connect through Plaid to start syncing transactions.
-          </DialogDescription>
+          <DialogDescription>Connect an account to start syncing transactions.</DialogDescription>
         </DialogHeader>
 
         <DialogBody className="gap-3">
@@ -57,13 +55,13 @@ export function ConnectDialog({ open, loading, onOpenChange, onConfirm }: Props)
           </ul>
 
           <p className="rounded-lg text-xs leading-relaxed ">
-            To change what accounts are shared for an existing institution, click{" "}
+            To update what accounts are shared for an existing institution, click{" "}
             <span className="font-medium">
               <Ellipsis className="inline" size="1em" />
               <ChevronRight className="inline" size="1em" />
               Manage
             </span>{" "}
-            for that institution. See our{" "}
+            on that institution. See our{" "}
             <a href="#" className="font-medium text-primary underline-offset-4 hover:underline">
               privacy policy
             </a>{" "}

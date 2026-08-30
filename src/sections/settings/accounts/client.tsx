@@ -3,10 +3,12 @@
 import { MoreHorizontal, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { usePlaidLink } from "react-plaid-link";
+import { usePlaidLink, type PlaidLinkOnSuccessMetadata } from "react-plaid-link";
 import { toast } from "sonner";
-import { DeleteDialog } from "src/components/delete-dialog";
 import { ConnectDialog } from "src/sections/settings/accounts/connect-dialog";
+import { DisconnectInstitutionDialog } from "src/sections/settings/accounts/disconnect-institution-dialog";
+import { DuplicateInstitutionDialog } from "src/sections/settings/accounts/duplicate-institution-dialog";
+import { InstitutionMark } from "src/sections/settings/accounts/institution-mark";
 import { Button } from "src/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import {
@@ -26,8 +28,13 @@ import {
 } from "src/server/actions";
 import type { PlaidAccount, PlaidConnection, PlaidConnections } from "src/types/plaid/types";
 import type { Subscription } from "src/types/subscription/types";
-import { cn } from "src/utils";
 import { wrapAsync } from "src/utils/wrap-errors";
+
+type DuplicatePrompt = {
+  publicToken: string;
+  institutionName: string;
+  connections: PlaidConnection[];
+};
 
 type Props = {
   connections: PlaidConnections;
@@ -46,10 +53,11 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
   const [token, setToken] = useState<string | null>(null);
   const [redirectUri, setRedirectUri] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
-  const [disconnectId, setDisconnectId] = useState<string | null>(null);
+  const [disconnectConnection, setDisconnectConnection] = useState<PlaidConnection | null>(null);
   const [connectOpen, setConnectOpen] = useState(false);
   const [linkMode, setLinkMode] = useState<LinkMode | null>(null);
   const [manageConnectionId, setManageConnectionId] = useState<string | null>(null);
+  const [duplicatePrompt, setDuplicatePrompt] = useState<DuplicatePrompt | null>(null);
 
   const count = connections.connections.length;
   const atLimit = count >= connections.limit;
@@ -65,31 +73,47 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
   }, []);
 
   const onSuccess = useCallback(
-    async (publicToken: string | null) => {
+    async (publicToken: string | null, metadata: PlaidLinkOnSuccessMetadata) => {
       setLoading(true);
-      try {
-        if (linkMode === "manage" && manageConnectionId) {
-          await wrapAsync(async () => {
-            const connection = await syncPlaidAccounts({ connectionId: manageConnectionId });
-            toast.success(`Updated ${connection.institutionName} accounts`);
-            router.refresh();
-          });
-        } else if (publicToken) {
-          await wrapAsync(async () => {
-            const connection = await exchangePlaidPublicToken({ publicToken });
-            toast.success(`Connected ${connection.institutionName}`);
-            router.refresh();
-          });
-        }
-      } finally {
-        resetLink();
 
-        if (new URLSearchParams(window.location.search).has("oauth_state_id")) {
-          window.history.replaceState({}, "", "/settings");
-        }
+      if (linkMode === "manage" && manageConnectionId) {
+        await wrapAsync(async () => {
+          const connection = await syncPlaidAccounts({ connectionId: manageConnectionId });
+          toast.success(`Updated ${connection.institutionName} accounts`);
+          router.refresh();
+        });
+        resetLink();
+        return;
       }
+
+      if (!publicToken) {
+        resetLink();
+        return;
+      }
+
+      const institutionId = metadata.institution?.institution_id;
+      const duplicates = institutionId
+        ? connections.connections.filter((connection) => connection.institutionId === institutionId)
+        : [];
+
+      if (duplicates.length > 0) {
+        setDuplicatePrompt({
+          publicToken,
+          institutionName: metadata.institution?.name ?? "this institution",
+          connections: duplicates,
+        });
+        resetLink();
+        return;
+      }
+
+      await wrapAsync(async () => {
+        const connection = await exchangePlaidPublicToken({ publicToken });
+        toast.success(`Connected ${connection.institutionName}`);
+        router.refresh();
+      });
+      resetLink();
     },
-    [linkMode, manageConnectionId, resetLink, router]
+    [connections.connections, linkMode, manageConnectionId, resetLink, router]
   );
 
   const onExit = useCallback(
@@ -109,9 +133,15 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
     [linkMode, manageConnectionId, resetLink]
   );
 
-  const onEvent = useCallback((eventName: string) => {
-    if (eventName === "OPEN") setLoading(false);
-  }, []);
+  const onEvent = useCallback(
+    (eventName: string) => {
+      if (eventName === "OPEN") {
+        setLoading(false);
+        setConnectOpen(false);
+      }
+    },
+    [linkMode]
+  );
 
   const { open, ready } = usePlaidLink({
     token,
@@ -138,7 +168,6 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
   }, [token, ready, open]);
 
   const onConnect = useCallback(async () => {
-    setConnectOpen(false);
     setToken(null);
     setRedirectUri(undefined);
     setLinkMode("connect");
@@ -170,20 +199,34 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
   }, []);
 
   const onDisconnect = useCallback(async () => {
-    if (!disconnectId) return;
+    if (!disconnectConnection) return;
+    await removePlaidItem(disconnectConnection.id);
+    toast.success("Institution disconnected");
+    router.refresh();
+  }, [disconnectConnection, router]);
+
+  const onCancelDuplicate = useCallback(() => {
+    setDuplicatePrompt(null);
+  }, []);
+
+  const onConfirmDuplicate = useCallback(async () => {
+    if (!duplicatePrompt) return;
+
+    setLoading(true);
     await wrapAsync(async () => {
-      await removePlaidItem(disconnectId);
-      toast.success("Institution disconnected");
-      setDisconnectId(null);
+      const connection = await exchangePlaidPublicToken({ publicToken: duplicatePrompt.publicToken });
+      toast.success(`Connected ${connection.institutionName}`);
+      setDuplicatePrompt(null);
       router.refresh();
     });
-  }, [disconnectId, router]);
+    setLoading(false);
+  }, [duplicatePrompt, router]);
 
   const description = !subscription.active
     ? "Available with Plus."
     : hasConnections
-      ? `${count} of ${connections.limit} institutions`
-      : "Link a bank to sync transactions.";
+    ? `${count} of ${connections.limit} institutions`
+    : "Link a bank to sync transactions.";
 
   return (
     <>
@@ -221,7 +264,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
                     key={connection.id}
                     connection={connection}
                     onManage={() => onManage(connection.id)}
-                    onDisconnect={() => setDisconnectId(connection.id)}
+                    onDisconnect={() => setDisconnectConnection(connection)}
                   />
                 ))}
               </ul>
@@ -237,12 +280,19 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
         onConfirm={onConnect}
       />
 
-      <DeleteDialog
-        open={disconnectId !== null}
-        title="Disconnect institution?"
-        desc="This removes the connection and stops syncing new transactions from this institution."
-        onClose={() => setDisconnectId(null)}
-        onDelete={onDisconnect}
+      <DuplicateInstitutionDialog
+        open={duplicatePrompt !== null}
+        institutionName={duplicatePrompt?.institutionName ?? ""}
+        connections={duplicatePrompt?.connections ?? []}
+        loading={loading}
+        onCancel={onCancelDuplicate}
+        onConfirm={onConfirmDuplicate}
+      />
+
+      <DisconnectInstitutionDialog
+        connection={disconnectConnection}
+        onClose={() => setDisconnectConnection(null)}
+        onDisconnect={onDisconnect}
       />
     </>
   );
@@ -278,10 +328,7 @@ function ConnectionGroup({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem onSelect={() => onManage()}>Manage</DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onSelect={() => onDisconnect()}
-            >
+            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => onDisconnect()}>
               Disconnect
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -297,32 +344,9 @@ function ConnectionGroup({
   );
 }
 
-function InstitutionMark({ name, logo }: { name: string; logo: string | null }) {
-  if (logo) {
-    return (
-      <img
-        src={`data:image/png;base64,${logo}`}
-        alt=""
-        className="size-7 shrink-0 rounded-full object-cover"
-      />
-    );
-  }
-
-  return (
-    <div
-      className={cn(
-        "flex size-7 shrink-0 items-center justify-center rounded-full",
-        "bg-muted text-[11px] font-semibold uppercase tracking-tight text-muted-foreground"
-      )}
-    >
-      {name.trim().charAt(0) || "?"}
-    </div>
-  );
-}
-
 function AccountRow({ account }: { account: PlaidAccount }) {
   return (
-    <li className="flex items-center justify-between gap-4 py-2 pl-[3.25rem] pr-4 text-sm">
+    <li className="flex items-center justify-between gap-4 py-2 pl-[3.6rem] pr-4 text-sm">
       <span className="min-w-0 truncate text-foreground/90">{account.name}</span>
       <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
         <span className="capitalize">{formatSubtype(account)}</span>
