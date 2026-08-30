@@ -189,7 +189,7 @@ export function TransactionsPage() {
     manualSorting: true,
   });
 
-  const showLoadMore = !!fetchMore || (isValidating && !isLoading);
+  const showLoadMore = !!fetchMore;
   const count = transactions?.[0]?.meta?.count;
   const error = budgetsError || trxError;
 

@@ -132,11 +132,11 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
   const canFetchNext = useMemo(() => {
     // If there is no data yet or we are loading, it doesn't make sense to fetch more.
     // If the last data page has no rows or no cursor, we also cannot fetch more rows.
-    if (isLoading || isValidating || data === undefined) return false;
+    if (isLoading || data === undefined) return false;
     if (data.length === 0) return true;
     const lastPage = data[data.length - 1];
     return lastPage.transactions.length > 0 && !!lastPage.cursor;
-  }, [data, isLoading, isValidating]);
+  }, [data, isLoading]);
 
   const fetchMore = useMemo(() => {
     if (!canFetchNext) return undefined;
