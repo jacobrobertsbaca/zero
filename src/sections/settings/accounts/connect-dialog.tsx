@@ -15,6 +15,7 @@ import { cn } from "src/utils";
 type Props = {
   open: boolean;
   loading?: boolean;
+  subscriptionActive: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 };
@@ -30,7 +31,7 @@ const info: { icon: LucideIcon; text: string }[] = [
   },
 ];
 
-export function ConnectDialog({ open, loading, onOpenChange, onConfirm }: Props) {
+export function ConnectDialog({ open, loading, subscriptionActive, onOpenChange, onConfirm }: Props) {
   return (
     <Dialog open={open} onOpenChange={(next) => !loading && onOpenChange(next)}>
       <DialogContent>
@@ -54,14 +55,21 @@ export function ConnectDialog({ open, loading, onOpenChange, onConfirm }: Props)
             ))}
           </ul>
 
-          <p className="rounded-lg text-xs leading-relaxed ">
-            To update what accounts are shared for an existing institution, click{" "}
-            <span className="font-medium">
-              <Ellipsis className="inline" size="1em" />
-              <ChevronRight className="inline" size="1em" />
-              Manage
-            </span>{" "}
-            on that institution. See our{" "}
+          <p className="rounded-lg text-xs leading-relaxed">
+            {subscriptionActive ? (
+              <>
+                To update what accounts are shared for an existing institution, click{" "}
+                <span className="font-medium">
+                  <Ellipsis className="inline" size="1em" />
+                  <ChevronRight className="inline" size="1em" />
+                  Manage
+                </span>{" "}
+                on that institution.
+              </>
+            ) : (
+              <>Transaction syncing is available with a Plus membership.</>
+            )}{" "}
+            See our{" "}
             <a href="#" className="font-medium text-primary underline-offset-4 hover:underline">
               privacy policy
             </a>{" "}
@@ -69,11 +77,13 @@ export function ConnectDialog({ open, loading, onOpenChange, onConfirm }: Props)
           </p>
         </DialogBody>
 
-        <DialogFooter>
-          <Button className="w-full" variant="outline" size="sm" onClick={onConfirm} disabled={loading}>
-            {loading ? <Spinner className="size-4" /> : "Connect with Plaid"}
-          </Button>
-        </DialogFooter>
+        {subscriptionActive && (
+          <DialogFooter>
+            <Button className="w-full" variant="outline" size="sm" onClick={onConfirm} disabled={loading}>
+              {loading ? <Spinner className="size-4" /> : "Connect with Plaid"}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -61,8 +61,14 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
 
   const count = connections.connections.length;
   const atLimit = count >= connections.limit;
-  const canConnect = subscription.active && !atLimit;
   const hasConnections = count > 0;
+
+  const description =
+    subscription.active && hasConnections
+      ? `${count} of ${connections.limit} institutions`
+      : !subscription.active && hasConnections
+      ? "Transaction syncing is paused without Plus."
+      : null;
 
   const resetLink = useCallback(() => {
     setToken(null);
@@ -222,26 +228,20 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
     setLoading(false);
   }, [duplicatePrompt, router]);
 
-  const description = !subscription.active
-    ? "Available with Plus."
-    : hasConnections
-    ? `${count} of ${connections.limit} institutions`
-    : "Link a bank to sync transactions.";
-
   return (
     <>
       <Card className="animate-in fade-in">
         <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-3">
           <div className="space-y-1">
             <CardTitle className="text-base">Connected accounts</CardTitle>
-            <CardDescription>{description}</CardDescription>
+            {description && <CardDescription>{description}</CardDescription>}
           </div>
           <Button
             variant="outline"
             size="sm"
             className="shrink-0"
             onClick={() => setConnectOpen(true)}
-            disabled={!canConnect || (loading && linkMode === "connect")}
+            disabled={atLimit}
           >
             {loading && linkMode === "connect" ? (
               <Spinner className="size-3.5" />
@@ -263,6 +263,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
                   <ConnectionGroup
                     key={connection.id}
                     connection={connection}
+                    canManage={subscription.active}
                     onManage={() => onManage(connection.id)}
                     onDisconnect={() => setDisconnectConnection(connection)}
                   />
@@ -276,6 +277,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
       <ConnectDialog
         open={connectOpen}
         loading={loading && linkMode === "connect"}
+        subscriptionActive={subscription.active}
         onOpenChange={setConnectOpen}
         onConfirm={onConnect}
       />
@@ -300,10 +302,12 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
 
 function ConnectionGroup({
   connection,
+  canManage,
   onManage,
   onDisconnect,
 }: {
   connection: PlaidConnection;
+  canManage: boolean;
   onManage: () => void;
   onDisconnect: () => void;
 }) {
@@ -327,7 +331,7 @@ function ConnectionGroup({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onSelect={() => onManage()}>Manage</DropdownMenuItem>
+            {canManage && <DropdownMenuItem onSelect={() => onManage()}>Manage</DropdownMenuItem>}
             <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => onDisconnect()}>
               Disconnect
             </DropdownMenuItem>

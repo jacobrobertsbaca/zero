@@ -193,7 +193,7 @@ export function SettingsPlusClient({ subscription }: Props) {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader className="space-y-2">
-            <DialogTitle className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight">
+            <DialogTitle className="flex flex-wrap items-center gap-2 font-semibold tracking-tight">
               Upgrade to
               <span className="plus-title-gradient inline-flex items-center gap-1.5">
                 <Sprout className="size-5 shrink-0 text-primary" strokeWidth={1.75} />
@@ -216,48 +216,48 @@ export function SettingsPlusClient({ subscription }: Props) {
             </ul>
 
             <div className="grid grid-cols-2 gap-3">
-            {(Object.keys(plans) as Plan[]).map((key) => {
-              const selected = plan === key;
+              {(Object.keys(plans) as Plan[]).map((key) => {
+                const selected = plan === key;
 
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setPlan(key)}
-                  className={cn(
-                    "group relative rounded-xl border-2 p-3 text-left transition-all duration-200",
-                    selected
-                      ? "border-primary/40 bg-primary/[0.06] shadow-sm ring-1 ring-primary/10"
-                      : "border-border/80 bg-card hover:border-primary/25 hover:bg-muted/40"
-                  )}
-                >
-                  {plans[key].savings && (
-                    <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground shadow-sm">
-                      {plans[key].savings}
-                    </span>
-                  )}
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setPlan(key)}
+                    className={cn(
+                      "group relative rounded-xl border-2 p-3 text-left transition-all duration-200",
+                      selected
+                        ? "border-primary/40 bg-primary/[0.06] shadow-sm ring-1 ring-primary/10"
+                        : "border-border/80 bg-card hover:border-primary/25 hover:bg-muted/40"
+                    )}
+                  >
+                    {plans[key].savings && (
+                      <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground shadow-sm">
+                        {plans[key].savings}
+                      </span>
+                    )}
 
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium">{plans[key].label}</p>
-                    <div
-                      className={cn(
-                        "flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                        selected
-                          ? "border-primary bg-primary"
-                          : "border-muted-foreground/25 group-hover:border-primary/35"
-                      )}
-                    >
-                      {selected && <Check className="size-2.5 text-white" strokeWidth={3} />}
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium">{plans[key].label}</p>
+                      <div
+                        className={cn(
+                          "flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                          selected
+                            ? "border-primary bg-primary"
+                            : "border-muted-foreground/25 group-hover:border-primary/35"
+                        )}
+                      >
+                        {selected && <Check className="size-2.5 text-white" strokeWidth={3} />}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="mt-1.5 flex items-end gap-1">
-                    <span className="text-2xl font-semibold leading-none tracking-tight">{plans[key].price}</span>
-                    <span className="pb-0.5 text-xs text-muted-foreground">{plans[key].detail}</span>
-                  </div>
-                </button>
-              );
-            })}
+                    <div className="mt-1.5 flex items-end gap-1">
+                      <span className="text-2xl font-semibold leading-none tracking-tight">{plans[key].price}</span>
+                      <span className="pb-0.5 text-xs text-muted-foreground">{plans[key].detail}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </DialogBody>
 
