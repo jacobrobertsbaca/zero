@@ -10,8 +10,11 @@ In terms of database changes, I want to introduce a couple new columns to the tr
 
 ```ts
 type SyncDetails = {
-  // The Plaid `original_description` of this transaction
+  // The generated default name of this transaction, see below.
   name: string;
+
+  // The Plaid `original_description` of this transaction
+  original_name: string;
 
   // The app ID (i.e. `plaid_accounts.id`) of the account associated with this transaction (must be mapped).
   account_id: string;
@@ -29,8 +32,14 @@ type SyncDetails = {
   // If `status` is `removed`, this is the datetime that the transaction was removed.
   datetime?: string;
 
-  // The merchant's logo URL, if available
-  logo_url?: string;
+  // The merchant's info, if available.
+  // Only include this if `plaid.merchant_name` was available
+  merchant?: {
+    // The Plaid `merchant_name`.
+    name: string;
+    // The merchant's logo URL, if available
+    logo_url?: string;
+  };
 
   // The location where this transaction occurred. Only include if both `lat` and `lng` were available in Plaid's transaction. For all other fields, copy the remaining fields from Plaid, using `undefined` when a field is unavailable
   location?: {
@@ -72,7 +81,7 @@ Newly synced transactions behave as follows:
 - The new transaction will have a `budget` and `category` set to `null`.
 - It's `sync_id` will be set to the ID of the incoming `plaid` transaction.
 - It's `sync_details` should be populated according to the documentation above.
-- It's `transactions.name` should be assigned to either 1) the space concatenation of `plaid.counterparties[i].name`, if non-empty, 2) `plaid.merchant_name` if available, or 3) `details.name`.
+- It's `transactions.name` should be assigned to either 1) the space concatenation of `plaid.counterparties[i].name`, if non-empty, 2) `details.merchant.name` if available, or 3) `details.original_name`. This should be stored as `details.name` for future reference.
 - It's `transactions.date` should be assigned to `plaid.authorized_date` or `plaid.date`, whichever is available.
 - It's `transactions.amount` should be assigned to the absolute value of `details.amount`.
 
