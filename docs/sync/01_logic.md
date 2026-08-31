@@ -4,7 +4,7 @@ Now I want to start working on syncing transactions from plaid. Architecturally,
 
 In terms of database changes, I want to introduce a couple new columns to the transactions table:
 
-- `sync_id` (`text`). Defaults to null. This contains the remote transaction ID from Plaid of the transaction that originated this entry in the database. This will be used for reconciliation when transaction details change, transactions post, etc.
+- `sync_id` (`text`). Defaults to null. This contains the remote transaction ID from Plaid of the transaction that originated this entry in the database. This will be used for reconciliation when transaction details change, transactions post, etc. Make this a unique column.
 - `sync_pending` (`boolean`). Whether this transaction has been confirmed by the user. It should be a derived column and `true` iff either of `transactions.budget` or `transactions.category` is `null`.
 - `sync_details` (`jsonb`). Defaults to null. A JSON structure that contains info about the transaction received externally from Plaid. The structure of this object will look like this:
 
@@ -50,22 +50,22 @@ type SyncDetails = {
   // This object determines whether the user has chosen to override the corresponding fields.
   overrides: {
     // Has the user provided a custom name for this transaction?
-    // When a transaction posts, the `transactions.name` column should *not* be updated if this value is `false`.
+    // When a transaction posts, the `transactions.name` column should *not* be updated if this value is `undefined`.
     // Defaults `undefined`
     name?: true;
     // Has the user provided a custom amount for this transaction?
-    // When a transaction posts, the `transactions.amount` column *should* be updated if this value is `false`.
+    // When a transaction posts, the `transactions.amount` column *should* be updated if this value is `undefined`.
     // Defaults `undefined`
     amount?: true;
   };
 };
 ```
 
-We will also need to modify the `budgets` and `categories` columns. Newly imported transactions will not have an assigned budget/category yet, and so these columns should be made nullable.
+We will also need to modify the `budgets` and `categories` columns. Newly imported transactions will not have an assigned budget/category yet, and so these columns should be made nullable. Do not modify any RPCs/triggers in order to accomplish this.
 
 ## Syncing Behaviour
 
-Syncing should be done when the transactions page is loaded. Syncing should be done server side, but should not delay the rendering of the transactions page. [`after()`](https://nextjs.org/docs/app/api-reference/functions/after) may be a good tool for this.
+Syncing should be done when the transactions page is loaded. Syncing should be done server side, but should not delay the rendering of the transactions page. [`after()`](https://nextjs.org/docs/app/api-reference/functions/after) may be a good tool for this. Syncing should not be performed if the user does not have an active subscription.
 
 Newly synced transactions behave as follows:
 
@@ -79,13 +79,15 @@ Newly synced transactions behave as follows:
 When a transaction posts and replaces an existing transaction:
 
 - Update `details.amount` with the new amount.
-- `transactions.amount` should be updated, but only if `details.overrides.amount` is not true. In this case, if the transaction being updated has not been assigned a category, we can assign it the absolute value of `details.amount` as usual. If it has been assigned a category, then update with the negated value of the upstream amount (if the category type is Income), or the signed amount received upstream (if the category type is not Income).
+- `transactions.amount` should be updated, but only if `details.overrides.amount` is not true. In this case, if the transaction being updated has not been assigned a category, assign it the absolute value of `details.amount` as usual. If it has been assigned a category, update with the negated value of the upstream amount (if the category type is Income), or the signed amount received upstream (if the category type is not Income).
 - `details.name` should be updated with `plaid.original_description`.
 
 If a transaction is removed:
 
 - If the transaction is still `sync_pending`, then simply delete the corresponding row.
 - Otherwise, mark `details.status` as `removed` and update `details.datetime` and `details.amount`. If `details.overrides.amount` is not `true`, zero out `transactions.amount`.
+
+> Note: to avoid concurrency issues when two attempts to sync overlap, only insert new transaction rows if no transaction has used that `sync_id` yet. Updating a modified transaction and removing a transaction are idempotent operations, so no additional concurrency support should be required.
 
 ## User Interface
 
