@@ -322,6 +322,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
         open={connectOpen}
         loading={loading && linkMode === "connect"}
         subscriptionActive={subscription.active}
+        hasConnections={hasConnections}
         onOpenChange={setConnectOpen}
         onConfirm={onConnect}
       />

@@ -79,7 +79,7 @@ const mapConnection = (
 type PlaidAccountRow = {
   id: string;
   owner: string;
-  item_id: string | null;
+  item_id: string;
   account_id: string;
   persistent_account_id: string | null;
   name: string;
@@ -109,7 +109,6 @@ const findExistingAccount = (
   const subtype = upstream.subtype ?? null;
   const mask = upstream.mask ?? null;
   return existing.find((row) => {
-    if (!row.item_id) return false;
     const rowInstitutionId = institutionByItemId.get(row.item_id);
     return rowInstitutionId === institutionId && row.subtype === subtype && row.mask === mask;
   });
@@ -273,7 +272,6 @@ export const getPlaidConnections = async (owner: string): Promise<PlaidConnectio
 
   const accountsByItem = new Map<string, PlaidAccount[]>();
   for (const account of accounts ?? []) {
-    if (!account.item_id) continue;
     const mapped = mapAccount(account);
     const list = accountsByItem.get(account.item_id) ?? [];
     list.push(mapped);

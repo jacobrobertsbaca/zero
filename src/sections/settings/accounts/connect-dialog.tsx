@@ -16,6 +16,7 @@ type Props = {
   open: boolean;
   loading?: boolean;
   subscriptionActive: boolean;
+  hasConnections: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 };
@@ -31,7 +32,7 @@ const info: { icon: LucideIcon; text: string }[] = [
   },
 ];
 
-export function ConnectDialog({ open, loading, subscriptionActive, onOpenChange, onConfirm }: Props) {
+export function ConnectDialog({ open, loading, subscriptionActive, hasConnections, onOpenChange, onConfirm }: Props) {
   return (
     <Dialog open={open} onOpenChange={(next) => !loading && onOpenChange(next)}>
       <DialogContent>
@@ -57,18 +58,20 @@ export function ConnectDialog({ open, loading, subscriptionActive, onOpenChange,
 
           <p className="rounded-lg text-xs leading-relaxed">
             {subscriptionActive ? (
-              <>
-                To update what accounts are shared for an existing institution, click{" "}
-                <span className="font-medium">
-                  <Ellipsis className="inline" size="1em" />
-                  <ChevronRight className="inline" size="1em" />
-                  Manage
-                </span>{" "}
-                on that institution.
-              </>
+              hasConnections && (
+                <>
+                  To update what accounts are shared for an existing institution, click{" "}
+                  <span className="font-medium">
+                    <Ellipsis className="inline" size="1em" />
+                    <ChevronRight className="inline" size="1em" />
+                    Manage
+                  </span>{" "}
+                  on that institution.{" "}
+                </>
+              )
             ) : (
-              <>Transaction syncing is available with a Plus membership.</>
-            )}{" "}
+              <>Transaction syncing is available with a Plus membership. </>
+            )}
             See our{" "}
             <a href="#" className="font-medium text-primary underline-offset-4 hover:underline">
               privacy policy

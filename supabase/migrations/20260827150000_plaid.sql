@@ -2,7 +2,10 @@ CREATE TABLE "public"."plaid_items" (
   "id"                uuid        NOT NULL DEFAULT gen_random_uuid(),
   "owner"             uuid        NOT NULL,
   "item_id"           text        NOT NULL,
+
+  /* NULL for an inactive connection */
   "access_token"      text,
+  
   "institution_id"    text        NOT NULL,
   "institution_name"  text        NOT NULL,
   "institution_logo"  text,
@@ -17,7 +20,7 @@ CREATE TABLE "public"."plaid_items" (
 CREATE TABLE "public"."plaid_accounts" (
   "id"              uuid        NOT NULL DEFAULT gen_random_uuid(),
   "owner"           uuid        NOT NULL,
-  "item_id"         uuid,
+  "item_id"         uuid        NOT NULL,
   "account_id"      text        NOT NULL,
   "persistent_account_id" text,
   "name"            text        NOT NULL,
