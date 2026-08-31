@@ -319,9 +319,7 @@ function ConnectionGroup({
         <InstitutionMark name={connection.institutionName} logo={connection.institutionLogo} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium leading-none">{connection.institutionName}</p>
-          {needsAttention && (
-            <p className="mt-1 text-[11px] leading-none text-destructive">Re-authentication required</p>
-          )}
+          {needsAttention && <p className="mt-1 text-[11px] leading-none text-destructive">Authentication required</p>}
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
