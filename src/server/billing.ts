@@ -152,6 +152,11 @@ export const syncSubscription = async (sub: Stripe.Subscription): Promise<void> 
         })
         .eq("stripe_customer_id", customerId)
     );
+    if (existing?.owner) {
+      // Note: dynamic importing to avoid circular dependencies
+      const { revokeAllItems } = await import("src/server/plaid");
+      await revokeAllItems(existing.owner);
+    }
     return;
   }
 

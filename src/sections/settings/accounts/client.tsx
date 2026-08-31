@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Plus } from "lucide-react";
+import { Info, MoreHorizontal, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { usePlaidLink, type PlaidLinkOnSuccessMetadata } from "react-plaid-link";
@@ -8,7 +8,9 @@ import { toast } from "sonner";
 import { ConnectDialog } from "src/sections/settings/accounts/connect-dialog";
 import { DisconnectInstitutionDialog } from "src/sections/settings/accounts/disconnect-institution-dialog";
 import { DuplicateInstitutionDialog } from "src/sections/settings/accounts/duplicate-institution-dialog";
+import { InactiveInstitutionDialog } from "src/sections/settings/accounts/inactive-institution-dialog";
 import { InstitutionMark } from "src/sections/settings/accounts/institution-mark";
+import { ReviveInstitutionDialog } from "src/sections/settings/accounts/revive-institution-dialog";
 import { Button } from "src/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import {
@@ -36,6 +38,12 @@ type DuplicatePrompt = {
   connections: PlaidConnection[];
 };
 
+type RevivePrompt = {
+  publicToken: string;
+  institutionName: string;
+  connections: PlaidConnection[];
+};
+
 type Props = {
   connections: PlaidConnections;
   subscription: Subscription;
@@ -54,18 +62,21 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
   const [redirectUri, setRedirectUri] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [disconnectConnection, setDisconnectConnection] = useState<PlaidConnection | null>(null);
+  const [inactiveConnection, setInactiveConnection] = useState<PlaidConnection | null>(null);
   const [connectOpen, setConnectOpen] = useState(false);
   const [linkMode, setLinkMode] = useState<LinkMode | null>(null);
   const [manageConnectionId, setManageConnectionId] = useState<string | null>(null);
   const [duplicatePrompt, setDuplicatePrompt] = useState<DuplicatePrompt | null>(null);
+  const [revivePrompt, setRevivePrompt] = useState<RevivePrompt | null>(null);
 
+  const activeCount = connections.connections.filter((connection) => !connection.inactive).length;
   const count = connections.connections.length;
-  const atLimit = count >= connections.limit;
+  const atLimit = activeCount >= connections.limit;
   const hasConnections = count > 0;
 
   const description =
     subscription.active && hasConnections
-      ? `${count} of ${connections.limit} institutions`
+      ? `${activeCount} of ${connections.limit} institutions`
       : !subscription.active && hasConnections
       ? "Transaction syncing is paused"
       : null;
@@ -98,15 +109,27 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
       }
 
       const institutionId = metadata.institution?.institution_id;
-      const duplicates = institutionId
+      const matching = institutionId
         ? connections.connections.filter((connection) => connection.institutionId === institutionId)
         : [];
+      const revokedMatches = matching.filter((connection) => connection.inactive);
+      const activeMatches = matching.filter((connection) => !connection.inactive);
 
-      if (duplicates.length > 0) {
+      if (revokedMatches.length > 0) {
+        setRevivePrompt({
+          publicToken,
+          institutionName: metadata.institution?.name ?? "this institution",
+          connections: revokedMatches,
+        });
+        resetLink();
+        return;
+      }
+
+      if (activeMatches.length > 0) {
         setDuplicatePrompt({
           publicToken,
           institutionName: metadata.institution?.name ?? "this institution",
-          connections: duplicates,
+          connections: activeMatches,
         });
         resetLink();
         return;
@@ -139,15 +162,12 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
     [linkMode, manageConnectionId, resetLink]
   );
 
-  const onEvent = useCallback(
-    (eventName: string) => {
-      if (eventName === "OPEN") {
-        setLoading(false);
-        setConnectOpen(false);
-      }
-    },
-    [linkMode]
-  );
+  const onEvent = useCallback((eventName: string) => {
+    if (eventName === "OPEN") {
+      setLoading(false);
+      setConnectOpen(false);
+    }
+  }, []);
 
   const { open, ready } = usePlaidLink({
     token,
@@ -228,6 +248,29 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
     setLoading(false);
   }, [duplicatePrompt, router]);
 
+  const onCancelRevive = useCallback(() => {
+    setRevivePrompt(null);
+  }, []);
+
+  const onConfirmRevive = useCallback(
+    async (connectionId: string) => {
+      if (!revivePrompt) return;
+
+      setLoading(true);
+      await wrapAsync(async () => {
+        const connection = await exchangePlaidPublicToken({
+          publicToken: revivePrompt.publicToken,
+          connectionId: connectionId,
+        });
+        toast.success(`Restored ${connection.institutionName}`);
+        setRevivePrompt(null);
+        router.refresh();
+      });
+      setLoading(false);
+    },
+    [revivePrompt, router]
+  );
+
   return (
     <>
       <Card className="animate-in fade-in">
@@ -263,9 +306,10 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
                   <ConnectionGroup
                     key={connection.id}
                     connection={connection}
-                    canManage={subscription.active}
+                    canManage={subscription.active && !connection.inactive}
                     onManage={() => onManage(connection.id)}
                     onDisconnect={() => setDisconnectConnection(connection)}
+                    onInactive={() => setInactiveConnection(connection)}
                   />
                 ))}
               </ul>
@@ -291,10 +335,27 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
         onConfirm={onConfirmDuplicate}
       />
 
+      <ReviveInstitutionDialog
+        open={revivePrompt !== null}
+        institutionName={revivePrompt?.institutionName ?? ""}
+        connections={revivePrompt?.connections ?? []}
+        loading={loading}
+        onCancel={onCancelRevive}
+        onConfirm={onConfirmRevive}
+      />
+
       <DisconnectInstitutionDialog
         connection={disconnectConnection}
         onClose={() => setDisconnectConnection(null)}
         onDisconnect={onDisconnect}
+      />
+
+      <InactiveInstitutionDialog
+        open={inactiveConnection !== null}
+        institutionName={inactiveConnection?.institutionName ?? ""}
+        onOpenChange={(open) => {
+          if (!open) setInactiveConnection(null);
+        }}
       />
     </>
   );
@@ -305,13 +366,15 @@ function ConnectionGroup({
   canManage,
   onManage,
   onDisconnect,
+  onInactive,
 }: {
   connection: PlaidConnection;
   canManage: boolean;
   onManage: () => void;
   onDisconnect: () => void;
+  onInactive: () => void;
 }) {
-  const needsAttention = connection.accounts.some((account) => account.status !== "active");
+  const needsAttention = !connection.inactive && connection.accounts.some((account) => account.status !== "active");
 
   return (
     <li>
@@ -319,7 +382,18 @@ function ConnectionGroup({
         <InstitutionMark name={connection.institutionName} logo={connection.institutionLogo} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium leading-none">{connection.institutionName}</p>
-          {needsAttention && <p className="mt-1 text-[11px] leading-none text-destructive">Authentication required</p>}
+          {connection.inactive ? (
+            <button
+              type="button"
+              onClick={onInactive}
+              className="mt-1 inline-flex items-center gap-1 text-[11px] leading-none text-muted-foreground hover:text-foreground"
+            >
+              Inactive
+              <Info className="size-3" />
+            </button>
+          ) : (
+            needsAttention && <p className="mt-1 text-[11px] leading-none text-destructive">Authentication required</p>
+          )}
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -2,7 +2,7 @@ CREATE TABLE "public"."plaid_items" (
   "id"                uuid        NOT NULL DEFAULT gen_random_uuid(),
   "owner"             uuid        NOT NULL,
   "item_id"           text        NOT NULL,
-  "access_token"      text        NOT NULL,
+  "access_token"      text,
   "institution_id"    text        NOT NULL,
   "institution_name"  text        NOT NULL,
   "institution_logo"  text,
