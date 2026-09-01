@@ -1,8 +1,5 @@
-import { Suspense } from "react";
 import { PageTitle } from "src/components/page-title";
-import { syncTransactions } from "src/server/plaid";
-import { userId } from "src/utils/supabase/server";
-import { TransactionsPage } from "./components";
+import { SyncedTransactions, TransactionsPage } from "./components";
 
 export const metadata = {
   title: "Transactions",
@@ -18,16 +15,10 @@ function PageFallback() {
   );
 }
 
-async function SyncedTransactions() {
-  const owner = await userId();
-  await syncTransactions(owner);
-  return <TransactionsPage />;
-}
-
 export default function Page() {
   return (
-    <Suspense fallback={<PageFallback />}>
-      <SyncedTransactions />
-    </Suspense>
+    <SyncedTransactions fallback={<PageFallback />}>
+      <TransactionsPage />
+    </SyncedTransactions>
   );
 }

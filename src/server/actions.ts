@@ -34,6 +34,7 @@ import {
   getPlaidConnections as getPlaidConnectionsRecord,
   removePlaidItem as removePlaidItemRecord,
   syncPlaidItemAccounts as syncPlaidItemAccountsRecord,
+  syncTransactions as syncTransactionsRecord,
 } from "src/server/plaid";
 import {
   CreatePlaidUpdateLinkTokenSchema,
@@ -194,4 +195,9 @@ export async function removePlaidItem(connectionId: string): Promise<void> {
   const owner = await userId();
   await removePlaidItemRecord(owner, connectionId);
   revalidatePath("/settings");
+}
+
+export async function syncTransactions(): Promise<void> {
+  const owner = await userId();
+  await syncTransactionsRecord(owner);
 }

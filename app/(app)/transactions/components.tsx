@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Loader2, Plus, Sprout, Star } from "lucide-react";
 import {
   ColumnDef,
@@ -15,6 +15,7 @@ import { PageTitle } from "src/components/page-title";
 import { Button } from "src/components/ui/button";
 import { Collapsible, CollapsibleContent } from "src/components/ui/collapsible";
 import { useBudgets, useTransactionsSearch } from "src/hooks/use-api";
+import { syncTransactions } from "src/server/actions";
 import { useIsMobile } from "src/hooks/use-mobile";
 import { SearchModelOptions, useSearchModel } from "src/hooks/use-search";
 import {
@@ -69,6 +70,27 @@ const useTransactionsModel = ({ budgets }: { budgets: readonly Budget[] | undefi
     setFilter: useCallback((filter: TransactionFilterModel) => setQuery((q) => ({ ...q, filter })), [setQuery]),
   };
 };
+
+/* ================================================================================================================= *
+ * Sync                                                                                                              *
+ * ================================================================================================================= */
+
+let syncedThisSession = false;
+
+export function SyncedTransactions({ fallback, children }: { fallback: ReactNode; children: ReactNode }) {
+  const [ready, setReady] = useState(syncedThisSession);
+
+  useEffect(() => {
+    if (syncedThisSession) return;
+    void syncTransactions().finally(() => {
+      syncedThisSession = true;
+      setReady(true);
+    });
+  }, []);
+
+  if (!ready) return fallback;
+  return children;
+}
 
 /* ================================================================================================================= *
  * Page                                                                                                              *
