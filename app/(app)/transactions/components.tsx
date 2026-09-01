@@ -284,7 +284,10 @@ export function TransactionsPage() {
           <TransactionList
             table={table}
             setSidebarTrx={(trx) => {
-              setSidebarTrx(trx);
+              setSidebarTrx({
+                ...trx,
+                ...(budgets && !trx.budget ? { budget: budgets[0].id } : {}),
+              });
               setSidebarOpen(true);
             }}
           />
