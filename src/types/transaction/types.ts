@@ -56,9 +56,15 @@ export type SyncDetails = Immutable<{
   };
 }>;
 
+export enum SyncStatus {
+  Pending = "pending",
+  Confirmed = "confirmed",
+  Removed = "removed",
+}
+
 export type TransactionSync = Immutable<{
   id: string;
-  pending: boolean;
+  status: SyncStatus;
   details: SyncDetails;
 }>;
 

@@ -35,7 +35,7 @@ import { Budget } from "src/types/budget/types";
 import { Category } from "src/types/category/types";
 import { moneyFormat, moneyZero } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
-import { Transaction, TransactionQuery } from "src/types/transaction/types";
+import { SyncStatus, Transaction, TransactionQuery } from "src/types/transaction/types";
 import { asDateString, dateFormatShort } from "src/types/utils/methods";
 import { Separator } from "src/components/ui/separator";
 import { cn } from "@/utils";
@@ -117,7 +117,7 @@ export function TransactionsPage() {
       {
         id: "star",
         cell: ({ row }) =>
-          row.original.sync?.pending ? (
+          row.original.sync?.status === SyncStatus.Pending ? (
             <span className="inline-flex items-center justify-center align-middle">
               <Sprout className="size-3.5 fill-primary text-primary" />
             </span>

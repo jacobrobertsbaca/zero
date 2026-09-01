@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { MoneySchema } from "../money/schema";
 import { DateStringSchema } from "../utils/schema";
-import { TransactionFilter } from "./types";
+import { TransactionFilter, SyncStatus } from "./types";
 
 export const SyncDetailsSchema = z.object({
   name: z.string(),
@@ -36,7 +36,7 @@ export const SyncDetailsSchema = z.object({
 
 export const TransactionSyncSchema = z.object({
   id: z.string(),
-  pending: z.boolean(),
+  status: z.nativeEnum(SyncStatus),
   details: SyncDetailsSchema,
 });
 
@@ -68,8 +68,9 @@ const textColumns = z.enum([
   "note",
   "categoryName",
   "budgetName",
+  "syncStatus",
 ]);
-const boolColumns = z.enum(["starred", "syncPending"]);
+const boolColumns = z.enum(["starred"]);
 const numberColumns = z.enum(["amount"]);
 
 export const TransactionSearchColumnSchema = z.enum([

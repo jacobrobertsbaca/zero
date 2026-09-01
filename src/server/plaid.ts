@@ -17,7 +17,7 @@ import { CategoryType } from "src/types/category/types";
 import { defaultCurrency, moneyAbs, moneyFactor, moneyZero } from "src/types/money/methods";
 import { ExchangePlaidPublicTokenSchema } from "src/types/plaid/schema";
 import type { PlaidAccount, PlaidConnection, PlaidConnections, PlaidSyncItem } from "src/types/plaid/types";
-import type { SyncDetails } from "src/types/transaction/types";
+import { SyncStatus, type SyncDetails } from "src/types/transaction/types";
 import { supabase } from "src/utils/supabase/server";
 import { z } from "zod";
 
@@ -632,6 +632,7 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
       if (!accountId) return [];
 
       const existing = universe.get(txn.pending_transaction_id ?? txn.transaction_id);
+      if (existing?.sync?.status === SyncStatus.Removed) return [];
       const overrides = existing?.sync?.details.overrides ?? {};
       const details = buildSyncDetails(txn, accountId, overrides);
       if (!details) return;
@@ -656,7 +657,7 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
         note: existing?.note ?? "",
         sync: {
           id: txn.transaction_id,
-          pending: !existing?.budget || !existing?.category,
+          status: existing?.sync?.status ?? SyncStatus.Pending,
           details,
         },
       });
@@ -665,7 +666,7 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
       const existing = universe.get(txn.transaction_id);
       if (!existing) return [];
 
-      if (existing.sync?.pending) return deleteTransaction(owner, existing.id);
+      if (existing.sync?.status === SyncStatus.Pending) return deleteTransaction(owner, existing.id);
       if (!existing.sync) return;
 
       const now = new Date().toISOString();

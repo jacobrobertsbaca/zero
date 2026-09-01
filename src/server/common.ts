@@ -10,15 +10,16 @@ import { defaultCurrency } from "src/types/money/methods";
 import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
-import type {
-  SyncDetails,
-  Transaction,
-  TransactionCursor,
-  TransactionFilter,
-  TransactionPage,
-  TransactionQuery,
-  TransactionSearchColumn,
-  TransactionSort,
+import {
+  SyncStatus,
+  type SyncDetails,
+  type Transaction,
+  type TransactionCursor,
+  type TransactionFilter,
+  type TransactionPage,
+  type TransactionQuery,
+  type TransactionSearchColumn,
+  type TransactionSort,
 } from "src/types/transaction/types";
 import { DateString } from "src/types/utils/types";
 
@@ -60,7 +61,7 @@ const BUDGET_QUERY = `
 
 const TRANSACTION_QUERY = `
   id, category, category_name, budget, budget_name, date, amount, name, last_modified, starred, note,
-  sync_id, sync_pending, sync_details
+  sync_id, sync_status, sync_details
 ` as const;
 
 const retrieveBudgets = async (owner: string, id?: string) => {
@@ -86,7 +87,7 @@ type ReadTransactionRow = Awaited<ReturnType<typeof retrieveTransactions>>[0];
 type WriteBudgetRow = Omit<ReadBudgetRow, "categories"> & { owner: any };
 type WriteCategoryRow = Omit<ReadCategoryRow, "periods"> & { owner: any; budget: any };
 type WritePeriodRow = ReadPeriodRow & { owner: any; budget: any; category: any };
-type WriteTransactionRow = Omit<ReadTransactionRow, "category_name" | "budget_name" | "sync_pending"> & { owner: any };
+type WriteTransactionRow = Omit<ReadTransactionRow, "category_name" | "budget_name"> & { owner: any };
 
 const parsePeriod = (row: ReadPeriodRow): Period => ({
   dates: {
@@ -147,7 +148,7 @@ const parseTransaction = (row: ReadTransactionRow): Transaction => ({
   sync: row.sync_id
     ? {
         id: row.sync_id,
-        pending: row.sync_pending ?? false,
+        status: (row.sync_status as SyncStatus) ?? SyncStatus.Confirmed,
         details: row.sync_details as SyncDetails,
       }
     : undefined,
@@ -199,6 +200,7 @@ const formatTransaction = (owner: string, trx: Transaction): WriteTransactionRow
   note: trx.note,
   sync_id: trx.sync?.id ?? null,
   sync_details: trx.sync?.details ?? null,
+  sync_status: trx.sync?.status ?? null,
 });
 
 /* ================================================================================================================= *
@@ -452,7 +454,8 @@ export const putTransaction = async (owner: string, trx: Transaction): Promise<T
   /* Set metadata */
   trx = produce(trx, (draft) => {
     draft.lastModified = new Date().toISOString();
-    if (draft.sync) draft.sync.pending = !draft.budget || !draft.category;
+    if (draft.sync && draft.sync.status !== SyncStatus.Removed)
+      draft.sync.status = !draft.budget || !draft.category ? SyncStatus.Pending : SyncStatus.Confirmed;
   });
 
   /* Write transaction to the database using `put_transaction` rpc */
@@ -497,7 +500,7 @@ const getTrxDbColumn = (column: TransactionSearchColumn): string => {
   if (column === "lastModified") return "last_modified";
   if (column === "categoryName") return "category_name";
   if (column === "budgetName") return "budget_name";
-  if (column === "syncPending") return "sync_pending";
+  if (column === "syncStatus") return "sync_status";
   return column;
 };
 
@@ -533,7 +536,7 @@ const getTrxCursorFilter = (sort: TransactionSort[], cursor: TransactionCursor):
     /* Need to select correct value when column is amount */
     let value;
     if (column === "amount") value = cursor.amount!.amount;
-    else if (column === "syncPending") value = cursor.sync?.pending ?? false;
+    else if (column === "syncStatus") value = cursor.sync?.status ?? "";
     else value = cursor[column]!;
 
     return {
@@ -592,13 +595,14 @@ const getTrxQuery = (
   const query = supabase
     .from("transactions")
     .select(TRANSACTION_QUERY, count ? { count: "exact", head: true } : undefined)
-    .eq("owner", owner);
+    .eq("owner", owner)
+    .neq("sync_status", SyncStatus.Removed);
 
   /* Sort query. If sorting unspecified, apply default sorting */
   let sort = model.sort;
   if (!sort || sort.length === 0)
     sort = [
-      { column: "syncPending", ascending: false },
+      { column: "syncStatus", ascending: false },
       { column: "starred", ascending: false },
       { column: "date", ascending: false },
     ];
