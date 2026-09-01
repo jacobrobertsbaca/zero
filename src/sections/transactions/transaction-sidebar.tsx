@@ -13,7 +13,7 @@ import { Sidebar } from "src/components/sidebar/sidebar";
 import { Button } from "src/components/ui/button";
 import { deleteTransaction, putTransaction } from "src/server/actions";
 import { Budget } from "src/types/budget/types";
-import { Transaction } from "src/types/transaction/types";
+import { SyncStatus, Transaction } from "src/types/transaction/types";
 import { dateFormat } from "src/types/utils/methods";
 import * as Yup from "yup";
 import { CategorySelector } from "./category-selector";
@@ -73,6 +73,7 @@ export const TransactionSidebar = ({
   onDelete,
 }: TransactionSidebarProps) => {
   const isExisting = !!transaction.id;
+  const isPending = transaction.sync?.status === SyncStatus.Pending;
 
   const budgetValues = useMemo(
     () =>
@@ -115,7 +116,7 @@ export const TransactionSidebar = ({
     <Sidebar
       open={open}
       onClose={onClose}
-      title={isExisting ? "Edit Transaction" : "New Transaction"}
+      title={isPending ? "Confirm Transaction" : isExisting ? "Edit Transaction" : "New Transaction"}
       FormProps={{
         enableReinitialize: true,
         initialValues: transaction,
@@ -160,6 +161,7 @@ export const TransactionSidebar = ({
             dirty={!isEqual(form.values, transaction)}
             state={EditState.Edit}
             onDelete={isExisting ? handleDelete : undefined}
+            ButtonProps={isPending ? { submit: { children: "Confirm" } } : undefined}
           />
         </>
       )}
