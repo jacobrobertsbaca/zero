@@ -1,11 +1,23 @@
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
-import { Configuration, CountryCode, PlaidApi, PlaidEnvironments, Products, type AccountBase } from "plaid";
-import { wrap } from "src/server/common";
+import {
+  Configuration,
+  CountryCode,
+  PlaidApi,
+  PlaidEnvironments,
+  Products,
+  RemovedTransaction,
+  type AccountBase,
+  type Transaction as PlaidTransaction,
+} from "plaid";
+import { wrap, putTransaction, deleteTransaction, getTransactionsBySyncIds } from "src/server/common";
 import { HttpError } from "src/server/errors";
 import { getSubscription } from "src/server/billing";
 import { tags } from "src/server/tags";
+import { CategoryType } from "src/types/category/types";
+import { defaultCurrency, moneyAbs, moneyFactor, moneyZero } from "src/types/money/methods";
 import { ExchangePlaidPublicTokenSchema } from "src/types/plaid/schema";
-import type { PlaidAccount, PlaidConnection, PlaidConnections } from "src/types/plaid/types";
+import type { PlaidAccount, PlaidConnection, PlaidConnections, PlaidSyncItem } from "src/types/plaid/types";
+import type { SyncDetails } from "src/types/transaction/types";
 import { supabase } from "src/utils/supabase/server";
 import { z } from "zod";
 
@@ -467,4 +479,237 @@ export const removePlaidItem = async (owner: string, connectionId: string): Prom
 
   await wrap(supabase.from("plaid_items").delete().eq("id", id).eq("owner", owner));
   revalidateTag(tags.plaid(owner), { expire: 0 });
+};
+
+/* ================================================================================================================= *
+ * Transaction sync                                                                                                  *
+ * ================================================================================================================= */
+
+/** Builds sync_details from a Plaid transaction, or null if it should not be synced (e.g. non-USD). */
+const buildSyncDetails = (
+  txn: PlaidTransaction,
+  accountId: string,
+  overrides: SyncDetails["overrides"] = {}
+): SyncDetails | null => {
+  if (txn.iso_currency_code !== "USD") return null;
+
+  const originalName = txn.original_description || txn.name;
+  const merchant = txn.merchant_name
+    ? { name: txn.merchant_name, ...(txn.logo_url ? { logo_url: txn.logo_url } : {}) }
+    : undefined;
+
+  const counterpartyName = (txn.counterparties ?? [])
+    .map((c) => c.name)
+    .filter(Boolean)
+    .join(" ");
+  const name = (counterpartyName || merchant?.name || originalName).slice(0, 120);
+
+  const location =
+    txn.location.lat != null && txn.location.lon != null
+      ? {
+          lat: txn.location.lat,
+          lng: txn.location.lon,
+          ...(txn.location.address ? { address: txn.location.address } : {}),
+          ...(txn.location.city ? { city: txn.location.city } : {}),
+          ...(txn.location.region ? { region: txn.location.region } : {}),
+          ...(txn.location.country ? { country: txn.location.country } : {}),
+          ...(txn.location.postal_code ? { postal_code: txn.location.postal_code } : {}),
+        }
+      : undefined;
+
+  const datetime = txn.authorized_datetime ?? txn.datetime ?? undefined;
+
+  return {
+    name,
+    original_name: originalName,
+    account_id: accountId,
+    status: txn.pending ? "pending" : "posted",
+    amount: {
+      amount: Math.round(txn.amount * 100),
+      currency: defaultCurrency,
+    },
+    ...(datetime ? { datetime } : {}),
+    ...(merchant ? { merchant } : {}),
+    ...(location ? { location } : {}),
+    payment_channel: (() => {
+      switch (txn.payment_channel) {
+        case "online":
+          return "online";
+        case "in store":
+          return "physical";
+        default:
+          return "other";
+      }
+    })(),
+    overrides,
+  };
+};
+
+const fetchPlaidUpdates = async (accessToken: string, cursor?: string | null) => {
+  const added: PlaidTransaction[] = [];
+  const modified: PlaidTransaction[] = [];
+  const removed: RemovedTransaction[] = [];
+
+  let nextCursor = cursor ?? undefined;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await plaid().transactionsSync({
+      access_token: accessToken,
+      cursor: nextCursor,
+      options: { include_original_description: true },
+    });
+
+    added.push(...response.data.added);
+    modified.push(...response.data.modified);
+    removed.push(...response.data.removed);
+    nextCursor = response.data.next_cursor;
+    hasMore = response.data.has_more;
+  }
+
+  const upserts = new Map<string, PlaidTransaction>();
+  const pendingIds = new Set<string>();
+
+  for (const txn of added) {
+    if (txn.iso_currency_code !== "USD") continue;
+    upserts.set(txn.pending_transaction_id ?? txn.transaction_id, txn);
+    if (txn.pending_transaction_id) pendingIds.add(txn.pending_transaction_id);
+  }
+
+  for (const txn of modified) {
+    if (txn.iso_currency_code !== "USD") continue;
+    upserts.set(txn.pending_transaction_id ?? txn.transaction_id, txn);
+  }
+
+  return {
+    upserted: [...upserts.values()],
+    removed: removed.filter((txn) => pendingIds.has(txn.transaction_id)),
+    cursor: nextCursor,
+  };
+};
+
+const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
+  "use cache";
+  cacheTag(tags.plaid(owner));
+  cacheLife("max");
+
+  const { data, error } = await supabase
+    .from("plaid_items")
+    .select("id, access_token, transactions_cursor, plaid_accounts ( id, account_id )")
+    .eq("owner", owner)
+    .not("access_token", "is", null);
+  if (error) throw new HttpError(error.code, error.message);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    accessToken: row.access_token,
+    transactionsCursor: row.transactions_cursor,
+    accounts: row.plaid_accounts.map((account) => ({ id: account.id, accountId: account.account_id })),
+  }));
+};
+
+const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
+  const accountByPlaidId = new Map(item.accounts.map((account) => [account.accountId, account.id]));
+
+  const { upserted, removed, cursor } = await fetchPlaidUpdates(item.accessToken, item.transactionsCursor);
+  const universe = await getTransactionsBySyncIds(
+    owner,
+    removed
+      .map((txn) => txn.transaction_id)
+      .concat(upserted.map((txn) => txn.pending_transaction_id ?? txn.transaction_id))
+  );
+
+  const categoryIds = [...new Set([...universe.values()].map((t) => t.category).filter(Boolean) as string[])];
+  const categoryTypes = new Map<string, CategoryType>();
+  if (categoryIds.length > 0) {
+    const rows = await wrap(supabase.from("categories").select("id, type").eq("owner", owner).in("id", categoryIds));
+    for (const row of rows) categoryTypes.set(row.id, row.type as CategoryType);
+  }
+
+  await Promise.all([
+    ...upserted.flatMap((txn) => {
+      const accountId = accountByPlaidId.get(txn.account_id);
+      if (!accountId) return [];
+
+      const existing = universe.get(txn.pending_transaction_id ?? txn.transaction_id);
+      const overrides = existing?.sync?.details.overrides ?? {};
+      const details = buildSyncDetails(txn, accountId, overrides);
+      if (!details) return;
+
+      const amount = (() => {
+        if (existing?.sync?.details.overrides.amount) return existing.amount;
+        const type = existing?.category ? categoryTypes.get(existing.category) : undefined;
+        if (!type) return moneyAbs(details.amount);
+        if (type === CategoryType.Income) return moneyFactor(details.amount, -1);
+        return details.amount;
+      })();
+
+      return putTransaction(owner, {
+        id: existing?.id ?? "",
+        budget: existing?.budget ?? null,
+        category: existing?.category ?? null,
+        date: (txn.authorized_date || txn.date).replaceAll("-", ""),
+        amount,
+        name: existing?.name ?? details.name,
+        lastModified: existing?.lastModified ?? "",
+        starred: existing?.starred ?? false,
+        note: existing?.note ?? "",
+        sync: {
+          id: txn.transaction_id,
+          pending: !existing?.budget || !existing?.category,
+          details,
+        },
+      });
+    }),
+    ...removed.flatMap((txn) => {
+      const existing = universe.get(txn.transaction_id);
+      if (!existing) return [];
+
+      if (existing.sync?.pending) return deleteTransaction(owner, existing.id);
+      if (!existing.sync) return;
+
+      const now = new Date().toISOString();
+      return putTransaction(owner, {
+        ...existing,
+        amount: existing.sync.details.overrides.amount ? existing.amount : moneyZero(),
+        sync: {
+          ...existing.sync,
+          details: {
+            ...existing.sync.details,
+            status: "removed",
+            datetime: now,
+          },
+        },
+      });
+    }),
+  ]);
+
+  const { error } = await supabase
+    .from("plaid_items")
+    .update({ transactions_cursor: cursor ?? null, updated_at: new Date().toISOString() })
+    .eq("id", item.id)
+    .eq("owner", owner);
+  if (error) throw new HttpError(error.code, error.message);
+};
+
+/**
+ * Syncs Plaid transactions for all active connections belonging to {@link owner}.
+ * No-ops when the user lacks an active Plus subscription or Plaid is not configured.
+ */
+export const syncTransactions = async (owner: string): Promise<void> => {
+  if (!isPlaidConfigured()) return;
+
+  const subscription = await getSubscription(owner);
+  if (!subscription.active) return;
+
+  const items = await getPlaidSyncItems(owner);
+  if (!items.length) return;
+
+  await Promise.all(
+    items.map((item) =>
+      syncTransactionsForItem(owner, item).catch((err) =>
+        console.error(`Transaction sync failed for item ${item.id}:`, err)
+      )
+    )
+  );
 };

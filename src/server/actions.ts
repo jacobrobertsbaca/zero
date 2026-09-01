@@ -118,8 +118,8 @@ export async function putTransaction(transaction: Transaction): Promise<Transact
   const parsed = TransactionSchema.parse(transaction);
   const owner = await userId();
   const result = await putTransactionRecord(owner, parsed);
-  revalidateTransaction(transaction.budget);
-  revalidateTransaction(result.budget);
+  if (transaction.budget) revalidateTransaction(transaction.budget);
+  if (result.budget) revalidateTransaction(result.budget);
   return result;
 }
 

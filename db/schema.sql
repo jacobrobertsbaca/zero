@@ -57,15 +57,20 @@ create table periods (
 create table transactions (
   id uuid primary key,
   owner uuid not null references auth.users on delete cascade,
-  category uuid not null references public.categories on delete cascade,
-  budget uuid not null references public.budgets on delete cascade,
-  category_name citext not null default '',
-  budget_name citext not null default '',
+  category uuid references public.categories on delete cascade,
+  budget uuid references public.budgets on delete cascade,
+  category_name citext,
+  budget_name citext,
   date char(8) not null,
   amount bigint not null,
   name citext not null check (length(name) <= 120),
   last_modified varchar(27) not null,
   starred boolean not null,
   note text not null check (length(note) <= 1000),
-  search text generated always as (name || ' ' || note || ' ' ||  budget_name || ' ' || category_name) stored
+  sync_id text unique,
+  sync_details jsonb,
+  sync_pending boolean generated always as (budget is null or category is null) stored,
+  search text generated always as (
+    name || ' ' || note || ' ' || coalesce(budget_name, '') || ' ' || coalesce(category_name, '')
+  ) stored
 );

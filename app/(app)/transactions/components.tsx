@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Loader2, Plus, Star } from "lucide-react";
+import { Loader2, Plus, Sprout, Star } from "lucide-react";
 import {
   ColumnDef,
   functionalUpdate,
@@ -84,6 +84,7 @@ const emptyTransaction = (): Transaction => ({
   lastModified: "",
   starred: false,
   note: "",
+  sync: undefined,
 });
 
 const getBudget = (row: Row<Transaction>, budgets: readonly Budget[] | undefined): Budget | undefined =>
@@ -115,20 +116,27 @@ export function TransactionsPage() {
     return [
       {
         id: "star",
-        cell: ({ row }) => (
-          <button
-            type="button"
-            className="inline-flex items-center justify-center rounded-md align-middle"
-            onClick={(evt) => {
-              starTransaction(row.original, !row.original.starred);
-              evt.stopPropagation();
-            }}
-          >
-            <Star
-              className={row.original.starred ? "size-3.5 fill-primary text-primary" : "size-3.5 text-muted-foreground"}
-            />
-          </button>
-        ),
+        cell: ({ row }) =>
+          row.original.sync?.pending ? (
+            <span className="inline-flex items-center justify-center align-middle">
+              <Sprout className="size-3.5 fill-primary text-primary" />
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-md align-middle"
+              onClick={(evt) => {
+                starTransaction(row.original, !row.original.starred);
+                evt.stopPropagation();
+              }}
+            >
+              <Star
+                className={
+                  row.original.starred ? "size-3.5 fill-primary text-primary" : "size-3.5 text-muted-foreground"
+                }
+              />
+            </button>
+          ),
         enableSorting: false,
         maxSize: mobile ? 10 : 5,
         meta: { center: true },

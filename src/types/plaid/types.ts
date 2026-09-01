@@ -22,6 +22,18 @@ export type PlaidConnection = Immutable<{
   inactive: boolean;
 }>;
 
+export type PlaidSyncAccount = Immutable<{
+  id: string;
+  accountId: string;
+}>;
+
+export type PlaidSyncItem = Immutable<{
+  id: string;
+  accessToken: string;
+  transactionsCursor: string | null;
+  accounts: PlaidSyncAccount[];
+}>;
+
 export type PlaidConnections = Immutable<{
   connections: PlaidConnection[];
   limit: number;

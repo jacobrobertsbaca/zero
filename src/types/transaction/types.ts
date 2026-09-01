@@ -9,15 +9,68 @@ import {
 } from "./schema";
 import { Immutable } from "immer";
 
+export type SyncDetails = Immutable<{
+  /** The generated default name of this transaction. */
+  name: string;
+
+  /** The Plaid `original_description` of this transaction. */
+  original_name: string;
+
+  /** The app ID (`plaid_accounts.id`) of the account associated with this transaction. */
+  account_id: string;
+
+  /** The status of the transaction. */
+  status: "posted" | "pending" | "removed";
+
+  /**
+   * The external amount of this transaction (USD only).
+   * Sign always matches Plaid's convention (positive for money leaving the account).
+   */
+  amount: Money;
+  datetime?: string;
+
+  merchant?: {
+    name: string;
+    logo_url?: string;
+  };
+
+  location?: {
+    lat: number;
+    lng: number;
+    address?: string;
+    city?: string;
+    region?: string;
+    country?: string;
+    postal_code?: string;
+  };
+
+  payment_channel: "online" | "physical" | "other";
+
+  /**
+   * Whether the user has overridden fields inferred from the synced transaction.
+   * `undefined` means the field has not been overridden.
+   */
+  overrides: {
+    name?: true;
+    amount?: true;
+  };
+}>;
+
+export type TransactionSync = Immutable<{
+  id: string;
+  pending: boolean;
+  details: SyncDetails;
+}>;
+
 export type Transaction = Immutable<{
   /** The unique ID of this transaction. */
   id: string;
 
   /** The ID of the budget this transaction is associated with. */
-  budget: string;
+  budget: string | null;
 
   /** The ID of the category this transaction is associated with. */
-  category: string;
+  category: string | null;
 
   /** The date of this transaction. */
   date: DateString;
@@ -36,15 +89,20 @@ export type Transaction = Immutable<{
 
   /** An optional note associated with the transaction. */
   note: string;
+
+  /** Sync metadata, present when this row originated from an external sync. */
+  sync?: TransactionSync;
 }>;
 
-export type TransactionCursor = Immutable<Transaction & {
-  /** The name of the budget this transaction is associated with. */
-  budgetName: string;
+export type TransactionCursor = Immutable<
+  Transaction & {
+    /** The name of the budget this transaction is associated with. */
+    budgetName: string | null;
 
-  /** The name of the category this transaction is associated with. */
-  categoryName: string;
-}>;
+    /** The name of the category this transaction is associated with. */
+    categoryName: string | null;
+  }
+>;
 
 export type TransactionPage = Immutable<{
   transactions: Transaction[];

@@ -149,7 +149,7 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
   const applyPut = useCallback(
     async (transaction: Transaction) => {
       await mutate((cache) => mutateTransactions(cache, transaction.id, transaction), { revalidate: false });
-      await invalidateQueries(transaction.budget);
+      await invalidateQueries(transaction.budget ?? undefined);
     },
     [mutate, invalidateQueries]
   );
@@ -181,7 +181,7 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
   const applyDelete = useCallback(
     async (transaction: Transaction) => {
       await mutate((cache) => mutateTransactions(cache, transaction.id, () => undefined), { revalidate: false });
-      await invalidateQueries(transaction.budget);
+      await invalidateQueries(transaction.budget ?? undefined);
     },
     [mutate, invalidateQueries]
   );
