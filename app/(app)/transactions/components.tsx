@@ -160,6 +160,23 @@ export function TransactionsPage() {
         id: "name",
         accessorKey: "name",
         header: "Name",
+        cell: ({ row, getValue }) => {
+          const logoUrl = row.original.sync?.details.merchant?.logo_url;
+          const name = getValue<string>();
+
+          return (
+            <div className="truncate">
+              {name}
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt=""
+                  className="ml-1.5 inline size-5 align-middle rounded-full object-cover ring-1 ring-border"
+                />
+              ) : null}
+            </div>
+          );
+        },
         meta: { ellipsis: true },
         maxSize: mobile ? 30 : 35,
       },
