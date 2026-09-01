@@ -10,12 +10,12 @@ ALTER TABLE "public"."transactions"
     (name)::text || ' '::text || note || ' '::text || coalesce((budget_name)::text, '') || ' '::text || coalesce((category_name)::text, '')
   ) STORED;
 
-CREATE TYPE "public"."transaction_sync_status" AS ENUM ('removed', 'confirmed', 'pending');
+CREATE TYPE "public"."sync_status" AS ENUM ('removed', 'confirmed', 'pending');
 
 ALTER TABLE "public"."transactions"
   ADD COLUMN "sync_id" text,
   ADD COLUMN "sync_details" jsonb,
-  ADD COLUMN "sync_status" "public"."transaction_sync_status";
+  ADD COLUMN "sync_status" "public"."sync_status" NOT NULL DEFAULT 'confirmed';
 
 ALTER TABLE "public"."transactions"
   ADD CONSTRAINT "transactions_sync_id_key" UNIQUE ("sync_id");

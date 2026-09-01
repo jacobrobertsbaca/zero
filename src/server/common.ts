@@ -148,7 +148,7 @@ const parseTransaction = (row: ReadTransactionRow): Transaction => ({
   sync: row.sync_id
     ? {
         id: row.sync_id,
-        status: (row.sync_status as SyncStatus) ?? SyncStatus.Confirmed,
+        status: row.sync_status as SyncStatus,
         details: row.sync_details as SyncDetails,
       }
     : undefined,
@@ -200,7 +200,7 @@ const formatTransaction = (owner: string, trx: Transaction): WriteTransactionRow
   note: trx.note,
   sync_id: trx.sync?.id ?? null,
   sync_details: trx.sync?.details ?? null,
-  sync_status: trx.sync?.status ?? null,
+  sync_status: trx.sync?.status ?? SyncStatus.Confirmed,
 });
 
 /* ================================================================================================================= *
@@ -536,7 +536,7 @@ const getTrxCursorFilter = (sort: TransactionSort[], cursor: TransactionCursor):
     /* Need to select correct value when column is amount */
     let value;
     if (column === "amount") value = cursor.amount!.amount;
-    else if (column === "syncStatus") value = cursor.sync?.status ?? "";
+    else if (column === "syncStatus") value = cursor.sync?.status ?? SyncStatus.Confirmed;
     else value = cursor[column]!;
 
     return {
