@@ -20,9 +20,11 @@ import { SyncStatus, Transaction } from "src/types/transaction/types";
 import { dateFormat } from "src/types/utils/methods";
 import * as Yup from "yup";
 import { CategorySelector } from "./category-selector";
+import { TransactionSyncDetails } from "./transaction-details";
 import { toast } from "sonner";
 import { produce } from "immer";
 import { wrapAsync } from "src/utils/wrap-errors";
+import { Separator } from "@/components/ui/separator";
 
 type UndoDeleteButtonProps = {
   toastId: string | number;
@@ -183,7 +185,6 @@ export const TransactionSidebar = ({
     >
       {(form) => {
         const details = form.values.sync?.details;
-        console.log(details);
 
         return (
           <>
@@ -228,6 +229,8 @@ export const TransactionSidebar = ({
               }}
             />
             <NoteField label="Note" name="note" placeholder="Optional" />
+
+            {details ? <TransactionSyncDetails details={details} fallbackDate={form.values.date} /> : null}
 
             <EditActions
               dirty={!isEqual(form.values, initialValues)}
