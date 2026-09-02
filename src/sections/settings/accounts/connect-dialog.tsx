@@ -73,7 +73,7 @@ export function ConnectDialog({ open, loading, subscriptionActive, hasConnection
               <>Transaction syncing is available with a Plus membership. </>
             )}
             See our{" "}
-            <a href="#" className="font-medium text-primary underline-offset-4 hover:underline">
+            <a href="/privacy" className="font-medium text-primary underline-offset-4 hover:underline">
               privacy policy
             </a>{" "}
             for more on how we use your information.

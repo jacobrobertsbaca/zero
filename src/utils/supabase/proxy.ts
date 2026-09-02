@@ -40,8 +40,13 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // No user, potentially respond by redirecting the user to the login page,
-  // leaving login and API routes alone.
-  if (!user && !pathname.startsWith("/login") && !pathname.startsWith("/api")) {
+  // leaving login, privacy, and API routes alone.
+  if (
+    !user &&
+    !pathname.startsWith("/login") &&
+    !pathname.startsWith("/privacy") &&
+    !pathname.startsWith("/api")
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
