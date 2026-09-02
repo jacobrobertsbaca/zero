@@ -24,7 +24,6 @@ import { TransactionSyncDetails } from "./transaction-details";
 import { toast } from "sonner";
 import { produce } from "immer";
 import { wrapAsync } from "src/utils/wrap-errors";
-import { Separator } from "@/components/ui/separator";
 
 type UndoDeleteButtonProps = {
   toastId: string | number;
@@ -79,6 +78,8 @@ export const TransactionSidebar = ({
 }: TransactionSidebarProps) => {
   const isExisting = !!transaction.id;
   const isPending = transaction.sync?.status === SyncStatus.Pending;
+  const [amountFocused, setAmountFocused] = useState(false);
+
   const initialValues = useMemo(
     () =>
       transaction.sync?.details
@@ -204,15 +205,11 @@ export const TransactionSidebar = ({
               label="Amount"
               name="amount"
               placeholder={
-                details && !details.overrides.amount
-                  ? moneyFormat(inferAmount(form.values), { keepZero: true, excludeSymbol: true })
-                  : undefined
+                details ? moneyFormat(inferAmount(form.values), { keepZero: true, excludeSymbol: true }) : undefined
               }
-              helperText={
-                details?.status === "pending" && !details?.overrides.amount
-                  ? "This transaction is pending. The final amount may change."
-                  : undefined
-              }
+              onFocus={() => setAmountFocused(true)}
+              onBlur={() => setAmountFocused(false)}
+              helperText={amountFocused && details ? "Leave blank to use the most up-to-date value" : undefined}
               onChange={(value) => {
                 if (details) form.setFieldValue("sync.details.overrides.amount", value ? true : undefined);
               }}
