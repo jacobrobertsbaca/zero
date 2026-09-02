@@ -626,7 +626,7 @@ const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
     .from("plaid_items")
     .select("id, access_token, transactions_cursor, plaid_accounts ( id, account_id )")
     .eq("owner", owner)
-    .eq("status", "active")
+    .neq("status", "inactive")
     .not("access_token", "is", null);
   if (error) throw new HttpError(error.code, error.message);
 
