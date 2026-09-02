@@ -46,7 +46,7 @@ const SyncDetailMark = ({ logo, logoUrl }: { logo?: string | null; logoUrl?: str
   return null;
 };
 
-const formatLocation = (location: NonNullable<SyncDetails["location"]>) => {
+const formatLocation = (location: SyncDetails["location"]) => {
   const parts = [location.city, location.region].filter(Boolean);
   return parts.join(", ") || location.address;
 };
@@ -77,7 +77,7 @@ const findPlaidAccount = (connections: readonly PlaidConnection[], accountId: st
 export const TransactionSyncDetails = ({ details, fallbackDate }: TransactionSyncDetailsProps) => {
   const { data: plaid } = useSWR("plaid/connections", () => getPlaidConnections());
   const account = plaid ? findPlaidAccount(plaid.connections, details.account_id) : undefined;
-  const location = details.location ? formatLocation(details.location) : undefined;
+  const location = formatLocation(details.location);
 
   const rows: { key: string; content: React.ReactNode }[] = [];
 
@@ -157,7 +157,9 @@ export const TransactionSyncDetails = ({ details, fallbackDate }: TransactionSyn
           </div>
         ))}
       </div>
-      {details.location ? <TransactionLocationMap lat={details.location.lat} lng={details.location.lng} /> : null}
+      {details.location.coords ? (
+        <TransactionLocationMap lat={details.location.coords.lat} lng={details.location.coords.lng} />
+      ) : null}
     </Card>
   );
 };

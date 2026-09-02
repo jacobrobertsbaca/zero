@@ -535,18 +535,16 @@ const buildSyncDetails = (
     .join(" ");
   const name = (counterpartyName || merchant?.name || originalName).slice(0, 120);
 
-  const location =
-    txn.location.lat != null && txn.location.lon != null
-      ? {
-          lat: txn.location.lat,
-          lng: txn.location.lon,
-          ...(txn.location.address ? { address: txn.location.address } : {}),
-          ...(txn.location.city ? { city: txn.location.city } : {}),
-          ...(txn.location.region ? { region: txn.location.region } : {}),
-          ...(txn.location.country ? { country: txn.location.country } : {}),
-          ...(txn.location.postal_code ? { postal_code: txn.location.postal_code } : {}),
-        }
-      : undefined;
+  const location = {
+    ...(txn.location.lat != null && txn.location.lon != null
+      ? { coords: { lat: txn.location.lat, lng: txn.location.lon } }
+      : {}),
+    ...(txn.location.address ? { address: txn.location.address } : {}),
+    ...(txn.location.city ? { city: txn.location.city } : {}),
+    ...(txn.location.region ? { region: txn.location.region } : {}),
+    ...(txn.location.country ? { country: txn.location.country } : {}),
+    ...(txn.location.postal_code ? { postal_code: txn.location.postal_code } : {}),
+  };
 
   const datetime = txn.authorized_datetime ?? txn.datetime ?? undefined;
 
@@ -561,7 +559,7 @@ const buildSyncDetails = (
     },
     ...(datetime ? { datetime } : {}),
     ...(merchant ? { merchant } : {}),
-    ...(location ? { location } : {}),
+    location,
     payment_channel: (() => {
       switch (txn.payment_channel) {
         case "online":

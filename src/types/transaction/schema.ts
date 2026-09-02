@@ -16,17 +16,19 @@ export const SyncDetailsSchema = z.object({
       logo_url: z.string().optional(),
     })
     .optional(),
-  location: z
-    .object({
-      lat: z.number(),
-      lng: z.number(),
-      address: z.string().optional(),
-      city: z.string().optional(),
-      region: z.string().optional(),
-      country: z.string().optional(),
-      postal_code: z.string().optional(),
-    })
-    .optional(),
+  location: z.object({
+    coords: z
+      .object({
+        lat: z.number(),
+        lng: z.number(),
+      })
+      .optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    region: z.string().optional(),
+    country: z.string().optional(),
+    postal_code: z.string().optional(),
+  }),
   payment_channel: z.enum(["online", "physical", "other"]),
   overrides: z.object({
     name: z.literal(true).optional(),

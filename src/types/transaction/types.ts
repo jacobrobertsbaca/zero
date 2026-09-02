@@ -34,9 +34,11 @@ export type SyncDetails = Immutable<{
     logo_url?: string;
   };
 
-  location?: {
-    lat: number;
-    lng: number;
+  location: {
+    coords?: {
+      lat: number;
+      lng: number;
+    };
     address?: string;
     city?: string;
     region?: string;
