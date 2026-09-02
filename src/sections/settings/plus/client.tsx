@@ -41,7 +41,7 @@ const benefits: { icon: LucideIcon; title: string; detail: string }[] = [
   {
     icon: Heart,
     title: "As cheap as we could make it.",
-    detail: "Budgeting should save you money. Everything outside of Plus stays free forever.",
+    detail: "Budgeting should save you money. Everything else stays free forever.",
   },
 ];
 

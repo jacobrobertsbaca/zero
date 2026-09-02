@@ -550,7 +550,7 @@ const fetchPlaidUpdates = async (accessToken: string, cursor?: string | null) =>
   const modified: PlaidTransaction[] = [];
   const removed: RemovedTransaction[] = [];
 
-  let nextCursor = cursor ?? undefined;
+  let nextCursor = cursor || "now";
   let hasMore = true;
 
   while (hasMore) {
