@@ -37,6 +37,7 @@ const getItemStatus = (event: PlaidWebhookBody): PlaidItemStatus | null => {
   if (event.webhook_type !== "ITEM" || !event.item_id) return null;
   if (event.webhook_code === "LOGIN_REPAIRED") return "active";
   if (event.webhook_code === "PENDING_DISCONNECT") return "login-required";
+  if (event.webhook_code === "PENDING_EXPIRATION") return "login-required";
   if (event.webhook_code === "USER_ACCOUNT_REVOKED") return "login-required";
   if (event.webhook_code === "ERROR" && event.error?.error_code === "ITEM_LOGIN_REQUIRED") {
     return "login-required";
