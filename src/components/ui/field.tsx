@@ -24,15 +24,12 @@ export function Field({ label, htmlFor, error, helperText, className, children }
       <AnimatePresence initial={false}>
         {helperText ? (
           <motion.p
-            key={typeof helperText === "string" || typeof helperText === "number" ? helperText : "helper"}
+            key="helper-text"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={cn(
-              "overflow-hidden text-xs",
-              error ? "text-destructive" : "text-muted-foreground"
-            )}
+            className={cn("overflow-hidden text-xs", error ? "text-destructive" : "text-muted-foreground")}
           >
             {helperText}
           </motion.p>
