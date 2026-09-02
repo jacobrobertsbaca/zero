@@ -1,0 +1,10 @@
+.transaction-map .leaflet-container {
+  position: relative;
+  z-index: 0;
+  background: hsl(var(--muted));
+  font-family: inherit;
+}
+
+.transaction-map .leaflet-tile-pane {
+  filter: saturate(0.85) contrast(0.96);
+}

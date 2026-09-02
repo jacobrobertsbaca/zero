@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/c
 import { Separator } from "src/components/ui/separator";
 import { supabase } from "src/utils/supabase/client";
 
-export function SettingsPassword({ className }: { className?: string }) {
+export function SettingsPasswordClient({ className }: { className?: string }) {
   return (
     <Form
       initialValues={{
@@ -36,6 +36,7 @@ export function SettingsPassword({ className }: { className?: string }) {
             </div>
             <SubmitButton
               size="sm"
+              variant="outline"
               className="shrink-0"
               disabled={
                 Object.keys(formik.errors).length > 0 || !formik.values.password || !formik.values.passwordConfirmed

@@ -10,16 +10,17 @@ import { defaultCurrency } from "src/types/money/methods";
 import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
 import { Draft, produce } from "immer";
-import type {
-  Transaction,
-  TransactionCursor,
-  TransactionFilter,
-  TransactionPage,
-  TransactionQuery,
-  TransactionSearchColumn,
-  TransactionSort,
+import {
+  SyncStatus,
+  type SyncDetails,
+  type Transaction,
+  type TransactionCursor,
+  type TransactionFilter,
+  type TransactionPage,
+  type TransactionQuery,
+  type TransactionSearchColumn,
+  type TransactionSort,
 } from "src/types/transaction/types";
-import { transactionCompare } from "src/types/transaction/methods";
 import { DateString } from "src/types/utils/types";
 
 /* ================================================================================================================= *
@@ -59,7 +60,8 @@ const BUDGET_QUERY = `
 ` as const;
 
 const TRANSACTION_QUERY = `
-  id, category, category_name, budget, budget_name, date, amount, name, last_modified, starred, note
+  id, category, category_name, budget, budget_name, date, amount, name, last_modified, starred, note,
+  sync_id, sync_status, sync_details
 ` as const;
 
 const retrieveBudgets = async (owner: string, id?: string) => {
@@ -143,6 +145,13 @@ const parseTransaction = (row: ReadTransactionRow): Transaction => ({
   lastModified: row.last_modified,
   starred: row.starred,
   note: row.note,
+  sync: row.sync_id
+    ? {
+        id: row.sync_id,
+        status: row.sync_status as SyncStatus,
+        details: row.sync_details as SyncDetails,
+      }
+    : undefined,
 });
 
 const formatPeriod = (owner: string, budget: string, category: string, period: Period): WritePeriodRow => ({
@@ -189,6 +198,9 @@ const formatTransaction = (owner: string, trx: Transaction): WriteTransactionRow
   last_modified: trx.lastModified,
   starred: trx.starred,
   note: trx.note,
+  sync_id: trx.sync?.id ?? null,
+  sync_details: trx.sync?.details ?? null,
+  sync_status: trx.sync?.status ?? SyncStatus.Confirmed,
 });
 
 /* ================================================================================================================= *
@@ -367,11 +379,6 @@ export const deleteCategory = async (owner: string, bid: string, cid: string): P
   await wrap(supabase.from("categories").delete().eq("id", cid).eq("budget", bid).eq("owner", owner));
 };
 
-export const getTransactions = async (owner: string): Promise<Transaction[]> => {
-  const rows = await retrieveTransactions(owner);
-  return rows.map(parseTransaction).sort(transactionCompare);
-};
-
 type BudgetTimelineEntry = { date: DateString; type: CategoryType; amount: number };
 
 type BudgetTimelineData = {
@@ -421,19 +428,22 @@ export const getBudgetTimeline = async (owner: string, budgetId: string): Promis
 };
 
 export const putTransaction = async (owner: string, trx: Transaction): Promise<Transaction> => {
-  /* Verify that budget and category exist and are owned by this user */
-  const budget = await wrap(supabase.from("budgets").select("id").eq("owner", owner).eq("id", trx.budget));
-  if (budget.length === 0) throw new NotFound("Budget associated with transaction doesn't exist!");
+  /* Verify that budget and category exist and are owned by this user, if they exist */
+  if (trx.budget) {
+    const budget = await wrap(supabase.from("budgets").select("id").eq("owner", owner).eq("id", trx.budget));
+    if (budget.length === 0) throw new NotFound("Budget associated with transaction doesn't exist!");
+  }
 
-  const category = await wrap(
-    supabase.from("categories").select("id").eq("owner", owner).eq("budget", trx.budget).eq("id", trx.category)
-  );
-  if (category.length === 0) throw new NotFound("Category associated with transaction doesn't exist!");
+  if (trx.category) {
+    const query = supabase.from("categories").select("id").eq("owner", owner).eq("id", trx.category);
+    const category = await wrap(trx.budget ? query.eq("budget", trx.budget) : query);
+    if (category.length === 0) throw new NotFound("Category associated with transaction doesn't exist!");
+  }
 
   /* If modifying an existing transaction, verify that transaction exists and is owned by this user.
    * Otherwise give the transaction a fresh id */
   if (trx.id) {
-    const existing = await wrap(supabase.from("transactions").select("id").eq("owner", owner));
+    const existing = await wrap(supabase.from("transactions").select("id").eq("owner", owner).eq("id", trx.id));
     if (existing.length === 0) throw new NotFound("No such transaction exists!");
   } else {
     trx = produce(trx, (draft) => {
@@ -441,9 +451,11 @@ export const putTransaction = async (owner: string, trx: Transaction): Promise<T
     });
   }
 
-  /* Set last modified time */
+  /* Set metadata */
   trx = produce(trx, (draft) => {
     draft.lastModified = new Date().toISOString();
+    if (draft.sync && draft.sync.status !== SyncStatus.Removed)
+      draft.sync.status = !draft.budget || !draft.category ? SyncStatus.Pending : SyncStatus.Confirmed;
   });
 
   /* Write transaction to the database using `put_transaction` rpc */
@@ -454,6 +466,17 @@ export const putTransaction = async (owner: string, trx: Transaction): Promise<T
   );
 
   return trx;
+};
+
+export const getTransactionsBySyncIds = async (owner: string, syncIds: string[]): Promise<Map<string, Transaction>> => {
+  if (syncIds.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from("transactions")
+    .select(TRANSACTION_QUERY)
+    .eq("owner", owner)
+    .in("sync_id", syncIds);
+  if (error) throw new HttpError(error.code, error.message);
+  return new Map((data ?? []).map((row) => [row.sync_id!, parseTransaction(row)]));
 };
 
 export const deleteTransaction = async (owner: string, tid: string): Promise<void> => {
@@ -477,6 +500,7 @@ const getTrxDbColumn = (column: TransactionSearchColumn): string => {
   if (column === "lastModified") return "last_modified";
   if (column === "categoryName") return "category_name";
   if (column === "budgetName") return "budget_name";
+  if (column === "syncStatus") return "sync_status";
   return column;
 };
 
@@ -512,6 +536,7 @@ const getTrxCursorFilter = (sort: TransactionSort[], cursor: TransactionCursor):
     /* Need to select correct value when column is amount */
     let value;
     if (column === "amount") value = cursor.amount!.amount;
+    else if (column === "syncStatus") value = cursor.sync?.status ?? SyncStatus.Confirmed;
     else value = cursor[column]!;
 
     return {
@@ -570,12 +595,14 @@ const getTrxQuery = (
   const query = supabase
     .from("transactions")
     .select(TRANSACTION_QUERY, count ? { count: "exact", head: true } : undefined)
-    .eq("owner", owner);
+    .eq("owner", owner)
+    .neq("sync_status", SyncStatus.Removed);
 
   /* Sort query. If sorting unspecified, apply default sorting */
   let sort = model.sort;
   if (!sort || sort.length === 0)
     sort = [
+      { column: "syncStatus", ascending: false },
       { column: "starred", ascending: false },
       { column: "date", ascending: false },
     ];

@@ -1,6 +1,5 @@
-import { Suspense } from "react";
 import { PageTitle } from "src/components/page-title";
-import { TransactionsPage } from "./components";
+import { SyncedTransactions, TransactionsPage } from "./components";
 
 export const metadata = {
   title: "Transactions",
@@ -18,8 +17,8 @@ function PageFallback() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<PageFallback />}>
+    <SyncedTransactions fallback={<PageFallback />}>
       <TransactionsPage />
-    </Suspense>
+    </SyncedTransactions>
   );
 }

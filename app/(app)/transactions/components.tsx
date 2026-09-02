@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { Loader2, Plus, Star } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Loader2, Plus, Sprout, Star } from "lucide-react";
 import {
   ColumnDef,
   functionalUpdate,
@@ -15,6 +15,7 @@ import { PageTitle } from "src/components/page-title";
 import { Button } from "src/components/ui/button";
 import { Collapsible, CollapsibleContent } from "src/components/ui/collapsible";
 import { useBudgets, useTransactionsSearch } from "src/hooks/use-api";
+import { syncTransactions } from "src/server/actions";
 import { useIsMobile } from "src/hooks/use-mobile";
 import { SearchModelOptions, useSearchModel } from "src/hooks/use-search";
 import {
@@ -35,7 +36,7 @@ import { Budget } from "src/types/budget/types";
 import { Category } from "src/types/category/types";
 import { moneyFormat, moneyZero } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
-import { Transaction, TransactionQuery } from "src/types/transaction/types";
+import { SyncStatus, Transaction, TransactionQuery } from "src/types/transaction/types";
 import { asDateString, dateFormatShort } from "src/types/utils/methods";
 import { Separator } from "src/components/ui/separator";
 import { cn } from "@/utils";
@@ -71,6 +72,27 @@ const useTransactionsModel = ({ budgets }: { budgets: readonly Budget[] | undefi
 };
 
 /* ================================================================================================================= *
+ * Sync                                                                                                              *
+ * ================================================================================================================= */
+
+let syncedThisSession = false;
+
+export function SyncedTransactions({ fallback, children }: { fallback: ReactNode; children: ReactNode }) {
+  const [ready, setReady] = useState(syncedThisSession);
+
+  useEffect(() => {
+    if (syncedThisSession) return;
+    void syncTransactions().finally(() => {
+      syncedThisSession = true;
+      setReady(true);
+    });
+  }, []);
+
+  if (!ready) return fallback;
+  return children;
+}
+
+/* ================================================================================================================= *
  * Page                                                                                                              *
  * ================================================================================================================= */
 
@@ -84,6 +106,7 @@ const emptyTransaction = (): Transaction => ({
   lastModified: "",
   starred: false,
   note: "",
+  sync: undefined,
 });
 
 const getBudget = (row: Row<Transaction>, budgets: readonly Budget[] | undefined): Budget | undefined =>
@@ -115,20 +138,27 @@ export function TransactionsPage() {
     return [
       {
         id: "star",
-        cell: ({ row }) => (
-          <button
-            type="button"
-            className="inline-flex items-center justify-center rounded-md align-middle"
-            onClick={(evt) => {
-              starTransaction(row.original, !row.original.starred);
-              evt.stopPropagation();
-            }}
-          >
-            <Star
-              className={row.original.starred ? "size-3.5 fill-primary text-primary" : "size-3.5 text-muted-foreground"}
-            />
-          </button>
-        ),
+        cell: ({ row }) =>
+          row.original.sync?.status === SyncStatus.Pending ? (
+            <span className="inline-flex items-center justify-center align-middle">
+              <Sprout className="size-3.5 fill-primary text-primary" />
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-md align-middle"
+              onClick={(evt) => {
+                starTransaction(row.original, !row.original.starred);
+                evt.stopPropagation();
+              }}
+            >
+              <Star
+                className={
+                  row.original.starred ? "size-3.5 fill-primary text-primary" : "size-3.5 text-muted-foreground"
+                }
+              />
+            </button>
+          ),
         enableSorting: false,
         maxSize: mobile ? 10 : 5,
         meta: { center: true },
@@ -152,6 +182,23 @@ export function TransactionsPage() {
         id: "name",
         accessorKey: "name",
         header: "Name",
+        cell: ({ row, getValue }) => {
+          const logoUrl = row.original.sync?.details.merchant?.logo_url;
+          const name = getValue<string>();
+
+          return (
+            <div className="truncate">
+              {name}
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt=""
+                  className="ml-1.5 inline size-5 align-middle rounded-full object-cover ring-1 ring-border"
+                />
+              ) : null}
+            </div>
+          );
+        },
         meta: { ellipsis: true },
         maxSize: mobile ? 30 : 35,
       },
@@ -207,7 +254,7 @@ export function TransactionsPage() {
               onClick={() => {
                 setSidebarTrx({
                   ...emptyTransaction(),
-                  budget: budgets[0].id,
+                  budget: budgets[0]?.id ?? null,
                   date: asDateString(new Date()),
                   amount: null as unknown as Money,
                 });
@@ -259,7 +306,10 @@ export function TransactionsPage() {
           <TransactionList
             table={table}
             setSidebarTrx={(trx) => {
-              setSidebarTrx(trx);
+              setSidebarTrx({
+                ...trx,
+                ...(budgets && !trx.budget ? { budget: budgets[0]?.id ?? null } : {}),
+              });
               setSidebarOpen(true);
             }}
           />

@@ -13,13 +13,18 @@ import { Sidebar } from "src/components/sidebar/sidebar";
 import { Button } from "src/components/ui/button";
 import { deleteTransaction, putTransaction } from "src/server/actions";
 import { Budget } from "src/types/budget/types";
-import { Transaction } from "src/types/transaction/types";
+import { CategoryType } from "src/types/category/types";
+import { moneyAbs, moneyFactor, moneyFormat } from "src/types/money/methods";
+import { Money } from "src/types/money/types";
+import { SyncStatus, Transaction } from "src/types/transaction/types";
 import { dateFormat } from "src/types/utils/methods";
 import * as Yup from "yup";
 import { CategorySelector } from "./category-selector";
+import { TransactionSyncDetails } from "./transaction-details";
 import { toast } from "sonner";
 import { produce } from "immer";
 import { wrapAsync } from "src/utils/wrap-errors";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type UndoDeleteButtonProps = {
   toastId: string | number;
@@ -73,6 +78,35 @@ export const TransactionSidebar = ({
   onDelete,
 }: TransactionSidebarProps) => {
   const isExisting = !!transaction.id;
+  const isPending = transaction.sync?.status === SyncStatus.Pending;
+
+  const mobile = useIsMobile();
+  const [amountFocused, setAmountFocused] = useState(false);
+
+  const initialValues = useMemo(
+    () =>
+      transaction.sync?.details
+        ? {
+            ...transaction,
+            name: transaction.sync.details.overrides.name ? transaction.name : "",
+            amount: transaction.sync.details.overrides.amount ? transaction.amount : (null as unknown as Money),
+          }
+        : transaction,
+    [transaction]
+  );
+
+  const inferAmount = useCallback(
+    (values: Transaction): Money => {
+      const syncAmount = values.sync!.details.amount;
+      const category = budgets
+        .find((budget) => budget.id === values.budget)
+        ?.categories.find((item) => item.id === values.category);
+      if (!category) return moneyAbs(syncAmount);
+      if (category.type === CategoryType.Income) return moneyFactor(syncAmount, -1);
+      return syncAmount;
+    },
+    [budgets]
+  );
 
   const budgetValues = useMemo(
     () =>
@@ -115,10 +149,10 @@ export const TransactionSidebar = ({
     <Sidebar
       open={open}
       onClose={onClose}
-      title={isExisting ? "Edit Transaction" : "New Transaction"}
+      title={isPending ? "Confirm Transaction" : isExisting ? "Edit Transaction" : "New Transaction"}
       FormProps={{
         enableReinitialize: true,
-        initialValues: transaction,
+        initialValues,
         validationSchema: Yup.object({
           date: Yup.string().required("Enter a valid date!"),
           budget: Yup.string()
@@ -129,40 +163,86 @@ export const TransactionSidebar = ({
               return budget.categories.length > 0;
             }),
           category: Yup.string().required("You must pick a category!"),
-          amount: Yup.mixed().required("You must enter an amount!"),
+          amount: Yup.mixed()
+            .nullable()
+            .test("amount", "You must enter an amount!", function (value) {
+              const sync = this.parent.sync?.details;
+              if (sync && !sync.overrides.amount) return true;
+              return value != null;
+            }),
         }),
         async onSubmit(values) {
-          const saved = await putTransaction(values);
+          const sync = values.sync?.details;
+          const saved = await putTransaction(
+            sync
+              ? {
+                  ...values,
+                  name: sync.overrides.name ? values.name : sync.name,
+                  amount: sync.overrides.amount ? values.amount : inferAmount(values),
+                }
+              : values
+          );
           await onUpdate(saved);
           onClose();
         },
       }}
     >
-      {(form) => (
-        <>
-          <DateField label="Date" name="date" />
-          <SelectField
-            label="Budget"
-            name="budget"
-            values={budgetValues}
-            onChange={(evt) => {
-              // Reset category to none when budget changes
-              form.setFieldValue("category", "");
-              form.setFieldValue("budget", evt.target.value);
-            }}
-          />
-          <CategorySelector budgets={budgets} />
-          <FormMoneyField label="Amount" name="amount" />
-          <TextField label="Name" name="name" placeholder="Optional" max={120} autoComplete="off" />
-          <NoteField label="Note" name="note" placeholder="Optional" />
+      {(form) => {
+        const details = form.values.sync?.details;
 
-          <EditActions
-            dirty={!isEqual(form.values, transaction)}
-            state={EditState.Edit}
-            onDelete={isExisting ? handleDelete : undefined}
-          />
-        </>
-      )}
+        return (
+          <>
+            <DateField label="Date" name="date" />
+            <SelectField
+              label="Budget"
+              name="budget"
+              values={budgetValues}
+              onChange={(evt) => {
+                // Reset category to none when budget changes
+                form.setFieldValue("category", "");
+                form.setFieldValue("budget", evt.target.value);
+              }}
+            />
+            <CategorySelector budgets={budgets} />
+            <FormMoneyField
+              label="Amount"
+              name="amount"
+              placeholder={
+                details ? moneyFormat(inferAmount(form.values), { keepZero: true, excludeSymbol: true }) : undefined
+              }
+              onFocus={() => setAmountFocused(true)}
+              onBlur={() => setAmountFocused(false)}
+              helperText={
+                (mobile || amountFocused) && details ? "Leave blank to use the most up-to-date value" : undefined
+              }
+              onChange={(value) => {
+                if (details) form.setFieldValue("sync.details.overrides.amount", value ? true : undefined);
+              }}
+            />
+            <TextField
+              label="Name"
+              name="name"
+              placeholder={details && !details.overrides.name ? details.name : "Optional"}
+              max={120}
+              autoComplete="off"
+              onChange={(event) => {
+                form.handleChange(event);
+                if (details) form.setFieldValue("sync.details.overrides.name", event.target.value ? true : undefined);
+              }}
+            />
+            <NoteField label="Note" name="note" placeholder="Optional" />
+
+            {details ? <TransactionSyncDetails details={details} fallbackDate={form.values.date} /> : null}
+
+            <EditActions
+              dirty={!isEqual(form.values, initialValues)}
+              state={EditState.Edit}
+              onDelete={isExisting ? handleDelete : undefined}
+              ButtonProps={isPending ? { submit: { children: "Confirm" } } : undefined}
+            />
+          </>
+        );
+      }}
     </Sidebar>
   );
 };

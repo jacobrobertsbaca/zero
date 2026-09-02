@@ -1,5 +1,5 @@
 import { flexRender, RowData, Table } from "@tanstack/react-table";
-import { Transaction } from "src/types/transaction/types";
+import { SyncStatus, Transaction } from "src/types/transaction/types";
 
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "src/utils";
@@ -71,7 +71,10 @@ export const TransactionList = ({ table, setSidebarTrx }: TransactionListProps) 
                 setSidebarTrx(row.original);
               }
             }}
-            className="cursor-pointer rounded-md border-b last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/40"
+            className={cn(
+              "cursor-pointer rounded-md border-b last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/40",
+              row.original.sync?.status === SyncStatus.Pending && "bg-primary/5 hover:bg-primary/10 focus-visible:bg-primary/10"
+            )}
           >
             {row.getVisibleCells().map((cell) => (
               <td
