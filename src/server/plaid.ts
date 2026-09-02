@@ -305,10 +305,10 @@ export const createLinkToken = async (owner: string): Promise<string> => {
 
   const response = await plaid().linkTokenCreate({
     user: { client_user_id: owner },
-    client_name: "Zero",
+    client_name: "zero",
     products: [Products.Transactions],
     country_codes: [CountryCode.Us],
-    language: "en",
+    language: "en"
   });
 
   return response.data.link_token;
@@ -330,7 +330,7 @@ export const createUpdateLinkToken = async (owner: string, connectionId: string)
 
   const response = await plaid().linkTokenCreate({
     user: { client_user_id: owner },
-    client_name: "Zero",
+    client_name: "zero",
     country_codes: [CountryCode.Us],
     language: "en",
     access_token: item.access_token,

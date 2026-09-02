@@ -138,18 +138,15 @@ const sections = [
 export default function Page() {
   return (
     <article className="page-enter">
-      <header className="mb-14 sm:mb-16">
-        <p className="mb-5  text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Sep 1, 2026</p>
-        <h1 className="mb-5 text-[2.125rem] font-semibold leading-[1.1] tracking-tight sm:text-5xl sm:leading-[1.05]">
-          Privacy Policy
-        </h1>
-        <p className="max-w-md text-[15px] leading-relaxed text-muted-foreground sm:text-base">
+      <header className="mb-12">
+        <h1 className="mb-4 text-3xl font-semibold tracking-tight sm:text-4xl">Privacy Policy</h1>
+        <p className="text-[15px] leading-relaxed text-muted-foreground sm:text-base">
           <Brand /> is a personal budgeting app. The full source code is available on{" "}
           <a
             href="https://github.com/jacobrobertsbaca/zero"
             target="_blank"
             rel="noopener noreferrer"
-            className="pl-0.5 inline-flex items-baseline gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
+            className="inline-flex items-baseline gap-1.5 pl-0.5 font-medium text-primary underline-offset-4 hover:underline"
           >
             <GitHubIcon className="size-3.5 shrink-0" />
             GitHub
@@ -158,16 +155,11 @@ export default function Page() {
         </p>
       </header>
 
-      <div className="divide-y divide-border/80">
-        {sections.map((section, index) => (
-          <section key={section.title} className="scroll-mt-24 py-8 first:pt-0 last:pb-0 sm:py-9">
-            <div className="mb-3 flex items-center gap-3">
-              <span className="font-mono text-[11px] tabular-nums text-primary/70">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <h2 className="text-base font-semibold tracking-tight text-foreground">{section.title}</h2>
-            </div>
-            <div className="space-y-3 pl-8 text-[15px] leading-[1.7] text-muted-foreground sm:pl-9 [&_ul]:mt-1 [&_ul]:space-y-2 [&_ul]:pl-0 [&_li]:relative [&_li]:pl-4 [&_li]:before:absolute [&_li]:before:left-0 [&_li]:before:text-primary/50 [&_li]:before:content-['·']">
+      <div className="space-y-10">
+        {sections.map((section) => (
+          <section key={section.title} className="scroll-mt-24">
+            <h2 className="mb-3 text-lg font-semibold tracking-tight text-foreground">{section.title}</h2>
+            <div className="space-y-3 text-[15px] leading-relaxed text-muted-foreground [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5">
               {section.body}
             </div>
           </section>
