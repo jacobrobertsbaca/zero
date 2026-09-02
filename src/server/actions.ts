@@ -42,7 +42,6 @@ import {
   SyncPlaidAccountsSchema,
 } from "src/types/plaid/schema";
 import type { PlaidConnection, PlaidConnections } from "src/types/plaid/types";
-import type { PriceLookupKey } from "src/types/subscription/types";
 import type { Subscription } from "src/types/subscription/types";
 import { supabase, userId } from "src/utils/supabase/server";
 
@@ -137,9 +136,9 @@ export async function getSubscription(): Promise<Subscription> {
   return getSubscriptionRecord(owner);
 }
 
-export async function createCheckoutSession(lookupKey: PriceLookupKey): Promise<string> {
+export async function createCheckoutSession(): Promise<string> {
   const owner = await userId();
-  return createCheckoutSessionRecord(owner, lookupKey);
+  return createCheckoutSessionRecord(owner);
 }
 
 export async function createPortalSession(): Promise<string> {

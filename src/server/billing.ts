@@ -76,12 +76,12 @@ const ensureCustomer = async (owner: string, sub: Subscription): Promise<string>
   return customer.id;
 };
 
-export const createCheckoutSession = async (owner: string, priceKey: PriceLookupKey): Promise<string> => {
+export const createCheckoutSession = async (owner: string): Promise<string> => {
   const sub = await getSubscription(owner);
   const customer = await ensureCustomer(owner, sub);
-  const prices = await stripe().prices.list({ lookup_keys: [priceKey], active: true, limit: 1 });
+  const prices = await stripe().prices.list({ lookup_keys: ["plus_monthly"], active: true, limit: 1 });
   const price = prices.data[0];
-  if (!price) throw new Error(`Stripe price "${priceKey}" was not found.`);
+  if (!price) throw new Error('Stripe price "plus_monthly" was not found.');
 
   const origin = await getRedirectUrl();
   const session = await stripe().checkout.sessions.create({

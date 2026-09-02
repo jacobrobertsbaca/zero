@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { ArrowRight, Check, CircleCheck, Sprout } from "lucide-react";
+import { ArrowRight, Heart, Infinity, Landmark, RefreshCw, Sprout, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "src/components/ui/button";
@@ -16,24 +16,34 @@ import {
   DialogTitle,
 } from "src/components/ui/dialog";
 import { Spinner } from "src/components/ui/spinner";
-import type { PriceLookupKey, Subscription } from "src/types/subscription/types";
+import type { Subscription } from "src/types/subscription/types";
 import { createCheckoutSession, createPortalSession } from "src/server/actions";
 import { cn } from "src/utils";
 import { wrapAsync } from "src/utils/wrap-errors";
 import "./plus.css";
 
-type Plan = PriceLookupKey;
-
-const plans: Record<Plan, { label: string; price: string; detail: string; savings?: string }> = {
-  plus_monthly: { label: "Monthly", price: "$2", detail: "per month" },
-  plus_yearly: { label: "Yearly", price: "$20", detail: "per year", savings: "Save 17%" },
-};
-
-const benefits = [
-  "Connect up to 4 institutions",
-  "Transactions sync daily",
-  "Synced transactions stay yours forever",
-] as const;
+const benefits: { icon: LucideIcon; title: string; detail: string }[] = [
+  {
+    icon: Landmark,
+    title: "Connect up to 4 institutions.",
+    detail: "Securely link banks and cards with Plaid to import activity.",
+  },
+  {
+    icon: RefreshCw,
+    title: "Transactions sync daily.",
+    detail: "Purchases and transfers show up automatically and can be renamed, edited, and deleted.",
+  },
+  {
+    icon: Infinity,
+    title: "Synced transactions stay yours forever.",
+    detail: "Cancel or disconnect without losing any of your data.",
+  },
+  {
+    icon: Heart,
+    title: "As cheap as we could make it.",
+    detail: "Budgeting should save you money. Everything outside of Plus stays free forever.",
+  },
+];
 
 type Props = {
   subscription: Subscription;
@@ -104,7 +114,6 @@ const subscriptionCopy = (subscription: Subscription) => {
 
 export function SettingsPlusClient({ subscription }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
-  const [plan, setPlan] = useState<Plan>("plus_yearly");
   const [loading, setLoading] = useState(false);
   const { badge, description, action, actionLabel } = subscriptionCopy(subscription);
 
@@ -132,12 +141,12 @@ export function SettingsPlusClient({ subscription }: Props) {
     setLoading(true);
     await wrapAsync(
       async () => {
-        const url = await createCheckoutSession(plan);
+        const url = await createCheckoutSession();
         window.location.href = url;
       },
       () => setLoading(false)
     );
-  }, [plan]);
+  }, []);
 
   const isUpgrade = action === "upgrade";
 
@@ -202,67 +211,26 @@ export function SettingsPlusClient({ subscription }: Props) {
             </DialogTitle>
           </DialogHeader>
 
-          <DialogBody className="gap-5 pb-5">
-            <ul className="space-y-2">
-              {benefits.map((text) => (
-                <li key={text} className="flex items-start gap-2.5">
-                  <CircleCheck
-                    className="mt-0.5 size-3.5 shrink-0 fill-primary text-primary-foreground"
-                    strokeWidth={1.5}
-                  />
-                  <span className="text-sm leading-snug text-foreground/80">{text}</span>
+          <DialogBody className="gap-2 pb-3">
+            <ul className="overflow-hidden rounded-sm border border-border/60 bg-gradient-to-b from-muted/35 to-muted/10">
+              {benefits.map(({ icon: Icon, title, detail }, index) => (
+                <li
+                  key={title}
+                  className={cn("flex items-center gap-3 px-3 py-3", index > 0 && "border-t border-border/50")}
+                >
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted border">
+                    <Icon className="size-3 text-foreground" strokeWidth={1.75} />
+                  </span>
+                  <span className="text-xs leading-snug text-foreground/85">
+                    <span className="font-medium text-foreground">{title}</span> {detail}
+                  </span>
                 </li>
               ))}
             </ul>
-
-            <div className="grid grid-cols-2 gap-3">
-              {(Object.keys(plans) as Plan[]).map((key) => {
-                const selected = plan === key;
-
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setPlan(key)}
-                    className={cn(
-                      "group relative rounded-xl border-2 p-3 text-left transition-all duration-200",
-                      selected
-                        ? "border-primary/40 bg-primary/[0.06] shadow-sm ring-1 ring-primary/10"
-                        : "border-border/80 bg-card hover:border-primary/25 hover:bg-muted/40"
-                    )}
-                  >
-                    {plans[key].savings && (
-                      <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground shadow-sm">
-                        {plans[key].savings}
-                      </span>
-                    )}
-
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium">{plans[key].label}</p>
-                      <div
-                        className={cn(
-                          "flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                          selected
-                            ? "border-primary bg-primary"
-                            : "border-muted-foreground/25 group-hover:border-primary/35"
-                        )}
-                      >
-                        {selected && <Check className="size-2.5 text-white" strokeWidth={3} />}
-                      </div>
-                    </div>
-
-                    <div className="mt-1.5 flex items-end gap-1">
-                      <span className="text-2xl font-semibold leading-none tracking-tight">{plans[key].price}</span>
-                      <span className="pb-0.5 text-xs text-muted-foreground">{plans[key].detail}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
           </DialogBody>
 
-          <DialogFooter className="flex-col gap-2 sm:flex-col">
-            <Button className="w-full" onClick={onUpgrade} disabled={loading}>
+          <DialogFooter className="flex-col gap-2 sm:flex-col border-0 pt-0">
+            <Button className="w-full" variant="outline" onClick={onUpgrade} disabled={loading}>
               {loading ? (
                 <Spinner className="size-4 text-foreground" />
               ) : subscription.trialEligible ? (
@@ -271,9 +239,6 @@ export function SettingsPlusClient({ subscription }: Props) {
                 "Continue"
               )}
             </Button>
-            <DialogDescription className="text-center text-xs text-muted-foreground">
-              {subscription.trialEligible ? "Start with 1 month free. Cancel anytime." : "Cancel anytime."}
-            </DialogDescription>
           </DialogFooter>
         </DialogContent>
       </Dialog>
