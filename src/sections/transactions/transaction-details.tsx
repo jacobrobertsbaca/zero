@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { format } from "date-fns";
 import useSWR from "swr";
 import { Card } from "src/components/ui/card";
@@ -8,6 +9,11 @@ import type { PlaidConnection } from "src/types/plaid/types";
 import { SyncDetails } from "src/types/transaction/types";
 import { asDate } from "src/types/utils/methods";
 import { DateString } from "src/types/utils/types";
+
+const TransactionLocationMap = dynamic(
+  () => import("./transaction-map").then((module) => module.TransactionLocationMap),
+  { ssr: false }
+);
 
 type TransactionSyncDetailsProps = {
   details: SyncDetails;
@@ -151,6 +157,7 @@ export const TransactionSyncDetails = ({ details, fallbackDate }: TransactionSyn
           </div>
         ))}
       </div>
+      {details.location ? <TransactionLocationMap lat={details.location.lat} lng={details.location.lng} /> : null}
     </Card>
   );
 };
