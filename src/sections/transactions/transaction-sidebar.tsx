@@ -24,6 +24,7 @@ import { TransactionSyncDetails } from "./transaction-details";
 import { toast } from "sonner";
 import { produce } from "immer";
 import { wrapAsync } from "src/utils/wrap-errors";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type UndoDeleteButtonProps = {
   toastId: string | number;
@@ -78,6 +79,8 @@ export const TransactionSidebar = ({
 }: TransactionSidebarProps) => {
   const isExisting = !!transaction.id;
   const isPending = transaction.sync?.status === SyncStatus.Pending;
+
+  const mobile = useIsMobile();
   const [amountFocused, setAmountFocused] = useState(false);
 
   const initialValues = useMemo(
@@ -209,7 +212,9 @@ export const TransactionSidebar = ({
               }
               onFocus={() => setAmountFocused(true)}
               onBlur={() => setAmountFocused(false)}
-              helperText={amountFocused && details ? "Leave blank to use the most up-to-date value" : undefined}
+              helperText={
+                (mobile || amountFocused) && details ? "Leave blank to use the most up-to-date value" : undefined
+              }
               onChange={(value) => {
                 if (details) form.setFieldValue("sync.details.overrides.amount", value ? true : undefined);
               }}
