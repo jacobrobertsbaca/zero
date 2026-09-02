@@ -1,4 +1,5 @@
-import { Box, CircularProgress, Divider, Stack, Typography } from "@mui/material";
+import { Separator } from "src/components/ui/separator";
+import { Spinner } from "src/components/ui/spinner";
 
 type LoadingPropsBase = {
   error?: any;
@@ -27,19 +28,19 @@ export const Loading = <T,>(props: LoadingProps<T>) => {
   }
 
   return (
-    <Box>
-      <Divider />
-      <Stack direction="column" alignItems="center" justifyContent="center" sx={{ height: 50, my: 5 }}>
+    <div className="my-6">
+      <Separator />
+      <div className="flex h-12 flex-col items-center justify-center gap-1 py-6">
         {error ? (
-          <Stack alignItems="center">
-            <Typography variant="inherit">😱 Oops. An error occurred.</Typography>
-            {error.message && <Typography variant="caption" color="text.secondary">{error.message}</Typography>}
-          </Stack>
+          <>
+            <p className="text-sm text-foreground">Oops. An error occurred.</p>
+            {error.message && <p className="text-xs text-muted-foreground">{error.message}</p>}
+          </>
         ) : (
-          <CircularProgress size={24} />
+          <Spinner className="size-[22px]" />
         )}
-      </Stack>
-      <Divider />
-    </Box>
+      </div>
+      <Separator />
+    </div>
   );
 };

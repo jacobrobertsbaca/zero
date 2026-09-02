@@ -1,33 +1,33 @@
-import { Box, BoxProps, Button, Stack, SvgIcon } from "@mui/material";
-
-import TrashIcon from "@heroicons/react/24/outline/TrashIcon";
-import { SubmitButton } from "../form/submit-button";
+import { Trash2, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useSnackbar } from "notistack";
-import { LoadingButton, LoadingButtonProps } from "@mui/lab";
+import { createPortal } from "react-dom";
+import { toast } from "sonner";
+import { SubmitButton } from "../form/submit-button";
+import { Button, ButtonProps } from "src/components/ui/button";
+import { cn } from "src/utils";
+import { useSidebarFooter } from "./sidebar";
 
 export enum EditState {
   View,
   Edit,
 }
 
-type EditActionsProps = BoxProps & {
+type EditActionsProps = React.HTMLAttributes<HTMLDivElement> & {
   dirty?: boolean;
   state: EditState;
   onStateChanged?: (state: EditState) => void;
   onDelete?: () => void | Promise<void>;
   ButtonProps?: {
-    submit?: LoadingButtonProps;
-    delete?: LoadingButtonProps;
+    submit?: ButtonProps;
+    delete?: ButtonProps;
   };
 };
 
 export const EditActions = (props: EditActionsProps) => {
-  const { dirty, state, onStateChanged, onDelete, ButtonProps, ...boxProps } = props;
+  const { dirty, state, onStateChanged, onDelete, ButtonProps, className, ...divProps } = props;
   const { submit: submitProps, delete: deleteProps } = ButtonProps ?? {};
-
-  const { enqueueSnackbar } = useSnackbar();
   const [deleting, setDeleting] = useState(false);
+  const footer = useSidebarFooter();
 
   const handleDelete = useCallback(async () => {
     if (!onDelete) return;
@@ -35,46 +35,45 @@ export const EditActions = (props: EditActionsProps) => {
     try {
       await onDelete();
     } catch (err: any) {
-      enqueueSnackbar(err.message, { variant: "error" });
+      toast.error(err.message);
     }
     setDeleting(false);
-  }, [onDelete, enqueueSnackbar]);
+  }, [onDelete]);
 
-  return (
-    <Box {...boxProps}>
-      <Stack spacing={1}>
-        {state === EditState.View && (
-          <Button variant="outlined" onClick={() => onStateChanged?.(EditState.Edit)}>
-            Edit
-          </Button>
-        )}
-        {state === EditState.Edit && (
-          <>
-            {
-              // Pass children as prop so they are overridable by ButtonProps
-              /* eslint-disable-next-line react/no-children-prop */
-              <SubmitButton variant="outlined" disabled={!dirty} children="Save" {...submitProps} />
-            }
-            {onDelete && (
-              <LoadingButton
-                variant="outlined"
-                color="error"
-                loading={deleting}
-                startIcon={
-                  <SvgIcon>
-                    <TrashIcon />
-                  </SvgIcon>
-                }
-                onClick={handleDelete}
-                // Pass children as prop so they are overridable by ButtonProps
-                /* eslint-disable-next-line react/no-children-prop */
-                children={<span>Delete</span>}
-                {...deleteProps}
-              />
-            )}
-          </>
-        )}
-      </Stack>
-    </Box>
+  const actions = (
+    <div
+      className={cn("flex items-center justify-end gap-2 border-t bg-background px-4 py-3", className)}
+      {...divProps}
+    >
+      {state === EditState.View && (
+        <Button type="button" variant="outline" size="sm" onClick={() => onStateChanged?.(EditState.Edit)}>
+          Edit
+        </Button>
+      )}
+      {state === EditState.Edit && (
+        <>
+          {onDelete && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              {...deleteProps}
+              disabled={deleting || deleteProps?.disabled}
+              onClick={handleDelete}
+            >
+              {deleting ? <Loader2 className="animate-spin" /> : deleteProps?.children ? null : <Trash2 />}
+              {deleteProps?.children ?? "Delete"}
+            </Button>
+          )}
+          <SubmitButton size="sm" disabled={!dirty} {...submitProps}>
+            {submitProps?.children ?? "Save"}
+          </SubmitButton>
+        </>
+      )}
+    </div>
   );
+
+  if (footer.el) return createPortal(actions, footer.el);
+  return actions;
 };

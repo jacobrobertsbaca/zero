@@ -1,13 +1,5 @@
-import { Stack, Typography } from "@mui/material";
-import Head from "next/head";
+import { cn } from "src/utils";
 
-export const PageTitle = ({ title }: { title: string }) => (
-  <>
-    <Head>
-      <title>{title} | zero</title>
-    </Head>
-    <Stack spacing={3} sx={{ mb: 3 }}>
-      <Typography variant="h4">{title}</Typography>
-    </Stack>
-  </>
+export const PageTitle = ({ title, className }: { title: string; className?: string }) => (
+  <h1 className={cn("text-2xl font-semibold tracking-tight text-foreground", className)}>{title}</h1>
 );

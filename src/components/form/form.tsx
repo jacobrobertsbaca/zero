@@ -1,14 +1,11 @@
-import { styled } from "@mui/material";
 import { Formik, FormikConfig, FormikHelpers, FormikValues } from "formik";
 import { ComponentProps, useCallback } from "react";
 import { wrapAsync } from "src/utils/wrap-errors";
 
-const StyledForm = styled("form")``;
-
-export type FormProps<T> = FormikConfig<T> & Omit<ComponentProps<typeof StyledForm>, "children" | "onSubmit">;
+export type FormProps<T> = FormikConfig<T> & Omit<ComponentProps<"form">, "children" | "onSubmit">;
 
 export const Form = <T extends FormikValues>(props: FormProps<T>) => {
-  const { onSubmit, children, ...rest } = props; 
+  const { onSubmit, children, className, ...rest } = props;
 
   const handleSubmit = useCallback(
     async (values: T, helpers: FormikHelpers<T>) => {
@@ -24,9 +21,9 @@ export const Form = <T extends FormikValues>(props: FormProps<T>) => {
   return (
     <Formik onSubmit={handleSubmit} {...rest}>
       {(formik) => (
-        <StyledForm onSubmit={formik.handleSubmit} {...rest}>
+        <form onSubmit={formik.handleSubmit} className={className} noValidate>
           {typeof children === "function" ? children(formik) : children}
-        </StyledForm>
+        </form>
       )}
     </Formik>
   );

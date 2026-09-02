@@ -1,28 +1,12 @@
-import { Box, Typography } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
 import NextLink from "next/link";
+import { cn } from "src/utils";
 
-export const Logo = () => {
-  return (
-    <Typography color="primary" variant="h6">
-      zero
-    </Typography>
-  );
-};
+export const Logo = ({ className }: { className?: string }) => (
+  <span className={cn("text-lg font-semibold tracking-tight text-primary", className)}>zero</span>
+);
 
-export const LogoLink = () => {
-  return (
-    <Box
-      component={NextLink}
-      href="/"
-      sx={{
-        display: "inline-flex",
-        height: 32,
-        width: 32,
-        textDecoration: "none"
-      }}
-    >
-      <Logo />
-    </Box>
-  );
-};
+export const LogoLink = ({ className }: { className?: string }) => (
+  <NextLink href="/" className="inline-flex h-8 items-center no-underline rounded-md">
+    <Logo className={className} />
+  </NextLink>
+);

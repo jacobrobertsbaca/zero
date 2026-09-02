@@ -1,44 +1,28 @@
-import { Divider, Stack, Typography } from "@mui/material";
-import { MoneyText } from "src/components/money-text";
-import { ActualNominal, Budget, BudgetSummary } from "src/types/budget/types";
-import { categoryTitle } from "src/types/category/methods";
-import { CategoryType } from "src/types/category/types";
-import { TitledSpendingBar } from "../common/spending-bar";
-import { budgetSummary } from "src/types/budget/methods";
+import { Suspense } from "react";
+import { getBudgetTimeline } from "src/server/common";
+import { userId } from "src/utils/supabase/server";
+import { BudgetTimelineChart } from "./budget-chart";
 
-/* ================================================================================================================= *
- * Utility Components                                                                                                *
- * ================================================================================================================= */
+async function BudgetTimeline({ budgetId }: { budgetId: string }) {
+  const owner = await userId();
+  const timeline = await getBudgetTimeline(owner, budgetId);
+  if (!timeline) return null;
 
-const LeftoverTooltip = (props: { leftovers: ActualNominal }) => (
-  <Typography variant="caption">
-    <MoneyText amount={props.leftovers.actual} fontWeight={600} status />
-    &nbsp;leftover of&nbsp;
-    <MoneyText amount={props.leftovers.nominal} fontWeight={600} status />
-    &nbsp;planned
-  </Typography>
-);
-
-/* ================================================================================================================= *
- * Details                                                                                                           *
- * ================================================================================================================= */
-
-type BudgetCardDetailsProps = {
-  budget: Budget;
-};
-
-export const BudgetCardDetails = ({ budget }: BudgetCardDetailsProps) => {
-  const summary = budgetSummary(budget);
-
-  if (summary.length === 0) return null;
   return (
-    <>
-      <Divider sx={{ mt: 2, mb: 2 }} />
-      <Stack spacing={1}>
-        {summary.map((s) => (
-          <TitledSpendingBar key={s.type ?? "leftover"} {...s} />
-        ))}
-      </Stack>
-    </>
+    <div className="budget-chart-expand">
+      <div className="budget-chart-expand-inner">
+        <div className="h-[148px] w-full overflow-visible pt-4 pb-1">
+          <BudgetTimelineChart timeline={timeline} />
+        </div>
+      </div>
+    </div>
   );
-};
+}
+
+export function BudgetCardDetails({ budgetId }: { budgetId: string }) {
+  return (
+    <Suspense fallback={null}>
+      <BudgetTimeline budgetId={budgetId} />
+    </Suspense>
+  );
+}

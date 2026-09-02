@@ -1,16 +1,24 @@
-import { InputAdornment, SvgIcon, TextField, TextFieldProps } from "@mui/material";
-
-import SearchIcon from "@heroicons/react/20/solid/MagnifyingGlassIcon";
+import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { debounce } from "lodash";
+import { Input } from "src/components/ui/input";
+import { cn } from "src/utils";
 
-export type TransactionSearchProps = TextFieldProps & {
+export type TransactionSearchProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> & {
   search: string | undefined;
   setSearch: (search: string | undefined) => void;
   debounceMs?: number;
+  fullWidth?: boolean;
 };
 
-export const TransactionSearch = ({ search, setSearch, debounceMs = 300, ...rest }: TransactionSearchProps) => {
+export const TransactionSearch = ({
+  search,
+  setSearch,
+  debounceMs = 300,
+  fullWidth,
+  className,
+  ...rest
+}: TransactionSearchProps) => {
   const [bufferedSearch, setBufferedSearch] = useState(search ?? "");
 
   const onSearchDebounced = useMemo(
@@ -30,27 +38,19 @@ export const TransactionSearch = ({ search, setSearch, debounceMs = 300, ...rest
   }, [search, onSyncDebounced]);
 
   return (
-    <TextField
-      placeholder="Search..."
-      value={bufferedSearch}
-      onChange={(e) => {
-        setBufferedSearch(e.target.value);
-        onSearchDebounced(e.target.value);
-        onSyncDebounced.cancel();
-      }}
-      InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <SvgIcon fontSize="small">
-              <SearchIcon />
-            </SvgIcon>
-          </InputAdornment>
-        ),
-      }}
-      variant="filled"
-      hiddenLabel
-      size="small"
-      {...rest}
-    />
+    <div className={cn("relative", fullWidth && "w-full", className)}>
+      <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        placeholder="Search..."
+        value={bufferedSearch}
+        onChange={(e) => {
+          setBufferedSearch(e.target.value);
+          onSearchDebounced(e.target.value);
+          onSyncDebounced.cancel();
+        }}
+        className="bg-muted/40 pl-9"
+        {...rest}
+      />
+    </div>
   );
 };

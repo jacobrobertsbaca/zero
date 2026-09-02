@@ -1,9 +1,5 @@
-import { Stack, Typography } from "@mui/material";
-
-import { Scrollbar } from "src/components/scrollbar";
-import { Category, CategoryType, RecurrenceType } from "src/types/category/types";
-import { categoryActual, categoryDirty, categoryNominal, categoryTitle } from "src/types/category/methods";
-import { PeriodList } from "./period-list";
+import { Category, CategoryType } from "src/types/category/types";
+import { categoryActual, categoryDirty, categoryNominal, categoryTitle, onCategoryNominal } from "src/types/category/methods";
 import { MoneyText } from "src/components/money-text";
 import { EditActions, EditState } from "../../../components/sidebar/edit-actions";
 import { useCallback, useEffect, useState } from "react";
@@ -11,12 +7,10 @@ import { useCallback, useEffect, useState } from "react";
 import { TextField } from "src/components/form/text-field";
 import { useFormikContext } from "formik";
 import { SelectField } from "src/components/form/select-field";
-import { PeriodListMutable } from "./period-list-mutable";
-import { RecurrencePicker } from "./recurrence-picker";
+import { MoneyField } from "src/components/form/money-field";
 import { Budget } from "src/types/budget/types";
-import { RolloverPicker } from "./rollover-picker";
 import * as Yup from "yup";
-import { useCategoryChanges } from "src/hooks/use-api";
+import { deleteCategory, putCategory } from "src/server/actions";
 import { Sidebar } from "src/components/sidebar/sidebar";
 import { DeleteDialog } from "src/components/delete-dialog";
 import { TransactionsLink } from "src/sections/transactions/transactions-link";
@@ -25,34 +19,11 @@ import { TransactionsLink } from "src/sections/transactions/transactions-link";
  * Utility                                                                                                           *
  * ================================================================================================================= */
 
-const recurrenceSummary = (category: Category): string => {
-  switch (category.recurrence.type) {
-    case RecurrenceType.None:
-      return `overall`;
-    case RecurrenceType.Monthly:
-      return `monthly on day ${category.recurrence.day}`;
-    case RecurrenceType.Weekly:
-      return `weekly on ${
-        {
-          0: "Sunday",
-          1: "Monday",
-          2: "Tuesday",
-          3: "Wednesday",
-          4: "Thursday",
-          5: "Friday",
-          6: "Saturday",
-        }[category.recurrence.day]
-      }`;
-  }
-};
-
 const SidebarItem = ({ title, children }: { title: React.ReactNode; children: React.ReactNode }) => (
-  <Stack>
-    <Typography variant="subtitle1">{title}</Typography>
-    <Typography variant="subtitle2" color="text.secondary">
-      {children}
-    </Typography>
-  </Stack>
+  <div className="flex flex-col">
+    <span className="text-sm">{title}</span>
+    <span className="text-sm text-muted-foreground">{children}</span>
+  </div>
 );
 
 /* ================================================================================================================= *
@@ -64,7 +35,7 @@ const TYPE_OPTIONS = Object.values(CategoryType).map((t) => ({
   label: categoryTitle(t),
 }));
 
-const CategoryEditView = ({ budget }: { budget: Budget }) => {
+const CategoryEditView = () => {
   const form = useFormikContext<Category>();
 
   /* Reset the form on unmount */
@@ -73,11 +44,17 @@ const CategoryEditView = ({ budget }: { budget: Budget }) => {
 
   return (
     <>
-      <TextField fullWidth label="Name" name="name" type="text" max={60} />
+      <TextField fullWidth label="Name" name="name" type="text" placeholder="Groceries, Coffee, Fun…" max={60} />
       <SelectField fullWidth label="Type" name="type" values={TYPE_OPTIONS} />
-      <RecurrencePicker budget={budget} />
-      <PeriodListMutable />
-      <RolloverPicker />
+      <MoneyField
+        fullWidth
+        label="Total"
+        value={categoryNominal(form.values)}
+        onChange={(total) => {
+          if (!total) return;
+          form.setValues(onCategoryNominal(form.values, total));
+        }}
+      />
     </>
   );
 };
@@ -86,18 +63,10 @@ const CategoryDetailsView = ({ category }: { category: Category }) => (
   <>
     <SidebarItem title="Type">{categoryTitle(category.type)}</SidebarItem>
     <SidebarItem title="Amount">
-      <MoneyText variant="inherit" amount={categoryActual(category)} />
+      <MoneyText amount={categoryActual(category)} />
       &nbsp;of&nbsp;
-      <MoneyText variant="inherit" amount={categoryNominal(category)} />
+      <MoneyText amount={categoryNominal(category)} />
     </SidebarItem>
-    {category.recurrence.type !== RecurrenceType.None && (
-      <SidebarItem title="Recurrence">
-        <MoneyText variant="inherit" amount={category.recurrence.amount} />
-        &nbsp;
-        {recurrenceSummary(category)}
-      </SidebarItem>
-    )}
-    <PeriodList category={category} />
   </>
 );
 
@@ -116,7 +85,6 @@ type CategorySidebarProps = {
 
 export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onDelete }: CategorySidebarProps) => {
   const [editState, setEditState] = useState(EditState.View);
-  const { putCategory, deleteCategory } = useCategoryChanges();
 
   const [deleteModal, setDeleteModal] = useState(false);
   const openModal = useCallback(() => setDeleteModal(true), []);
@@ -139,14 +107,14 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
       open={open}
       onClose={onClose}
       title={(formik) => (
-        <Stack direction="row" alignItems="center">
+        <div className="flex items-center gap-1.5">
           {editState !== EditState.Edit && <TransactionsLink category={category} />}
           {editState !== EditState.Edit
             ? category.name
             : category.id
             ? formik.values.name
             : formik.values.name || "New Category"}
-        </Stack>
+        </div>
       )}
       FormProps={{
         enableReinitialize: true,
@@ -172,7 +140,7 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
             onDelete={handleDelete}
           />
 
-          {editState === EditState.Edit && <CategoryEditView budget={budget} />}
+          {editState === EditState.Edit && <CategoryEditView />}
           {editState !== EditState.Edit && <CategoryDetailsView category={category} />}
           <EditActions
             dirty={categoryDirty(formik.values, category)}

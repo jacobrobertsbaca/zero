@@ -1,0 +1,115 @@
+.budget-chart-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  animation: budget-chart-expand 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards,
+    budget-chart-fade 700ms cubic-bezier(0.16, 1, 0.3, 1) 40ms forwards;
+}
+
+.budget-chart-expand-inner {
+  min-height: 0;
+  overflow: hidden;
+  /* Extra clip box so the end tooltip can sit in the card padding. */
+  margin-right: -16px;
+  padding-right: 16px;
+  animation: budget-chart-unclip 0ms 300ms forwards;
+}
+
+.budget-chart-enter {
+  position: relative;
+  overflow: visible;
+  /* Negative insets keep the end-dot and tooltip outside the plot from
+   * being clipped once the wipe finishes. */
+  animation: budget-chart-reveal calc(var(--budget-chart-reveal-ms, 1100) * 1ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.budget-chart-end-dot {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: budget-chart-dot 320ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
+}
+
+.budget-chart-tooltip {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: budget-chart-tooltip-in 320ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
+}
+
+@keyframes budget-chart-expand {
+  from {
+    grid-template-rows: 0fr;
+  }
+  to {
+    grid-template-rows: 1fr;
+  }
+}
+
+@keyframes budget-chart-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes budget-chart-reveal {
+  from {
+    clip-path: inset(-56px 100% -20px -16px);
+  }
+  to {
+    clip-path: inset(-56px -56px -20px -16px);
+  }
+}
+
+@keyframes budget-chart-tooltip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes budget-chart-unclip {
+  to {
+    overflow: visible;
+  }
+}
+
+@keyframes budget-chart-dot {
+  from {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budget-chart-expand,
+  .budget-chart-enter,
+  .budget-chart-end-dot,
+  .budget-chart-tooltip {
+    animation: none;
+    opacity: 1;
+    clip-path: inset(-56px -56px -20px -16px);
+    transform: none;
+  }
+
+  .budget-chart-expand-inner {
+    animation: none;
+    overflow: visible;
+  }
+
+  .budget-chart-expand {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}

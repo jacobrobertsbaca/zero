@@ -1,12 +1,12 @@
-import { Table, TableProps } from "@mui/material";
 import { once } from "lodash";
 import { createContext, useContext, useState } from "react";
+import { cn } from "src/utils";
 
 export type PaginatedTableContext<T> = {
   readonly rows: T[];
   page: number;
   rowsPerPage: number;
-  rowsPerPageOptions: ReturnType<typeof rowsPerPageOptionsToMuiOptions>;
+  rowsPerPageOptions: ReturnType<typeof rowsPerPageOptionsToOptions>;
   onPageChange: (page: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
 };
@@ -15,8 +15,7 @@ const createPaginatedTableContext = once(<T,>() => createContext({} as Paginated
 export const usePaginatedTableContext = <T,>() => useContext(createPaginatedTableContext<T>());
 
 const rowsPerPageOptionDefault = (rowsOptions: number[]) => (rowsOptions ? Math.max(rowsOptions[0], 0) : 0);
-const rowsPerPageOptionsToMuiOptions = (rowsOptions: number[]) => {
-  // Sort rows so that non-positive elements are last.
+const rowsPerPageOptionsToOptions = (rowsOptions: number[]) => {
   rowsOptions = [...rowsOptions];
   return rowsOptions
     .sort((a, b) => {
@@ -28,18 +27,10 @@ const rowsPerPageOptionsToMuiOptions = (rowsOptions: number[]) => {
     .map((r) => (r > 0 ? r : { value: 0, label: "All" }));
 };
 
-type PaginatedTableProps<T> = TableProps & {
+type PaginatedTableProps<T> = React.TableHTMLAttributes<HTMLTableElement> & {
   readonly rows: T[];
-
-  /**
-   * Options for number of rows to show per page.
-   * These will be sorted before being shown, with the first value corresponding to the default option.
-   * Non-positive numbers correspond to an "All" option which displays all rows.
-   */
   rowsPerPageOptions: number[];
-
   defaultPage?: number;
-
   children: React.ReactNode;
 };
 
@@ -48,6 +39,7 @@ export const PaginatedTable = <T,>({
   rowsPerPageOptions,
   defaultPage,
   children,
+  className,
   ...tableProps
 }: PaginatedTableProps<T>) => {
   const [rowsPerPage, setRowsPerPage] = useState(rowsPerPageOptionDefault(rowsPerPageOptions));
@@ -57,19 +49,19 @@ export const PaginatedTable = <T,>({
 
   const Context = createPaginatedTableContext<T>();
   return (
-    <Table {...tableProps}>
+    <table className={cn("w-full caption-bottom text-sm", className)} {...tableProps}>
       <Context.Provider
         value={{
           rows,
           page,
           rowsPerPage,
-          rowsPerPageOptions: rowsPerPageOptionsToMuiOptions(rowsPerPageOptions),
+          rowsPerPageOptions: rowsPerPageOptionsToOptions(rowsPerPageOptions),
           onPageChange: setPage,
           onRowsPerPageChange: setRowsPerPage,
         }}
       >
         {children}
       </Context.Provider>
-    </Table>
+    </table>
   );
 };

@@ -1,5 +1,5 @@
 import { produce } from "immer";
-import { resourceLimits } from "worker_threads";
+import { Parser } from "expr-eval";
 import { Money } from "./types";
 
 export const defaultCurrency = "USD";
@@ -136,4 +136,35 @@ export const moneyParse = (value: string): Money | null => {
     amount: multiplier * (100 * majorUnits + minorUnits),
     currency: defaultCurrency,
   };
+};
+
+/** Parse money or arithmetic; uses longest valid prefix for incomplete input. */
+export const moneyParseExpression = (value: string): Money | null => {
+  const trimmed = value.trim();
+  if (!trimmed || !/^[0-9.\-+*/()\s]+$/.test(trimmed)) return null;
+
+  const tryParse = (candidate: string): Money | null => {
+    const simple = moneyParse(candidate);
+    if (simple) return simple;
+    try {
+      const result = Parser.evaluate(candidate);
+      if (typeof result !== "number" || !Number.isFinite(result)) return null;
+      return { amount: Math.round(result * 100), currency: defaultCurrency };
+    } catch {
+      return null;
+    }
+  };
+
+  for (let end = trimmed.length; end > 0; end--) {
+    const candidate = trimmed.slice(0, end).trimEnd();
+    if (!candidate) continue;
+    const direct = tryParse(candidate);
+    if (direct) return direct;
+    const open = (candidate.match(/\(/g) || []).length - (candidate.match(/\)/g) || []).length;
+    if (open > 0) {
+      const closed = tryParse(candidate + ")".repeat(open));
+      if (closed) return closed;
+    }
+  }
+  return null;
 };

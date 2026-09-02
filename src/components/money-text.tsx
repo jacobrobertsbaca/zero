@@ -1,26 +1,21 @@
-import { Typography, TypographyProps } from "@mui/material";
-import { moneyFormat, MoneyFormatOptions, RoundingMode } from "src/types/money/methods";
+import { moneyFormat, MoneyFormatOptions } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
+import { cn } from "src/utils";
 
-type MoneyTextProps = TypographyProps & MoneyFormatOptions & {
-  /**
-   * The amount associated with this text
-   */
+type MoneyTextProps = MoneyFormatOptions & {
   amount: Money;
-
-  /**
-   * Whether or not to color the text depending on positive/negative.
-   */
   status?: boolean;
+  className?: string;
 };
 
-export const MoneyText = ({ amount, status, ...rest }: MoneyTextProps) => (
-  <Typography
-    variant="inherit"
-    display="inline"
-    {...(status ? { color: amount.amount >= 0 ? "success.light" : "warning.main" } : {})}
-    {...rest}
+export const MoneyText = ({ amount, status, className, ...rest }: MoneyTextProps) => (
+  <span
+    className={cn(
+      "inline",
+      status && (amount.amount >= 0 ? "text-success" : "text-warning"),
+      className
+    )}
   >
     {moneyFormat(amount, rest)}
-  </Typography>
+  </span>
 );
