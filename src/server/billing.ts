@@ -1,8 +1,8 @@
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
-import { headers } from "next/headers";
 import Stripe from "stripe";
 import { tags } from "src/server/tags";
 import type { PlusStatus, PriceLookupKey, Subscription } from "src/types/subscription/types";
+import { getAppOrigin } from "src/utils/server";
 import { supabase } from "src/utils/supabase/server";
 import { wrap } from "src/server/common";
 import { HttpError } from "src/server/errors";
@@ -15,15 +15,6 @@ let _stripe: Stripe | undefined;
 export const stripe = () => {
   if (!process.env.STRIPE_SECRET_KEY) throw new Error("Stripe is not configured.");
   return (_stripe ??= new Stripe(process.env.STRIPE_SECRET_KEY));
-};
-
-const getRedirectUrl = async () => {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (!host) throw new Error("Could not determine app URL from request headers.");
-  const proto =
-    h.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
-  return `${proto}://${host}`;
 };
 
 export const getSubscription = async (owner: string): Promise<Subscription> => {
@@ -83,7 +74,7 @@ export const createCheckoutSession = async (owner: string): Promise<string> => {
   const price = prices.data[0];
   if (!price) throw new Error('Stripe price "plus_monthly" was not found.');
 
-  const origin = await getRedirectUrl();
+  const origin = await getAppOrigin();
   const session = await stripe().checkout.sessions.create({
     mode: "subscription",
     customer,
@@ -103,7 +94,7 @@ export const createPortalSession = async (owner: string): Promise<string> => {
 
   const session = await stripe().billingPortal.sessions.create({
     customer: sub.stripeCustomerId,
-    return_url: `${await getRedirectUrl()}/settings`,
+    return_url: `${await getAppOrigin()}/settings`,
   });
   return session.url;
 };

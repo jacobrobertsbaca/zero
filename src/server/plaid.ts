@@ -18,6 +18,7 @@ import { defaultCurrency, moneyAbs, moneyFactor, moneyZero } from "src/types/mon
 import { ExchangePlaidPublicTokenSchema } from "src/types/plaid/schema";
 import type { PlaidAccount, PlaidConnection, PlaidConnections, PlaidSyncItem } from "src/types/plaid/types";
 import { SyncStatus, type SyncDetails } from "src/types/transaction/types";
+import { getAppOrigin } from "src/utils/server";
 import { supabase } from "src/utils/supabase/server";
 import { z } from "zod";
 
@@ -308,7 +309,8 @@ export const createLinkToken = async (owner: string): Promise<string> => {
     client_name: "zero",
     products: [Products.Transactions],
     country_codes: [CountryCode.Us],
-    language: "en"
+    language: "en",
+    redirect_uri: process.env.NODE_ENV === "production" ? `${await getAppOrigin()}/settings` : undefined,
   });
 
   return response.data.link_token;
@@ -335,6 +337,7 @@ export const createUpdateLinkToken = async (owner: string, connectionId: string)
     language: "en",
     access_token: item.access_token,
     update: { account_selection_enabled: true },
+    redirect_uri: process.env.NODE_ENV === "production" ? `${await getAppOrigin()}/settings` : undefined,
   });
 
   return response.data.link_token;
