@@ -254,7 +254,7 @@ export function TransactionsPage() {
               onClick={() => {
                 setSidebarTrx({
                   ...emptyTransaction(),
-                  budget: budgets[0].id,
+                  budget: budgets[0]?.id ?? null,
                   date: asDateString(new Date()),
                   amount: null as unknown as Money,
                 });
@@ -308,7 +308,7 @@ export function TransactionsPage() {
             setSidebarTrx={(trx) => {
               setSidebarTrx({
                 ...trx,
-                ...(budgets && !trx.budget ? { budget: budgets[0].id } : {}),
+                ...(budgets && !trx.budget ? { budget: budgets[0]?.id ?? null } : {}),
               });
               setSidebarOpen(true);
             }}

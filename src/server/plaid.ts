@@ -16,7 +16,13 @@ import { tags } from "src/server/tags";
 import { CategoryType } from "src/types/category/types";
 import { defaultCurrency, moneyAbs, moneyFactor, moneyZero } from "src/types/money/methods";
 import { ExchangePlaidPublicTokenSchema } from "src/types/plaid/schema";
-import type { PlaidAccount, PlaidConnection, PlaidConnections, PlaidSyncItem } from "src/types/plaid/types";
+import type {
+  PlaidAccount,
+  PlaidConnection,
+  PlaidConnections,
+  PlaidItemStatus,
+  PlaidSyncItem,
+} from "src/types/plaid/types";
 import { SyncStatus, type SyncDetails } from "src/types/transaction/types";
 import { getAppOrigin } from "src/utils/server";
 import { supabase } from "src/utils/supabase/server";
@@ -38,7 +44,7 @@ const plaidEnvironment = () => {
 };
 
 let _plaid: PlaidApi | undefined;
-const plaid = () => {
+export const plaid = () => {
   if (!isPlaidConfigured()) throw new Error("Plaid is not configured.");
   return (_plaid ??= new PlaidApi(
     new Configuration({
@@ -67,6 +73,9 @@ const fetchInstitution = async (institutionId: string) => {
   return response.data.institution;
 };
 
+const CONNECTION_SELECT =
+  "id, item_id, institution_id, institution_name, institution_logo, created_at, access_token, status" as const;
+
 const mapConnection = (
   item: {
     id: string;
@@ -75,7 +84,7 @@ const mapConnection = (
     institution_name: string;
     institution_logo: string | null;
     created_at: string;
-    access_token: string | null;
+    status: string;
   },
   accounts: PlaidAccount[]
 ): PlaidConnection => ({
@@ -85,7 +94,7 @@ const mapConnection = (
   institutionName: item.institution_name,
   institutionLogo: item.institution_logo,
   createdAt: item.created_at,
-  inactive: item.access_token === null,
+  status: item.status as PlaidItemStatus,
   accounts,
 });
 
@@ -223,7 +232,7 @@ const activeConnectionCount = async (owner: string): Promise<number> => {
     .from("plaid_items")
     .select("id", { count: "exact", head: true })
     .eq("owner", owner)
-    .not("access_token", "is", null);
+    .neq("status", "inactive");
   if (error) throw new HttpError(error.code, error.message);
   return count ?? 0;
 };
@@ -236,21 +245,22 @@ export const revokeAllItems = async (owner: string): Promise<void> => {
     .from("plaid_items")
     .select("id, access_token")
     .eq("owner", owner)
-    .not("access_token", "is", null);
+    .neq("status", "inactive");
   if (error) throw new HttpError(error.code, error.message);
   if (!items?.length) return;
 
   const now = new Date().toISOString();
   for (const item of items) {
-    if (!item.access_token) continue;
-    try {
-      await plaid().itemRemove({ access_token: item.access_token });
-    } catch (err) {
-      console.error("Plaid itemRemove failed during revoke:", err);
+    if (item.access_token) {
+      try {
+        await plaid().itemRemove({ access_token: item.access_token });
+      } catch (err) {
+        console.error("Plaid itemRemove failed during revoke:", err);
+      }
     }
     const { error: updateError } = await supabase
       .from("plaid_items")
-      .update({ access_token: null, updated_at: now })
+      .update({ access_token: null, status: "inactive", updated_at: now })
       .eq("id", item.id)
       .eq("owner", owner);
     if (updateError) throw new HttpError(updateError.code, updateError.message);
@@ -266,7 +276,7 @@ export const getPlaidConnections = async (owner: string): Promise<PlaidConnectio
 
   const { data: items, error: itemsError } = await supabase
     .from("plaid_items")
-    .select("id, item_id, institution_id, institution_name, institution_logo, created_at, access_token")
+    .select(CONNECTION_SELECT)
     .eq("owner", owner)
     .order("created_at", { ascending: true });
   if (itemsError) throw new HttpError(itemsError.code, itemsError.message);
@@ -304,13 +314,15 @@ export const createLinkToken = async (owner: string): Promise<string> => {
     throw new HttpError("limit_reached", `You can connect up to ${MAX_PLAID_ITEMS} institutions.`);
   }
 
+  const origin = await getAppOrigin();
   const response = await plaid().linkTokenCreate({
     user: { client_user_id: owner },
     client_name: "zero",
     products: [Products.Transactions],
     country_codes: [CountryCode.Us],
     language: "en",
-    redirect_uri: process.env.NODE_ENV === "production" ? `${await getAppOrigin()}/settings` : undefined,
+    redirect_uri: process.env.NODE_ENV === "production" ? `${origin}/settings` : undefined,
+    webhook: process.env.NODE_ENV === "production" ? `${origin}/api/plaid/webhook` : undefined,
   });
 
   return response.data.link_token;
@@ -322,14 +334,17 @@ export const createUpdateLinkToken = async (owner: string, connectionId: string)
   const id = z.string().uuid().parse(connectionId);
   const { data: item, error } = await supabase
     .from("plaid_items")
-    .select("id, access_token")
+    .select("id, access_token, status")
     .eq("owner", owner)
     .eq("id", id)
     .maybeSingle();
   if (error) throw new HttpError(error.code, error.message);
   if (!item) throw new HttpError("not_found", "Connection not found.");
-  if (!item.access_token) throw new HttpError("revoked", "This connection is inactive. Reconnect it instead.");
+  if (!item.access_token || item.status === "inactive") {
+    throw new HttpError("revoked", "This connection is inactive. Reconnect it instead.");
+  }
 
+  const origin = await getAppOrigin();
   const response = await plaid().linkTokenCreate({
     user: { client_user_id: owner },
     client_name: "zero",
@@ -337,7 +352,7 @@ export const createUpdateLinkToken = async (owner: string, connectionId: string)
     language: "en",
     access_token: item.access_token,
     update: { account_selection_enabled: true },
-    redirect_uri: process.env.NODE_ENV === "production" ? `${await getAppOrigin()}/settings` : undefined,
+    redirect_uri: process.env.NODE_ENV === "production" ? `${origin}/settings` : undefined,
   });
 
   return response.data.link_token;
@@ -369,13 +384,13 @@ export const exchangePublicToken = async (
     const connectionId = parsed.connectionId;
     const { data: revoked, error: revokedError } = await supabase
       .from("plaid_items")
-      .select("id, institution_id, access_token")
+      .select("id, institution_id, status")
       .eq("owner", owner)
       .eq("id", connectionId)
       .maybeSingle();
     if (revokedError) throw new HttpError(revokedError.code, revokedError.message);
     if (!revoked) throw new HttpError("not_found", "Connection not found.");
-    if (revoked.access_token !== null) throw new HttpError("conflict", "That connection is still active.");
+    if (revoked.status !== "inactive") throw new HttpError("conflict", "That connection is still active.");
     if (revoked.institution_id !== institutionId) {
       throw new HttpError("invalid_item", "Institution does not match the selected connection.");
     }
@@ -389,11 +404,12 @@ export const exchangePublicToken = async (
         institution_name: institution.name,
         institution_logo: institution.logo ?? null,
         transactions_cursor: null,
+        status: "active",
         updated_at: now,
       })
       .eq("id", connectionId)
       .eq("owner", owner)
-      .select("id, item_id, institution_id, institution_name, institution_logo, created_at, access_token")
+      .select(CONNECTION_SELECT)
       .single();
     if (itemError) throw new HttpError(itemError.code, itemError.message);
 
@@ -422,9 +438,10 @@ export const exchangePublicToken = async (
       institution_id: institutionId,
       institution_name: institution.name,
       institution_logo: institution.logo ?? null,
+      status: "active",
       updated_at: now,
     })
-    .select("id, item_id, institution_id, institution_name, institution_logo, created_at, access_token")
+    .select(CONNECTION_SELECT)
     .single();
   if (itemError) throw new HttpError(itemError.code, itemError.message);
 
@@ -442,22 +459,33 @@ export const syncPlaidItemAccounts = async (owner: string, connectionId: string)
   const id = z.string().uuid().parse(connectionId);
   const { data: item, error } = await supabase
     .from("plaid_items")
-    .select("id, item_id, institution_id, institution_name, institution_logo, access_token, created_at")
+    .select(CONNECTION_SELECT)
     .eq("owner", owner)
     .eq("id", id)
     .maybeSingle();
   if (error) throw new HttpError(error.code, error.message);
   if (!item) throw new HttpError("not_found", "Connection not found.");
-  if (!item.access_token) throw new HttpError("revoked", "This connection is inactive. Reconnect it instead.");
+  if (!item.access_token || item.status === "inactive") {
+    throw new HttpError("revoked", "This connection is inactive. Reconnect it instead.");
+  }
 
   const accounts = await syncPlaidAccountsForItem(owner, {
     id: item.id,
     access_token: item.access_token,
     institution_id: item.institution_id,
   });
-  revalidateTag(tags.plaid(owner), { expire: 0 });
 
-  return mapConnection(item, accounts);
+  const { data: updated, error: updateError } = await supabase
+    .from("plaid_items")
+    .update({ status: "active", updated_at: new Date().toISOString() })
+    .eq("id", item.id)
+    .eq("owner", owner)
+    .select(CONNECTION_SELECT)
+    .single();
+  if (updateError) throw new HttpError(updateError.code, updateError.message);
+
+  revalidateTag(tags.plaid(owner), { expire: 0 });
+  return mapConnection(updated, accounts);
 };
 
 export const removePlaidItem = async (owner: string, connectionId: string): Promise<void> => {
@@ -553,7 +581,7 @@ const fetchPlaidUpdates = async (accessToken: string, cursor?: string | null) =>
   const modified: PlaidTransaction[] = [];
   const removed: RemovedTransaction[] = [];
 
-  let nextCursor = cursor || "now";
+  let nextCursor = cursor ?? "now";
   let hasMore = true;
 
   while (hasMore) {
@@ -600,6 +628,7 @@ const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
     .from("plaid_items")
     .select("id, access_token, transactions_cursor, plaid_accounts ( id, account_id )")
     .eq("owner", owner)
+    .eq("status", "active")
     .not("access_token", "is", null);
   if (error) throw new HttpError(error.code, error.message);
 

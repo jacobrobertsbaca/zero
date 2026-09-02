@@ -5,6 +5,9 @@ CREATE TABLE "public"."plaid_items" (
 
   /* NULL for an inactive connection */
   "access_token"      text,
+
+  /* Possible values: active, inactive, login-required */
+  "status"            text        NOT NULL DEFAULT 'active',
   
   "institution_id"    text        NOT NULL,
   "institution_name"  text        NOT NULL,

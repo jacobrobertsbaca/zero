@@ -69,7 +69,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
   const [duplicatePrompt, setDuplicatePrompt] = useState<DuplicatePrompt | null>(null);
   const [revivePrompt, setRevivePrompt] = useState<RevivePrompt | null>(null);
 
-  const activeCount = connections.connections.filter((connection) => !connection.inactive).length;
+  const activeCount = connections.connections.filter((connection) => connection.status !== "inactive").length;
   const count = connections.connections.length;
   const atLimit = activeCount >= connections.limit;
   const hasConnections = count > 0;
@@ -112,8 +112,8 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
       const matching = institutionId
         ? connections.connections.filter((connection) => connection.institutionId === institutionId)
         : [];
-      const revokedMatches = matching.filter((connection) => connection.inactive);
-      const activeMatches = matching.filter((connection) => !connection.inactive);
+      const revokedMatches = matching.filter((connection) => connection.status === "inactive");
+      const activeMatches = matching.filter((connection) => connection.status !== "inactive");
 
       if (revokedMatches.length > 0) {
         setRevivePrompt({
@@ -306,7 +306,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
                   <ConnectionGroup
                     key={connection.id}
                     connection={connection}
-                    canManage={subscription.active && !connection.inactive}
+                    canManage={subscription.active && connection.status !== "inactive"}
                     onManage={() => onManage(connection.id)}
                     onDisconnect={() => setDisconnectConnection(connection)}
                     onInactive={() => setInactiveConnection(connection)}
@@ -375,7 +375,7 @@ function ConnectionGroup({
   onDisconnect: () => void;
   onInactive: () => void;
 }) {
-  const needsAttention = !connection.inactive && connection.accounts.some((account) => account.status !== "active");
+  const needsAttention = connection.status === "login-required";
 
   return (
     <li>
@@ -383,7 +383,7 @@ function ConnectionGroup({
         <InstitutionMark name={connection.institutionName} logo={connection.institutionLogo} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium leading-none">{connection.institutionName}</p>
-          {connection.inactive ? (
+          {connection.status === "inactive" ? (
             <button
               type="button"
               onClick={onInactive}

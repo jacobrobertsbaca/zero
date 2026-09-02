@@ -1,5 +1,7 @@
 import type { Immutable } from "immer";
 
+export type PlaidItemStatus = "active" | "inactive" | "login-required";
+
 export type PlaidAccount = Immutable<{
   id: string;
   accountId: string;
@@ -19,7 +21,7 @@ export type PlaidConnection = Immutable<{
   institutionLogo: string | null;
   accounts: PlaidAccount[];
   createdAt: string;
-  inactive: boolean;
+  status: PlaidItemStatus;
 }>;
 
 export type PlaidSyncAccount = Immutable<{
