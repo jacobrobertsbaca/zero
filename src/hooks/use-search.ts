@@ -1,5 +1,5 @@
 import { isEqual } from "lodash";
-import { ReadonlyURLSearchParams, useRouter, useSearchParams } from "next/navigation";
+import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 
 export type SearchModel<Query> = {
@@ -18,41 +18,44 @@ export const useSearchModel = <Query>({
   encodeQuery,
   decodeQuery,
 }: SearchModelOptions<Query>): SearchModel<Query> => {
-  const searchParams = useSearchParams() ?? new ReadonlyURLSearchParams();
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState<Query>(() => decodeQuery(searchParams));
-  const lastQuery = useRef<Query>(undefined);
 
+  const synced = useRef(searchParams.toString());
+  const decodeRef = useRef(decodeQuery);
+  decodeRef.current = decodeQuery;
+
+  /* Sync URL to state when the search string itself changes */
   useEffect(() => {
-    let query: Query;
+    const next = searchParams.toString();
+    if (next === synced.current) return;
+    synced.current = next;
+
     try {
-      query = decodeQuery(searchParams);
-    } catch (error: any) {
-      console.warn("Failed to search query from query string. Got error: ", error);
-      return;
+      const decoded = decodeRef.current(searchParams);
+      setQuery((prev) => (isEqual(prev, decoded) ? prev : decoded));
+    } catch (error: unknown) {
+      console.warn("Failed to decode search query from query string. Got error: ", error);
     }
+  }, [searchParams]);
 
-    setQuery(query);
-  }, [decodeQuery, searchParams]);
-
-  /* Update query params when state changes */
+  /* State → URL */
   useEffect(() => {
-    if (isEqual(query, lastQuery.current)) return;
-    lastQuery.current = query;
-
     const params = new URLSearchParams();
-
     try {
       encodeQuery(query, params);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.warn("Failed to encode query to query string. Got error: ", error);
       return;
     }
 
-    let encoded = params.toString();
-    if (encoded !== "") encoded = `?${encoded}`;
-    router.replace(`${href}${encoded}`);
-  }, [query, router, href, encodeQuery]);
+    const encoded = params.toString();
+    if (encoded === synced.current) return;
+    synced.current = encoded;
+
+    const url = encoded === "" ? href : `${href}?${encoded}`;
+    window.history.replaceState(window.history.state, "", url);
+  }, [query, href, encodeQuery]);
 
   return { query, setQuery };
 };
