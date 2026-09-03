@@ -183,7 +183,6 @@ function TransactionsContent({ plaid }: { plaid: PlaidConnections }) {
         header: "Date",
         cell: ({ getValue }) => dateFormatShort(getValue<string>()),
         maxSize: mobile ? 30 : 12.5,
-        meta: { ellipsis: true },
       },
       {
         id: "amount",
@@ -191,7 +190,6 @@ function TransactionsContent({ plaid }: { plaid: PlaidConnections }) {
         header: "Amount",
         cell: ({ getValue }) => moneyFormat(getValue<Money>(), { keepZero: true }),
         maxSize: mobile ? 30 : 12.5,
-        meta: { ellipsis: true },
       },
       {
         id: "name",
@@ -204,7 +202,7 @@ function TransactionsContent({ plaid }: { plaid: PlaidConnections }) {
                 ?.institutionLogo
             : undefined;
           return (
-            <div className="flex items-center gap-1.5">
+            <div className="flex min-w-0 items-center gap-1.5">
               {logo ? (
                 <img
                   src={`data:image/png;base64,${logo}`}
@@ -212,11 +210,10 @@ function TransactionsContent({ plaid }: { plaid: PlaidConnections }) {
                   className="size-5 shrink-0 rounded-full object-cover ring-1 ring-border"
                 />
               ) : null}
-              <span>{getValue<string>()}</span>
+              <span className="truncate">{getValue<string>()}</span>
             </div>
           );
         },
-        meta: { ellipsis: true },
         maxSize: mobile ? 30 : 35,
       },
       ...(!mobile
@@ -227,7 +224,6 @@ function TransactionsContent({ plaid }: { plaid: PlaidConnections }) {
               header: "Budget",
               cell: ({ row }) => getBudget(row, budgets)?.name,
               maxSize: 17.5,
-              meta: { ellipsis: true },
             },
             {
               id: "categoryName",
@@ -235,7 +231,6 @@ function TransactionsContent({ plaid }: { plaid: PlaidConnections }) {
               header: "Category",
               cell: ({ row }) => getCategory(row, getBudget(row, budgets))?.name,
               maxSize: 17.5,
-              meta: { ellipsis: true },
             },
           ] as ColumnDef<Transaction>[])
         : []),

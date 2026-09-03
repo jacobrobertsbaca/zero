@@ -6,7 +6,6 @@ import { cn } from "src/utils";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
-    ellipsis?: boolean;
     center?: boolean;
   }
 }
@@ -80,8 +79,7 @@ export const TransactionList = ({ table, setSidebarTrx }: TransactionListProps) 
               <td
                 key={cell.id}
                 className={cn(
-                  "px-1 py-2 align-middle",
-                  cell.column.columnDef.meta?.ellipsis && "truncate",
+                  "max-w-0 truncate px-1 py-2 align-middle",
                   cell.column.columnDef.meta?.center && "text-center"
                 )}
               >
