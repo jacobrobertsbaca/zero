@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Info, MoreHorizontal, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -273,11 +274,20 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
 
   return (
     <>
-      <Card className="animate-in fade-in">
+      <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-3">
           <div className="space-y-1">
             <CardTitle className="text-base">Connected accounts</CardTitle>
-            {description && <CardDescription>{description}</CardDescription>}
+            {description && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <CardDescription>{description}</CardDescription>
+              </motion.div>
+            )}
           </div>
           <Button
             variant="outline"
@@ -298,7 +308,12 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
         </CardHeader>
 
         {hasConnections && (
-          <>
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
             <Separator />
             <CardContent className="p-0">
               <ul className="divide-y divide-border/70">
@@ -314,7 +329,7 @@ export function SettingsAccountsClient({ connections, subscription }: Props) {
                 ))}
               </ul>
             </CardContent>
-          </>
+          </motion.div>
         )}
       </Card>
 

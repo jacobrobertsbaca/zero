@@ -17,12 +17,8 @@ export default function Page() {
       <PageTitle title="Settings" />
 
       <SettingsSection title="External Accounts">
-        <Suspense>
-          <SettingsPlus />
-        </Suspense>
-        <Suspense>
-          <SettingsAccounts />
-        </Suspense>
+        <SettingsPlus />
+        <SettingsAccounts />
       </SettingsSection>
 
       <SettingsSection title="Account">

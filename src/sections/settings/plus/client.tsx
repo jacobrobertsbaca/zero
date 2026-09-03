@@ -1,20 +1,13 @@
 "use client";
 
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 import { ArrowRight, Heart, Infinity, Landmark, RefreshCw, Sprout, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "src/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "src/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "src/components/ui/dialog";
 import { Spinner } from "src/components/ui/spinner";
 import type { Subscription } from "src/types/subscription/types";
 import { createCheckoutSession, createPortalSession } from "src/server/actions";
@@ -154,7 +147,7 @@ export function SettingsPlusClient({ subscription }: Props) {
     <>
       <Card
         className={cn(
-          "animate-in fade-in border-primary/25 bg-primary/[0.04]",
+          "border-primary/25 bg-primary/[0.04]",
           isUpgrade &&
             "border-primary/35 bg-gradient-to-br from-primary/[0.12] via-primary/[0.05] to-transparent shadow-sm",
           subscription.active && "from-primary/[0.08] via-primary/[0.04]"
@@ -171,7 +164,14 @@ export function SettingsPlusClient({ subscription }: Props) {
                 </span>
               )}
             </CardTitle>
-            <CardDescription>{description}</CardDescription>
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden"
+            >
+              <CardDescription>{description}</CardDescription>
+            </motion.div>
           </div>
           {action === "manage" ? (
             <Button
