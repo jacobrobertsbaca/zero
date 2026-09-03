@@ -214,7 +214,7 @@ export const TransactionSidebar = ({
               onBlur={() => setAmountFocused(false)}
               helperText={
                 (mobile || amountFocused) && details
-                  ? "Leave blank to sync the most up-to-date value from your institution"
+                  ? "Leave blank to sync the most recent value from your institution"
                   : undefined
               }
               onChange={(value) => {
