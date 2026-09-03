@@ -7,7 +7,7 @@ import {
   deleteBudget as deleteBudgetRecord,
   deleteCategory as deleteCategoryRecord,
   deleteTransaction as deleteTransactionRecord,
-  getBudgets as getBudgetsRecord,
+  listBudgets as listBudgetsRecord,
   putBudget as putBudgetRecord,
   putCategory as putCategoryRecord,
   putTransaction as putTransactionRecord,
@@ -107,9 +107,9 @@ export async function reorderCategories(budgetId: string, categoryIds: string[])
   revalidateBudget(bid);
 }
 
-export async function getBudgets(): Promise<Budget[]> {
+export async function listBudgets(): Promise<Budget[]> {
   const owner = await userId();
-  return getBudgetsRecord(owner);
+  return listBudgetsRecord(owner);
 }
 
 export async function searchTransactions(

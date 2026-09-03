@@ -5,7 +5,7 @@ import { budgetCompare, buildBudgetTimeline, timelineAsOf } from "src/types/budg
 import { supabase } from "src/utils/supabase/server";
 import { PostgrestFilterBuilder, PostgrestTransformBuilder } from "@supabase/postgrest-js";
 import { HttpError, NotFound } from "./errors";
-import { Category, CategoryType, Period, Recurrence, RecurrenceType } from "src/types/category/types";
+import { Category, CategoryType, Period, Recurrence, RecurrenceType, RolloverMode } from "src/types/category/types";
 import { defaultCurrency } from "src/types/money/methods";
 import { categoryNominal, onCategoryNominal, onRecurrence, periodCompare } from "src/types/category/methods";
 import { isEqual } from "lodash";
@@ -226,18 +226,35 @@ export const getBudgets = async (owner: string, id?: string): Promise<Budget[]> 
 };
 
 /**
- * Lightweight budget list for overview cards (no categories/periods).
- * Timeline details should be fetched separately via {@link getBudgetTimeline}.
+ * Lightweight budget list with category names (no periods or amounts).
  */
 export const listBudgets = async (owner: string): Promise<Budget[]> => {
-  const rows = await wrap(supabase.from("budgets").select("id, name, begin_date, end_date").eq("owner", owner));
+  const rows = await wrap(
+    supabase
+      .from("budgets")
+      .select("id, name, begin_date, end_date, categories ( id, name, type, sort_order )")
+      .eq("owner", owner)
+      .order("sort_order", { referencedTable: "categories", ascending: true })
+  );
   return rows
     .map(
       (row): Budget => ({
         id: row.id,
         name: row.name,
         dates: { begin: row.begin_date, end: row.end_date },
-        categories: [],
+        categories: row.categories
+          .map(
+            (category): Category => ({
+              id: category.id,
+              name: category.name,
+              type: category.type,
+              order: category.sort_order,
+              recurrence: { type: RecurrenceType.None, amount: null },
+              periods: [],
+              rollover: { loss: RolloverMode.None, surplus: RolloverMode.None },
+            })
+          )
+          .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name)),
       })
     )
     .sort(budgetCompare);
@@ -385,9 +402,7 @@ export const reorderCategories = async (owner: string, bid: string, categoryIds:
   const budget = await wrap(supabase.from("budgets").select("id").eq("owner", owner).eq("id", bid));
   if (budget.length === 0) throw new NotFound("No such budget exists!");
 
-  const existing = await wrap(
-    supabase.from("categories").select("id").eq("owner", owner).eq("budget", bid)
-  );
+  const existing = await wrap(supabase.from("categories").select("id").eq("owner", owner).eq("budget", bid));
   const existingIds = new Set(existing.map((row) => row.id as string));
   if (categoryIds.length !== existingIds.size || categoryIds.some((id) => !existingIds.has(id))) {
     throw new HttpError(400, "Invalid category order");

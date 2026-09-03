@@ -2,8 +2,7 @@ import { produce, Draft } from "immer";
 import useSWR, { useSWRConfig } from "swr";
 import { useCallback, useMemo } from "react";
 import {
-  deleteTransaction as deleteTransactionAction,
-  getBudgets,
+  listBudgets,
   getPlaidConnections,
   putTransaction as putTransactionAction,
   searchTransactions,
@@ -28,7 +27,7 @@ export const PlaidConnectionsKey = "plaid/connections";
  * ================================================================================================================= */
 
 export const useBudgets = () => {
-  const { data, error, isLoading } = useSWR<readonly Budget[]>(BudgetsKey, () => getBudgets());
+  const { data, error, isLoading } = useSWR<readonly Budget[]>(BudgetsKey, () => listBudgets());
   return {
     budgets: data,
     error,
