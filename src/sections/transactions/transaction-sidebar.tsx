@@ -213,7 +213,9 @@ export const TransactionSidebar = ({
               onFocus={() => setAmountFocused(true)}
               onBlur={() => setAmountFocused(false)}
               helperText={
-                (mobile || amountFocused) && details ? "Leave blank to use the most up-to-date value" : undefined
+                (mobile || amountFocused) && details
+                  ? "Leave blank to sync the most up-to-date value from your institution"
+                  : undefined
               }
               onChange={(value) => {
                 if (details) form.setFieldValue("sync.details.overrides.amount", value ? true : undefined);
@@ -232,9 +234,7 @@ export const TransactionSidebar = ({
             />
             <NoteField label="Note" name="note" placeholder="Optional" />
 
-            {details ? (
-              <TransactionSyncDetails details={details} fallbackDate={form.values.date} />
-            ) : null}
+            {details ? <TransactionSyncDetails details={details} fallbackDate={form.values.date} /> : null}
 
             <EditActions
               dirty={!isEqual(form.values, initialValues)}
