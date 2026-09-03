@@ -35,7 +35,7 @@ import { Budget } from "src/types/budget/types";
 import { Category } from "src/types/category/types";
 import { moneyFormat, moneyZero } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
-import { SyncStatus, Transaction, TransactionQuery } from "src/types/transaction/types";
+import { SyncStatus, Transaction, TransactionPage, TransactionQuery } from "src/types/transaction/types";
 import { asDateString, dateFormatShort } from "src/types/utils/methods";
 import { Separator } from "src/components/ui/separator";
 import { cn } from "@/utils";
@@ -102,7 +102,7 @@ const getBudget = (row: Row<Transaction>, budgets: readonly Budget[] | undefined
 const getCategory = (row: Row<Transaction>, budget: Budget | undefined): Category | undefined =>
   budget?.categories.find((c) => c.id === row.original.category);
 
-export function TransactionsPage() {
+export function TransactionsPage({ initialTransactions }: { initialTransactions?: TransactionPage[] }) {
   const { budgets, error: budgetsError } = useBudgets();
   const { plaid } = usePlaidConnections();
   const { search, sorting, filter, setSearch, setSort, setFilter, model } = useTransactionsModel({ budgets });
@@ -120,7 +120,7 @@ export function TransactionsPage() {
     fetchMore,
     isLoading,
     isValidating,
-  } = useTransactionsSearch(model);
+  } = useTransactionsSearch(model, initialTransactions);
 
   const columns = useMemo<ColumnDef<Transaction>[]>(() => {
     return [
@@ -282,11 +282,7 @@ export function TransactionsPage() {
           <div className="flex animate-in fade-in flex-col gap-3 duration-300">
             <TransactionSearch fullWidth search={search} setSearch={setSearch} />
             <Collapsible open={typeof count === "number"}>
-              <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                {typeof count === "number" && (
-                  <p className="text-xs text-muted-foreground">Found {count} transactions</p>
-                )}
-              </CollapsibleContent>
+              {typeof count === "number" && <p className="text-xs text-muted-foreground">Found {count} transactions</p>}
             </Collapsible>
             <TransactionFilterChips filter={filter} setFilter={setFilter} budgets={budgets}>
               <TransactionFilterButton filter={filter} setFilter={setFilter} budgets={budgets} />

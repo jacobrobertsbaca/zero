@@ -103,7 +103,7 @@ const mutateTransactions = (
   });
 };
 
-export const useTransactionsSearch = (query: TransactionQuery) => {
+export const useTransactionsSearch = (query: TransactionQuery, fallbackData?: TransactionPage[]) => {
   const { mutate: invalidate } = useSWRConfig();
 
   /** Every page key has the format: [TAG, CURSOR, QUERY_MODEL] */
@@ -111,7 +111,7 @@ export const useTransactionsSearch = (query: TransactionQuery) => {
     (_, previousPage?: TransactionPage) => [TransactionsSearchKey, previousPage?.cursor, query],
     ([_, cursor, model]: [string, TransactionPage["cursor"], TransactionQuery]) =>
       searchTransactions(model, cursor ?? undefined),
-    { keepPreviousData: true }
+    { keepPreviousData: true, fallbackData }
   );
 
   /**
