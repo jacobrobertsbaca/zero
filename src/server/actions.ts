@@ -2,6 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { tags } from "src/server/tags";
 import { z } from "zod";
 import {
@@ -67,13 +68,17 @@ const SearchTransactionsSchema = z.object({
 });
 
 const revalidateBudget = (budgetId: string) => {
-  revalidatePath("/budgets");
-  revalidatePath(`/budgets/${budgetId}`);
-  updateTag(tags.budget(budgetId));
+  after(() => {
+    revalidatePath("/budgets");
+    revalidatePath(`/budgets/${budgetId}`);
+    updateTag(tags.budget(budgetId));
+  });
 };
 
 const revalidateTransaction = (budgetId: string) => {
-  revalidatePath("/transactions");
+  after(() => {
+    revalidatePath("/transactions");
+  });
   revalidateBudget(budgetId);
 };
 
@@ -143,10 +148,9 @@ export async function putTransaction(transaction: Transaction): Promise<Transact
 
 export async function deleteTransaction(transaction: Transaction): Promise<void> {
   const id = z.string().min(1).parse(transaction.id);
-  const budgetId = z.string().min(1).parse(transaction.budget);
   const owner = await userId();
   await deleteTransactionRecord(owner, id);
-  revalidateTransaction(budgetId);
+  if (transaction.budget) revalidateTransaction(transaction.budget);
 }
 
 export async function getSubscription(): Promise<Subscription> {
