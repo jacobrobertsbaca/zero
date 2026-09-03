@@ -18,9 +18,6 @@ export function SettingsPlus() {
               <Sprout className="size-4 shrink-0" />
               Plus
             </CardTitle>
-            <Button size="sm" className="shrink-0" disabled>
-              Upgrade
-            </Button>
           </CardHeader>
         </Card>
       }

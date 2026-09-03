@@ -177,7 +177,7 @@ export function SettingsPlusClient({ subscription }: Props) {
             <Button
               variant="outline"
               size="sm"
-              className="shrink-0 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+              className="shrink-0 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary animate-in fade-in"
               onClick={onManage}
               disabled={loading}
             >
@@ -191,7 +191,7 @@ export function SettingsPlusClient({ subscription }: Props) {
               )}
             </Button>
           ) : (
-            <Button size="sm" className="shrink-0 shadow-sm" onClick={openModal}>
+            <Button size="sm" className="shrink-0 shadow-sm animate-in fade-in" onClick={openModal}>
               {actionLabel}
               <ArrowRight className="size-3.5" />
             </Button>
