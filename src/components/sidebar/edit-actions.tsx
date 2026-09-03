@@ -45,7 +45,10 @@ export const EditActions = (props: EditActionsProps) => {
 
   const actions = (
     <div
-      className={cn("flex items-center justify-end gap-2 border-t bg-background px-4 py-3", className)}
+      className={cn(
+        "flex items-center justify-end gap-2 border-t bg-background p-3 max-md:p-[1rem] max-md:[&>button]:flex-1",
+        className
+      )}
       {...divProps}
     >
       {state === EditState.View && (
