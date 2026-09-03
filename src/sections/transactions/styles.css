@@ -6,5 +6,5 @@
 }
 
 .transaction-map .leaflet-tile-pane {
-  filter: saturate(0.85) contrast(0.96);
+  filter: saturate(0.95) contrast(0.96);
 }

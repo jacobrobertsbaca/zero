@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { format } from "date-fns";
+import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { Card } from "src/components/ui/card";
 import { getPlaidConnections } from "src/server/actions";
@@ -9,6 +10,7 @@ import type { PlaidConnection } from "src/types/plaid/types";
 import { SyncDetails } from "src/types/transaction/types";
 import { asDate } from "src/types/utils/methods";
 import { DateString } from "src/types/utils/types";
+import { cn } from "src/utils";
 
 const TransactionLocationMap = dynamic(
   () => import("./transaction-map").then((module) => module.TransactionLocationMap),
@@ -27,12 +29,53 @@ type SyncDetailRowProps = {
 
 const MARK_CLASS = "block size-4 shrink-0 rounded object-cover";
 
-const SyncDetailRow = ({ label, children }: SyncDetailRowProps) => (
-  <div className="flex h-8 items-center justify-between gap-2 px-2">
-    <span className="shrink-0 leading-none text-muted-foreground">{label}</span>
-    <div className="flex min-w-0 items-center justify-end leading-none">{children}</div>
-  </div>
-);
+const SyncDetailRow = ({ label, children }: SyncDetailRowProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [fade, setFade] = useState({ left: false, right: false });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const update = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      setFade({
+        left: scrollLeft > 1,
+        right: scrollLeft + clientWidth < scrollWidth - 1,
+      });
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    el.addEventListener("scroll", update, { passive: true });
+    return () => {
+      ro.disconnect();
+      el.removeEventListener("scroll", update);
+    };
+  }, [children]);
+
+  return (
+    <div className="flex h-8 items-center gap-12 px-2">
+      <span className="shrink-0 leading-none text-muted-foreground">{label}</span>
+      <div
+        ref={ref}
+        className={cn(
+          "min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain py-px -my-px [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          fade.left &&
+            fade.right &&
+            "[mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)]",
+          fade.left && !fade.right && "[mask-image:linear-gradient(to_right,transparent,black_12px,black_100%)]",
+          !fade.left && fade.right && "[mask-image:linear-gradient(to_right,black,black_calc(100%-12px),transparent)]"
+        )}
+      >
+        <div className="flex w-max min-w-full items-center justify-end gap-1.5 whitespace-nowrap leading-none">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SyncDetailMark = ({ logo, logoUrl }: { logo?: string | null; logoUrl?: string }) => {
   if (logoUrl) {
@@ -67,6 +110,12 @@ const formatStatus = (status: SyncDetails["status"]) => {
   }
 };
 
+const formatAccountKind = (account: { type: string; subtype: string | null }) => {
+  const label = (account.subtype ?? account.type).replaceAll("_", " ");
+  if (label.toLowerCase() === "credit card") return "Credit";
+  return label;
+};
+
 const findPlaidAccount = (connections: readonly PlaidConnection[], accountId: string) => {
   for (const connection of connections) {
     const account = connection.accounts.find((item) => item.id === accountId);
@@ -86,21 +135,28 @@ export const TransactionSyncDetails = ({ details, fallbackDate }: TransactionSyn
       key: "merchant",
       content: (
         <SyncDetailRow label="Merchant">
-          <span className="flex min-w-0 items-center justify-end gap-1.5">
-            <SyncDetailMark logoUrl={details.merchant.logo_url} />
-            <span className="truncate">{details.merchant.name}</span>
-          </span>
+          <SyncDetailMark logoUrl={details.merchant.logo_url} />
+          <span>{details.merchant.name}</span>
         </SyncDetailRow>
       ),
     });
   }
+
+  rows.push({
+    key: "name",
+    content: (
+      <SyncDetailRow label="Name">
+        <span>{details.original_name}</span>
+      </SyncDetailRow>
+    ),
+  });
 
   if (location) {
     rows.push({
       key: "location",
       content: (
         <SyncDetailRow label="Location">
-          <span className="truncate">{location}</span>
+          <span>{location}</span>
         </SyncDetailRow>
       ),
     });
@@ -120,17 +176,15 @@ export const TransactionSyncDetails = ({ details, fallbackDate }: TransactionSyn
     content: (
       <SyncDetailRow label="Account">
         {account ? (
-          <span className="flex min-w-0 items-center justify-end gap-1.5">
+          <>
             <SyncDetailMark logo={account.connection.institutionLogo} />
-            <span className="flex min-w-0 items-center justify-end gap-1 truncate capitalize">
-              <span className="truncate">
-                {account.connection.institutionName} {account.account.type.replaceAll("_", " ")}
-              </span>
-              {account.account.mask ? (
-                <span className="shrink-0 font-mono tabular-nums tracking-tight ">··{account.account.mask}</span>
-              ) : null}
+            <span className="capitalize">
+              {account.connection.institutionName} {formatAccountKind(account.account)}
             </span>
-          </span>
+            {account.account.mask ? (
+              <span className="font-mono tabular-nums tracking-tight">··{account.account.mask}</span>
+            ) : null}
+          </>
         ) : (
           <span className="text-muted-foreground">{plaid ? "Unknown account" : "Loading..."}</span>
         )}
