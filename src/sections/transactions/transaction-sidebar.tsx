@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { produce } from "immer";
 import { wrapAsync } from "src/utils/wrap-errors";
 import { useIsMobile } from "@/hooks/use-mobile";
+import type { PlaidConnections } from "src/types/plaid/types";
 
 type UndoDeleteButtonProps = {
   toastId: string | number;
@@ -63,6 +64,7 @@ const UndoDeleteButton = ({ toastId, transaction, update }: UndoDeleteButtonProp
 type TransactionSidebarProps = {
   transaction: Transaction;
   budgets: readonly Budget[];
+  plaid: PlaidConnections;
   open: boolean;
   onClose: () => void;
   onUpdate: (trx: Transaction) => void | Promise<void>;
@@ -72,6 +74,7 @@ type TransactionSidebarProps = {
 export const TransactionSidebar = ({
   transaction,
   budgets,
+  plaid,
   open,
   onClose,
   onUpdate,
@@ -232,7 +235,9 @@ export const TransactionSidebar = ({
             />
             <NoteField label="Note" name="note" placeholder="Optional" />
 
-            {details ? <TransactionSyncDetails details={details} fallbackDate={form.values.date} /> : null}
+            {details ? (
+              <TransactionSyncDetails details={details} fallbackDate={form.values.date} plaid={plaid} />
+            ) : null}
 
             <EditActions
               dirty={!isEqual(form.values, initialValues)}

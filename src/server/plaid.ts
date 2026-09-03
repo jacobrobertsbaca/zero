@@ -520,21 +520,23 @@ export const removePlaidItem = async (owner: string, connectionId: string): Prom
 /** Builds sync_details from a Plaid transaction, or null if it should not be synced (e.g. non-USD). */
 const buildSyncDetails = (
   txn: PlaidTransaction,
-  accountId: string,
+  item: PlaidSyncItem,
   overrides: SyncDetails["overrides"] = {}
 ): SyncDetails | null => {
   if (txn.iso_currency_code !== "USD") return null;
 
-  const originalName = txn.original_description || txn.name;
-  const merchant = txn.merchant_name
-    ? { name: txn.merchant_name, ...(txn.logo_url ? { logo_url: txn.logo_url } : {}) }
-    : undefined;
+  const accountId = item.accounts.find((account) => account.accountId === txn.account_id)?.id;
+  if (!accountId) return null;
 
-  const counterpartyName = (txn.counterparties ?? [])
-    .map((c) => c.name)
-    .filter(Boolean)
-    .join(" ");
-  const name = (counterpartyName || merchant?.name || originalName).slice(0, 120);
+  const originalName = txn.original_description || txn.name;
+  const isVenmo = /venmo/i.test(item.institutionName);
+
+  const merchant =
+    !isVenmo && txn.merchant_name
+      ? { name: txn.merchant_name, ...(txn.logo_url ? { logo_url: txn.logo_url } : {}) }
+      : undefined;
+
+  const name = (isVenmo ? originalName : merchant?.name || originalName).slice(0, 120);
 
   const location = {
     ...(txn.location.lat != null && txn.location.lon != null
@@ -625,7 +627,7 @@ const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
 
   const { data, error } = await supabase
     .from("plaid_items")
-    .select("id, access_token, transactions_cursor, plaid_accounts ( id, account_id )")
+    .select("id, access_token, institution_name, transactions_cursor, plaid_accounts ( id, account_id )")
     .eq("owner", owner)
     .neq("status", "inactive")
     .not("access_token", "is", null);
@@ -634,14 +636,13 @@ const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
   return (data ?? []).map((row) => ({
     id: row.id,
     accessToken: row.access_token,
+    institutionName: row.institution_name,
     transactionsCursor: row.transactions_cursor,
     accounts: row.plaid_accounts.map((account) => ({ id: account.id, accountId: account.account_id })),
   }));
 };
 
 const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
-  const accountByPlaidId = new Map(item.accounts.map((account) => [account.accountId, account.id]));
-
   const { upserted, removed, cursor } = await fetchPlaidUpdates(item.accessToken, item.transactionsCursor);
   const universe = await getTransactionsBySyncIds(
     owner,
@@ -659,14 +660,11 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
 
   await Promise.all([
     ...upserted.flatMap((txn) => {
-      const accountId = accountByPlaidId.get(txn.account_id);
-      if (!accountId) return [];
-
       const existing = universe.get(txn.pending_transaction_id ?? txn.transaction_id);
       if (existing?.sync?.status === SyncStatus.Removed) return [];
       const overrides = existing?.sync?.details.overrides ?? {};
-      const details = buildSyncDetails(txn, accountId, overrides);
-      if (!details) return;
+      const details = buildSyncDetails(txn, item, overrides);
+      if (!details) return [];
 
       const amount = (() => {
         if (existing?.sync?.details.overrides.amount) return existing.amount;

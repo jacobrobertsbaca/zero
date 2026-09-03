@@ -81,7 +81,7 @@ export const TransactionList = ({ table, setSidebarTrx }: TransactionListProps) 
                 key={cell.id}
                 className={cn(
                   "px-1 py-2 align-middle",
-                  cell.column.columnDef.meta?.ellipsis && "overflow-hidden text-ellipsis [overflow-wrap:anywhere]",
+                  cell.column.columnDef.meta?.ellipsis && "truncate",
                   cell.column.columnDef.meta?.center && "text-center"
                 )}
               >

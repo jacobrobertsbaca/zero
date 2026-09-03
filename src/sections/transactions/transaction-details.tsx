@@ -3,10 +3,8 @@
 import dynamic from "next/dynamic";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
-import useSWR from "swr";
 import { Card } from "src/components/ui/card";
-import { getPlaidConnections } from "src/server/actions";
-import type { PlaidConnection } from "src/types/plaid/types";
+import type { PlaidConnection, PlaidConnections } from "src/types/plaid/types";
 import { SyncDetails } from "src/types/transaction/types";
 import { asDate } from "src/types/utils/methods";
 import { DateString } from "src/types/utils/types";
@@ -20,6 +18,7 @@ const TransactionLocationMap = dynamic(
 type TransactionSyncDetailsProps = {
   details: SyncDetails;
   fallbackDate: DateString;
+  plaid: PlaidConnections;
 };
 
 type SyncDetailRowProps = {
@@ -123,9 +122,8 @@ const findPlaidAccount = (connections: readonly PlaidConnection[], accountId: st
   }
 };
 
-export const TransactionSyncDetails = ({ details, fallbackDate }: TransactionSyncDetailsProps) => {
-  const { data: plaid } = useSWR("plaid/connections", () => getPlaidConnections());
-  const account = plaid ? findPlaidAccount(plaid.connections, details.account_id) : undefined;
+export const TransactionSyncDetails = ({ details, fallbackDate, plaid }: TransactionSyncDetailsProps) => {
+  const account = findPlaidAccount(plaid.connections, details.account_id);
   const location = formatLocation(details.location);
 
   const rows: { key: string; content: React.ReactNode }[] = [];
@@ -186,7 +184,7 @@ export const TransactionSyncDetails = ({ details, fallbackDate }: TransactionSyn
             ) : null}
           </>
         ) : (
-          <span className="text-muted-foreground">{plaid ? "Unknown account" : "Loading..."}</span>
+          <span className="text-muted-foreground">Unknown account</span>
         )}
       </SyncDetailRow>
     ),
