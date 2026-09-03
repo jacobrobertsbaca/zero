@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag, revalidateTag } from "next/cache";
+import { cacheLife, cacheTag, revalidatePath, revalidateTag, updateTag } from "next/cache";
 import {
   Configuration,
   CountryCode,
@@ -9,8 +9,7 @@ import {
   type AccountBase,
   type Transaction as PlaidTransaction,
 } from "plaid";
-import { wrap, getTransactionsBySyncIds } from "src/server/common";
-import { putTransaction, deleteTransaction } from "./actions";
+import { wrap, getTransactionsBySyncIds, putTransaction, deleteTransaction } from "src/server/common";
 import { HttpError } from "src/server/errors";
 import { getSubscription } from "src/server/billing";
 import { tags } from "src/server/tags";
@@ -620,18 +619,13 @@ const fetchPlaidUpdates = async (accessToken: string, cursor?: string | null) =>
   };
 };
 
-const TRANSACTIONS_SYNC_COOLDOWN_MS = 60 * 60 * 1000;
-
 const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
-  const cutoff = new Date(Date.now() - TRANSACTIONS_SYNC_COOLDOWN_MS).toISOString();
   const { data, error } = await supabase
     .from("plaid_items")
-    .update({ updated_at: new Date().toISOString() })
+    .select("id, access_token, institution_name, transactions_cursor, plaid_accounts ( id, account_id )")
     .eq("owner", owner)
     .neq("status", "inactive")
-    .not("access_token", "is", null)
-    .lt("updated_at", cutoff)
-    .select("id, access_token, institution_name, transactions_cursor, plaid_accounts ( id, account_id )");
+    .not("access_token", "is", null);
   if (error) throw new HttpError(error.code, error.message);
 
   return (data ?? []).map((row) => ({
@@ -641,6 +635,19 @@ const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
     transactionsCursor: row.transactions_cursor,
     accounts: row.plaid_accounts.map((account) => ({ id: account.id, accountId: account.account_id })),
   }));
+};
+
+const revalidateSyncedBudgets = (budgetIds: Iterable<string>) => {
+  let touchedTransactions = false;
+  for (const budgetId of budgetIds) {
+    touchedTransactions = true;
+    revalidatePath(`/budgets/${budgetId}`);
+    updateTag(tags.budget(budgetId));
+  }
+  if (touchedTransactions) {
+    revalidatePath("/budgets");
+    revalidatePath("/transactions");
+  }
 };
 
 const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
@@ -659,6 +666,8 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
     for (const row of rows) categoryTypes.set(row.id, row.type as CategoryType);
   }
 
+  const touchedBudgets = new Set<string>();
+
   await Promise.all([
     ...upserted.flatMap((txn) => {
       const existing = universe.get(txn.pending_transaction_id ?? txn.transaction_id);
@@ -675,9 +684,12 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
         return details.amount;
       })();
 
-      return putTransaction({
+      const budget = existing?.budget ?? null;
+      if (budget) touchedBudgets.add(budget);
+
+      return putTransaction(owner, {
         id: existing?.id ?? "",
-        budget: existing?.budget ?? null,
+        budget,
         category: existing?.category ?? null,
         date: (txn.authorized_date || txn.date).replaceAll("-", ""),
         amount,
@@ -695,12 +707,13 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
     ...removed.flatMap((txn) => {
       const existing = universe.get(txn.transaction_id);
       if (!existing) return [];
+      if (existing.budget) touchedBudgets.add(existing.budget);
 
-      if (existing.sync?.status === SyncStatus.Pending) return deleteTransaction(existing);
+      if (existing.sync?.status === SyncStatus.Pending) return deleteTransaction(owner, existing.id);
       if (!existing.sync) return;
 
       const now = new Date().toISOString();
-      return putTransaction({
+      return putTransaction(owner, {
         ...existing,
         amount: existing.sync.details.overrides.amount ? existing.amount : moneyZero(),
         sync: {
@@ -721,12 +734,14 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
     .eq("id", item.id)
     .eq("owner", owner);
   if (error) throw new HttpError(error.code, error.message);
+
+  revalidateSyncedBudgets(touchedBudgets);
 };
 
 /**
  * Syncs Plaid transactions for all active connections belonging to {@link owner}.
  */
-export const syncTransactions = async (owner: string): Promise<void> => {
+const syncTransactions = async (owner: string): Promise<void> => {
   if (!isPlaidConfigured()) return;
 
   const subscription = await getSubscription(owner);
@@ -740,6 +755,24 @@ export const syncTransactions = async (owner: string): Promise<void> => {
       syncTransactionsForItem(owner, item).catch((err) =>
         console.error(`Transaction sync failed for item ${item.id}:`, err)
       )
+    )
+  );
+};
+
+export const syncAllTransactions = async (): Promise<void> => {
+  if (!isPlaidConfigured()) return;
+
+  const { data, error } = await supabase
+    .from("plaid_items")
+    .select("owner")
+    .neq("status", "inactive")
+    .not("access_token", "is", null);
+  if (error) throw new HttpError(error.code, error.message);
+
+  const owners = [...new Set((data ?? []).map((row) => row.owner))];
+  await Promise.all(
+    owners.map((owner) =>
+      syncTransactions(owner).catch((err) => console.error(`Transaction sync failed for user ${owner}:`, err))
     )
   );
 };
