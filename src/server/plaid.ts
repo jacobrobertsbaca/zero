@@ -620,17 +620,18 @@ const fetchPlaidUpdates = async (accessToken: string, cursor?: string | null) =>
   };
 };
 
-const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
-  "use cache";
-  cacheTag(tags.plaid(owner));
-  cacheLife("max");
+const TRANSACTIONS_SYNC_COOLDOWN_MS = 60 * 60 * 1000;
 
+const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
+  const cutoff = new Date(Date.now() - TRANSACTIONS_SYNC_COOLDOWN_MS).toISOString();
   const { data, error } = await supabase
     .from("plaid_items")
-    .select("id, access_token, institution_name, transactions_cursor, plaid_accounts ( id, account_id )")
+    .update({ updated_at: new Date().toISOString() })
     .eq("owner", owner)
     .neq("status", "inactive")
-    .not("access_token", "is", null);
+    .not("access_token", "is", null)
+    .lt("updated_at", cutoff)
+    .select("id, access_token, institution_name, transactions_cursor, plaid_accounts ( id, account_id )");
   if (error) throw new HttpError(error.code, error.message);
 
   return (data ?? []).map((row) => ({
@@ -724,7 +725,6 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
 
 /**
  * Syncs Plaid transactions for all active connections belonging to {@link owner}.
- * No-ops when the user lacks an active Plus subscription or Plaid is not configured.
  */
 export const syncTransactions = async (owner: string): Promise<void> => {
   if (!isPlaidConfigured()) return;
@@ -742,6 +742,4 @@ export const syncTransactions = async (owner: string): Promise<void> => {
       )
     )
   );
-
-  revalidateTag(tags.plaid(owner), { expire: 0 });
 };
