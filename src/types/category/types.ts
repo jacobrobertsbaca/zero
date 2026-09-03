@@ -66,6 +66,7 @@ export type Category = Immutable<{
   id: string;
   name: string;
   type: CategoryType;
+  order: number;
   recurrence: Recurrence;
   periods: Period[];
   rollover: {

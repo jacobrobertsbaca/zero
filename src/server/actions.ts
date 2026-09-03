@@ -11,6 +11,7 @@ import {
   putBudget as putBudgetRecord,
   putCategory as putCategoryRecord,
   putTransaction as putTransactionRecord,
+  reorderCategories as reorderCategoriesRecord,
   searchTransactions as searchTransactionsRecord,
 } from "src/server/common";
 import { budgetMaxDays, budgetMaxYears } from "src/types/budget/methods";
@@ -96,6 +97,14 @@ export async function deleteCategory(budgetId: string, categoryId: string): Prom
   const cid = z.string().min(1).parse(categoryId);
   const owner = await userId();
   await deleteCategoryRecord(owner, bid, cid);
+  revalidateBudget(bid);
+}
+
+export async function reorderCategories(budgetId: string, categoryIds: string[]): Promise<void> {
+  const bid = z.string().min(1).parse(budgetId);
+  const ids = z.array(z.string().min(1)).parse(categoryIds);
+  const owner = await userId();
+  await reorderCategoriesRecord(owner, bid, ids);
   revalidateBudget(bid);
 }
 

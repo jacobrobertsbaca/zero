@@ -133,11 +133,13 @@ export const CategorySidebar = ({ budget, category, open, onClose, onUpdate, onD
         validationSchema: Yup.object({
           name: Yup.string().trim().required("You must provide a name!"),
         }),
-        async onSubmit(category) {
-          category = await putCategory(budget.id, category);
+        async onSubmit(values) {
+          const isNew = !category.id;
+          const saved = await putCategory(budget.id, values);
           setEditState(EditState.View);
           setDeleteModal(false);
-          onUpdate(category);
+          onUpdate(saved);
+          if (isNew) onClose();
         },
       }}
     >

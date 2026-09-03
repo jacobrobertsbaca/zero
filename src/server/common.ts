@@ -48,7 +48,7 @@ export const wrap = async <TResult>(
  * ================================================================================================================= */
 
 const CATEGORY_QUERY = `
-  id, name, type, rec_type, rec_day, rec_amount, ro_loss, ro_surplus,
+  id, name, type, rec_type, rec_day, rec_amount, ro_loss, ro_surplus, sort_order,
   periods (
     begin_date, end_date, days, nominal, actual, truncate
   )
@@ -65,7 +65,11 @@ const TRANSACTION_QUERY = `
 ` as const;
 
 const retrieveBudgets = async (owner: string, id?: string) => {
-  let query = supabase.from("budgets").select(BUDGET_QUERY).eq("owner", owner);
+  let query = supabase
+    .from("budgets")
+    .select(BUDGET_QUERY)
+    .eq("owner", owner)
+    .order("sort_order", { referencedTable: "categories", ascending: true });
   if (id) query = query.eq("id", id);
   return await wrap(query);
 };
@@ -117,6 +121,7 @@ const parseCategory = (row: ReadCategoryRow): Category => ({
   id: row.id,
   name: row.name,
   type: row.type,
+  order: row.sort_order,
   recurrence: parseRecurrence(row),
   periods: row.periods.map((r) => parsePeriod(r)).sort(periodCompare),
   rollover: {
@@ -132,7 +137,9 @@ const parseBudget = (row: ReadBudgetRow): Budget => ({
     begin: row.begin_date,
     end: row.end_date,
   },
-  categories: row.categories.map((r) => parseCategory(r)),
+  categories: row.categories
+    .map((r) => parseCategory(r))
+    .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name)),
 });
 
 const parseTransaction = (row: ReadTransactionRow): Transaction => ({
@@ -177,6 +184,7 @@ const formatCategory = (owner: string, budget: string, category: Category): Writ
   rec_amount: category.recurrence.amount?.amount ?? null,
   ro_loss: category.rollover.loss,
   ro_surplus: category.rollover.surplus,
+  sort_order: category.order,
 });
 
 const formatBudget = (owner: string, budget: Budget): WriteBudgetRow => ({
@@ -331,15 +339,25 @@ export const putCategory = async (owner: string, bid: string, category: Category
   if (budget.length === 0) throw new NotFound("No such budget exists!");
 
   /* If modifying an existing category, verify that category exists in this budget and is owned by this user.
-   * Otherwise give the category a fresh id */
+   * Otherwise give the category a fresh id and append it to the end of the list. */
   if (category.id) {
     const existing = await wrap(
       supabase.from("categories").select("id").eq("owner", owner).eq("budget", bid).eq("id", category.id)
     );
     if (existing.length === 0) throw new NotFound("No such category exists!");
   } else {
+    const last = await wrap(
+      supabase
+        .from("categories")
+        .select("sort_order")
+        .eq("owner", owner)
+        .eq("budget", bid)
+        .order("sort_order", { ascending: false })
+        .limit(1)
+    );
     category = produce(category, (draft) => {
       draft.id = crypto.randomUUID();
+      draft.order = (last[0]?.sort_order ?? -1) + 1;
     });
   }
 
@@ -358,6 +376,28 @@ export const putCategory = async (owner: string, bid: string, category: Category
   const rows = await retrieveCategory(owner, category.id);
   if (rows.length === 0) throw new NotFound("Category was deleted during modification!");
   return parseCategory(rows[0]);
+};
+
+/**
+ * Persists a new display order for all categories in a budget.
+ */
+export const reorderCategories = async (owner: string, bid: string, categoryIds: string[]): Promise<void> => {
+  const budget = await wrap(supabase.from("budgets").select("id").eq("owner", owner).eq("id", bid));
+  if (budget.length === 0) throw new NotFound("No such budget exists!");
+
+  const existing = await wrap(
+    supabase.from("categories").select("id").eq("owner", owner).eq("budget", bid)
+  );
+  const existingIds = new Set(existing.map((row) => row.id as string));
+  if (categoryIds.length !== existingIds.size || categoryIds.some((id) => !existingIds.has(id))) {
+    throw new HttpError(400, "Invalid category order");
+  }
+
+  await Promise.all(
+    categoryIds.map((id, index) =>
+      wrap(supabase.from("categories").update({ sort_order: index }).eq("id", id).eq("owner", owner).eq("budget", bid))
+    )
+  );
 };
 
 /**

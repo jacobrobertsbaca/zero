@@ -74,6 +74,7 @@ export const CategorySchema = z
     id: z.string(),
     name: z.string().trim().min(1).max(60),
     type: z.nativeEnum(CategoryType),
+    order: z.number().int().min(0),
     recurrence: RecurrenceSchema,
     periods: PeriodSchema.array().min(3),
     rollover: z.object({
