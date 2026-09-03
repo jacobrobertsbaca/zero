@@ -9,7 +9,8 @@ import {
   type AccountBase,
   type Transaction as PlaidTransaction,
 } from "plaid";
-import { wrap, putTransaction, deleteTransaction, getTransactionsBySyncIds } from "src/server/common";
+import { wrap, getTransactionsBySyncIds } from "src/server/common";
+import { putTransaction, deleteTransaction } from "./actions";
 import { HttpError } from "src/server/errors";
 import { getSubscription } from "src/server/billing";
 import { tags } from "src/server/tags";
@@ -675,7 +676,7 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
         return details.amount;
       })();
 
-      return putTransaction(owner, {
+      return putTransaction({
         id: existing?.id ?? "",
         budget: existing?.budget ?? null,
         category: existing?.category ?? null,
@@ -696,11 +697,11 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
       const existing = universe.get(txn.transaction_id);
       if (!existing) return [];
 
-      if (existing.sync?.status === SyncStatus.Pending) return deleteTransaction(owner, existing.id);
+      if (existing.sync?.status === SyncStatus.Pending) return deleteTransaction(existing);
       if (!existing.sync) return;
 
       const now = new Date().toISOString();
-      return putTransaction(owner, {
+      return putTransaction({
         ...existing,
         amount: existing.sync.details.overrides.amount ? existing.amount : moneyZero(),
         sync: {
