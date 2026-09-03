@@ -211,7 +211,7 @@ export const categoryDefault = (budget?: Budget): Category => {
   const category: Category = {
     id: "",
     name: "",
-    type: CategoryType.Income,
+    type: CategoryType.Spending,
     order: budget?.categories.length ?? 0,
     recurrence: { type: RecurrenceType.None, amount: null },
     periods: [],
