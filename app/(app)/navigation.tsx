@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { type LucideIcon, ChartBar, CreditCard, PanelLeft, Settings } from "lucide-react";
+import { type LucideIcon, ChartBar, CreditCard, Menu, PanelLeft, Settings } from "lucide-react";
 import { Separator } from "src/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "src/components/ui/sheet";
 import { cn } from "src/utils";
@@ -21,10 +21,12 @@ function SidebarTriggerButton({
   open,
   onClick,
   className,
+  icon: Icon = PanelLeft,
 }: {
   open?: boolean;
   onClick?: () => void;
   className?: string;
+  icon?: LucideIcon;
 }) {
   return (
     <button
@@ -38,7 +40,7 @@ function SidebarTriggerButton({
         className
       )}
     >
-      <PanelLeft className="size-3.5" strokeWidth={1.75} aria-hidden />
+      <Icon className="size-1/2 shrink-0" strokeWidth={1.75} aria-hidden />
     </button>
   );
 }
@@ -109,7 +111,10 @@ function DesktopHoverSidebar() {
         </div>
       </div>
 
-      <div className={cn("absolute top-0 left-0", ITEM_INSET, !open && "pointer-events-auto")} onMouseEnter={show}>
+      <div
+        className={cn("absolute top-0 left-0", ITEM_INSET, !open && "pointer-events-auto")}
+        onMouseEnter={show}
+      >
         <SidebarTriggerButton open={open} />
       </div>
     </div>
@@ -154,13 +159,18 @@ export function Navigation({ children }: { children: React.ReactNode }) {
       <main className="relative flex w-full flex-1 flex-col bg-background">
         <header
           className={cn(
-            "sticky top-0 z-20 flex items-center border-b border-border/60 bg-background/80 backdrop-blur-md md:hidden",
+            "sticky top-0 z-20 flex items-center border-b border-border/60 bg-background/80 backdrop-blur-md xl:hidden",
             ITEM_INSET
           )}
         >
-          <SidebarTriggerButton onClick={() => setMobileOpen(true)} />
+          <SidebarTriggerButton
+            icon={Menu}
+            className="size-9 md:hidden"
+            onClick={() => setMobileOpen(true)}
+          />
+          <div className="hidden size-7 md:block" aria-hidden />
         </header>
-        <div key={pathname} className="page-enter mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 md:pt-20 md:pb-8">
+        <div key={pathname} className="page-enter mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 md:pt-9 xl:pt-20">
           {children}
         </div>
       </main>
