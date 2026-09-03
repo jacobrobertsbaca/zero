@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense, type ReactNode } from "react";
 import { Loader2, Plus, Sprout, Star } from "lucide-react";
 import {
   ColumnDef,
@@ -14,7 +14,8 @@ import {
 import { PageTitle } from "src/components/page-title";
 import { Button } from "src/components/ui/button";
 import { Collapsible, CollapsibleContent } from "src/components/ui/collapsible";
-import { useBudgets, useTransactionsSearch } from "src/hooks/use-api";
+import { useSWRConfig } from "swr";
+import { TransactionsSearchKey, useBudgets, useTransactionsSearch } from "src/hooks/use-api";
 import { syncTransactions } from "src/server/actions";
 import { useIsMobile } from "src/hooks/use-mobile";
 import { SearchModelOptions, useSearchModel } from "src/hooks/use-search";
@@ -86,17 +87,20 @@ const useTransactionsModel = ({ budgets }: { budgets: readonly Budget[] | undefi
 
 let syncedThisSession = false;
 function useSyncedTransactions() {
-  const [ready, setReady] = useState(syncedThisSession);
+  const { mutate } = useSWRConfig();
+  const [syncing, setSyncing] = useState(!syncedThisSession);
 
   useEffect(() => {
     if (syncedThisSession) return;
-    void syncTransactions().finally(() => {
-      syncedThisSession = true;
-      setReady(true);
-    });
-  }, []);
+    syncedThisSession = true;
+    syncTransactions()
+      .then(() =>
+        mutate((key) => Array.isArray(key) && key[0] === TransactionsSearchKey, undefined, { revalidate: true })
+      )
+      .finally(() => setSyncing(false));
+  }, [mutate]);
 
-  return ready;
+  return syncing;
 }
 
 /* ================================================================================================================= *
@@ -123,12 +127,15 @@ const getCategory = (row: Row<Transaction>, budget: Budget | undefined): Categor
   budget?.categories.find((c) => c.id === row.original.category);
 
 export default function Page() {
-  const ready = useSyncedTransactions();
-  if (!ready) return <TransactionsTitle shimmer />;
-  return <TransactionsContent />;
+  return (
+    <Suspense fallback={<TransactionsTitle shimmer />}>
+      <TransactionsContent />
+    </Suspense>
+  );
 }
 
 function TransactionsContent() {
+  const syncing = useSyncedTransactions();
   const { budgets, error: budgetsError } = useBudgets();
   const { search, sorting, filter, setSearch, setSort, setFilter, model } = useTransactionsModel({ budgets });
   const mobile = useIsMobile();
@@ -256,7 +263,7 @@ function TransactionsContent() {
   return (
     <div className="flex flex-col gap-3">
       <TransactionsTitle
-        shimmer={isLoading}
+        shimmer={isLoading || syncing}
         actions={
           budgets && budgets.length > 0 ? (
             <Button
