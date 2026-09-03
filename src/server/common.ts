@@ -458,7 +458,14 @@ const getBudgetTimelineData = async (owner: string, budgetId: string): Promise<B
 
   const [categories, transactions] = await Promise.all([
     wrap(supabase.from("categories").select("id, type").eq("owner", owner).eq("budget", budgetId)),
-    wrap(supabase.from("transactions").select("date, amount, category").eq("owner", owner).eq("budget", budgetId)),
+    wrap(
+      supabase
+        .from("transactions")
+        .select("date, amount, category")
+        .eq("owner", owner)
+        .eq("budget", budgetId)
+        .neq("sync_status", SyncStatus.Removed)
+    ),
   ]);
 
   const typeByCategory = new Map(categories.map((c) => [c.id as string, c.type as CategoryType]));
