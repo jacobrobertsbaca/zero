@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Loader2, Plus, Sprout, Star } from "lucide-react";
 import {
   ColumnDef,
@@ -14,8 +14,7 @@ import {
 import { PageTitle } from "src/components/page-title";
 import { Button } from "src/components/ui/button";
 import { Collapsible, CollapsibleContent } from "src/components/ui/collapsible";
-import { useBudgets, useTransactionsSearch } from "src/hooks/use-api";
-import { markSyncCompleted } from "src/server/actions";
+import { useBudgets, usePlaidConnections, useTransactionsSearch } from "src/hooks/use-api";
 import { useIsMobile } from "src/hooks/use-mobile";
 import { SearchModelOptions, useSearchModel } from "src/hooks/use-search";
 import {
@@ -36,7 +35,6 @@ import { Budget } from "src/types/budget/types";
 import { Category } from "src/types/category/types";
 import { moneyFormat, moneyZero } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
-import type { PlaidConnections } from "src/types/plaid/types";
 import { SyncStatus, Transaction, TransactionQuery } from "src/types/transaction/types";
 import { asDateString, dateFormatShort } from "src/types/utils/methods";
 import { Separator } from "src/components/ui/separator";
@@ -104,12 +102,9 @@ const getBudget = (row: Row<Transaction>, budgets: readonly Budget[] | undefined
 const getCategory = (row: Row<Transaction>, budget: Budget | undefined): Category | undefined =>
   budget?.categories.find((c) => c.id === row.original.category);
 
-export function TransactionsPage({ plaid, didSync }: { plaid: PlaidConnections; didSync: boolean }) {
-  useEffect(() => {
-    if (didSync) markSyncCompleted();
-  }, [didSync]);
-
+export function TransactionsPage() {
   const { budgets, error: budgetsError } = useBudgets();
+  const { plaid } = usePlaidConnections();
   const { search, sorting, filter, setSearch, setSort, setFilter, model } = useTransactionsModel({ budgets });
   const mobile = useIsMobile();
 
@@ -177,7 +172,7 @@ export function TransactionsPage({ plaid, didSync }: { plaid: PlaidConnections; 
         cell: ({ row, getValue }) => {
           const accountId = row.original.sync?.details.account_id;
           const logo = accountId
-            ? plaid.connections.find((connection) => connection.accounts.some((account) => account.id === accountId))
+            ? plaid?.connections.find((connection) => connection.accounts.some((account) => account.id === accountId))
                 ?.institutionLogo
             : undefined;
           return (
@@ -260,7 +255,6 @@ export function TransactionsPage({ plaid, didSync }: { plaid: PlaidConnections; 
 
       <TransactionSidebar
         budgets={budgets ?? []}
-        plaid={plaid}
         transaction={sidebarTrx}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

@@ -4,7 +4,8 @@ import dynamic from "next/dynamic";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 import { Card } from "src/components/ui/card";
-import type { PlaidConnection, PlaidConnections } from "src/types/plaid/types";
+import { usePlaidConnections } from "src/hooks/use-api";
+import type { PlaidConnection } from "src/types/plaid/types";
 import { SyncDetails } from "src/types/transaction/types";
 import { asDate } from "src/types/utils/methods";
 import { DateString } from "src/types/utils/types";
@@ -18,7 +19,6 @@ const TransactionLocationMap = dynamic(
 type TransactionSyncDetailsProps = {
   details: SyncDetails;
   fallbackDate: DateString;
-  plaid: PlaidConnections;
 };
 
 type SyncDetailRowProps = {
@@ -26,7 +26,7 @@ type SyncDetailRowProps = {
   children: React.ReactNode;
 };
 
-const MARK_CLASS = "block size-4 shrink-0 rounded object-cover";
+const MARK_CLASS = "block size-4 shrink-0 rounded object-cover border";
 
 const SyncDetailRow = ({ label, children }: SyncDetailRowProps) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -122,8 +122,9 @@ const findPlaidAccount = (connections: readonly PlaidConnection[], accountId: st
   }
 };
 
-export const TransactionSyncDetails = ({ details, fallbackDate, plaid }: TransactionSyncDetailsProps) => {
-  const account = findPlaidAccount(plaid.connections, details.account_id);
+export const TransactionSyncDetails = ({ details, fallbackDate }: TransactionSyncDetailsProps) => {
+  const { plaid, isLoading } = usePlaidConnections();
+  const account = findPlaidAccount(plaid?.connections ?? [], details.account_id);
   const location = formatLocation(details.location);
 
   const rows: { key: string; content: React.ReactNode }[] = [];
@@ -183,6 +184,8 @@ export const TransactionSyncDetails = ({ details, fallbackDate, plaid }: Transac
               <span className="font-mono tabular-nums tracking-tight">··{account.account.mask}</span>
             ) : null}
           </>
+        ) : isLoading ? (
+          <span className="text-shimmer">Loading account</span>
         ) : (
           <span className="text-muted-foreground">Unknown account</span>
         )}

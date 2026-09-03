@@ -4,10 +4,12 @@ import { useCallback, useMemo } from "react";
 import {
   deleteTransaction as deleteTransactionAction,
   getBudgets,
+  getPlaidConnections,
   putTransaction as putTransactionAction,
   searchTransactions,
 } from "src/server/actions";
 import type { Budget } from "src/types/budget/types";
+import type { PlaidConnections } from "src/types/plaid/types";
 import { Transaction, TransactionPage, TransactionQuery } from "src/types/transaction/types";
 import useSWRInfinite from "swr/infinite";
 import { isEqual } from "lodash";
@@ -19,6 +21,7 @@ import { toast } from "sonner";
 
 export const BudgetsKey = "budgets";
 export const TransactionsSearchKey = "transactions/search";
+export const PlaidConnectionsKey = "plaid/connections";
 
 /* ================================================================================================================= *
  * Budgets                                                                                                           *
@@ -28,6 +31,19 @@ export const useBudgets = () => {
   const { data, error, isLoading } = useSWR<readonly Budget[]>(BudgetsKey, () => getBudgets());
   return {
     budgets: data,
+    error,
+    isLoading,
+  };
+};
+
+/* ================================================================================================================= *
+ * Plaid                                                                                                             *
+ * ================================================================================================================= */
+
+export const usePlaidConnections = () => {
+  const { data, error, isLoading } = useSWR<PlaidConnections>(PlaidConnectionsKey, () => getPlaidConnections());
+  return {
+    plaid: data,
     error,
     isLoading,
   };

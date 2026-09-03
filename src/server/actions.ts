@@ -1,8 +1,6 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
-import { cookies } from "next/headers";
-import { after } from "next/server";
 import { tags } from "src/server/tags";
 import { z } from "zod";
 import {
@@ -37,7 +35,6 @@ import {
   getPlaidConnections as getPlaidConnectionsRecord,
   removePlaidItem as removePlaidItemRecord,
   syncPlaidItemAccounts as syncPlaidItemAccountsRecord,
-  syncTransactions as syncTransactionsRecord,
 } from "src/server/plaid";
 import {
   CreatePlaidUpdateLinkTokenSchema,
@@ -47,14 +44,6 @@ import {
 import type { PlaidConnection, PlaidConnections } from "src/types/plaid/types";
 import type { Subscription } from "src/types/subscription/types";
 import { supabase, userId } from "src/utils/supabase/server";
-
-const TRANSACTIONS_SYNC_COOKIE = "transactions_synced_at";
-const TRANSACTIONS_SYNC_COOLDOWN_MS = 6 * 60 * 60 * 1000;
-
-const revalidateTransactionsSync = async () => {
-  const cookieStore = await cookies();
-  cookieStore.delete(TRANSACTIONS_SYNC_COOKIE);
-};
 
 const PutBudgetSchema = BudgetSchema.omit({ categories: true }).refine(
   (value) => datesDays(value.dates) <= budgetMaxDays(),
@@ -68,17 +57,13 @@ const SearchTransactionsSchema = z.object({
 });
 
 const revalidateBudget = (budgetId: string) => {
-  after(() => {
-    revalidatePath("/budgets");
-    revalidatePath(`/budgets/${budgetId}`);
-    updateTag(tags.budget(budgetId));
-  });
+  revalidatePath("/budgets");
+  revalidatePath(`/budgets/${budgetId}`);
+  updateTag(tags.budget(budgetId));
 };
 
 const revalidateTransaction = (budgetId: string) => {
-  after(() => {
-    revalidatePath("/transactions");
-  });
+  revalidatePath("/transactions");
   revalidateBudget(budgetId);
 };
 
@@ -198,7 +183,6 @@ export async function exchangePlaidPublicToken(
 ): Promise<PlaidConnection> {
   const owner = await userId();
   const result = await exchangePublicTokenRecord(owner, input);
-  await revalidateTransactionsSync();
   revalidatePath("/settings");
   return result;
 }
@@ -207,7 +191,6 @@ export async function syncPlaidAccounts(input: z.infer<typeof SyncPlaidAccountsS
   const owner = await userId();
   const parsed = SyncPlaidAccountsSchema.parse(input);
   const result = await syncPlaidItemAccountsRecord(owner, parsed.connectionId);
-  await revalidateTransactionsSync();
   revalidatePath("/settings");
   return result;
 }
@@ -216,31 +199,4 @@ export async function removePlaidItem(connectionId: string): Promise<void> {
   const owner = await userId();
   await removePlaidItemRecord(owner, connectionId);
   revalidatePath("/settings");
-}
-
-/**
- * Pulls new transactions from connected accounts.
- * @returns `true` if a sync ran. The client must call {@link markSyncCompleted}.
- */
-export async function syncTransactions(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const lastSyncedAt = Number(cookieStore.get(TRANSACTIONS_SYNC_COOKIE)?.value);
-  if (Number.isFinite(lastSyncedAt) && Date.now() - lastSyncedAt < TRANSACTIONS_SYNC_COOLDOWN_MS) {
-    return false;
-  }
-
-  const owner = await userId();
-  await syncTransactionsRecord(owner);
-  return true;
-}
-
-export async function markSyncCompleted(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(TRANSACTIONS_SYNC_COOKIE, String(Date.now()), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
 }

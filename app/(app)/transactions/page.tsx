@@ -1,16 +1,19 @@
-import { Suspense } from "react";
-import { getPlaidConnections, syncTransactions } from "src/server/actions";
+import { after } from "next/server";
+import { syncTransactions } from "src/server/plaid";
 import { TransactionsPage, TransactionsTitle } from "src/sections/transactions/transactions-page";
+import { userId } from "src/utils/supabase/server";
+import { Suspense } from "react";
 
-export default function Page() {
-  return (
-    <Suspense fallback={<TransactionsTitle shimmer />}>
-      <TransactionsData />
-    </Suspense>
-  );
+async function SyncedTransactions() {
+  const owner = await userId();
+  after(() => syncTransactions(owner));
+  return <TransactionsPage />;
 }
 
-async function TransactionsData() {
-  const [plaid, didSync] = await Promise.all([getPlaidConnections(), syncTransactions()]);
-  return <TransactionsPage plaid={plaid} didSync={didSync} />;
+export default async function Page() {
+  return (
+    <Suspense fallback={<TransactionsTitle shimmer />}>
+      <SyncedTransactions />
+    </Suspense>
+  );
 }

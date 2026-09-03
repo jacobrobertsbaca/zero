@@ -28,7 +28,6 @@ import { SyncStatus, type SyncDetails } from "src/types/transaction/types";
 import { getAppOrigin } from "src/utils/server";
 import { supabase } from "src/utils/supabase/server";
 import { z } from "zod";
-import { after } from "next/server";
 
 export const MAX_PLAID_ITEMS = 4;
 
@@ -744,5 +743,5 @@ export const syncTransactions = async (owner: string): Promise<void> => {
     )
   );
 
-  after(() => revalidateTag(tags.plaid(owner), { expire: 0 }));
+  revalidateTag(tags.plaid(owner), { expire: 0 });
 };
