@@ -53,15 +53,31 @@ interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {}
 
+const isToastEvent = (event: Event | CustomEvent<{ originalEvent: Event }>) => {
+  const target =
+    "detail" in event && event.detail?.originalEvent
+      ? event.detail.originalEvent.target
+      : event.target;
+  return target instanceof Element && !!target.closest("[data-sonner-toaster]");
+};
+
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
+>(({ side = "right", className, children, onInteractOutside, onPointerDownOutside, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content
       ref={ref}
       className={cn(sheetVariants({ side }), className)}
+      onInteractOutside={(event) => {
+        if (isToastEvent(event)) event.preventDefault();
+        onInteractOutside?.(event);
+      }}
+      onPointerDownOutside={(event) => {
+        if (isToastEvent(event)) event.preventDefault();
+        onPointerDownOutside?.(event);
+      }}
       {...props}
     >
       <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 disabled:pointer-events-none data-[state=open]:bg-secondary">

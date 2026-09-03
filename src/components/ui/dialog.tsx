@@ -27,10 +27,18 @@ const DialogOverlay = React.forwardRef<
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
+const isToastEvent = (event: Event | CustomEvent<{ originalEvent: Event }>) => {
+  const target =
+    "detail" in event && event.detail?.originalEvent
+      ? event.detail.originalEvent.target
+      : event.target;
+  return target instanceof Element && !!target.closest("[data-sonner-toaster]");
+};
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, onInteractOutside, onPointerDownOutside, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -39,6 +47,14 @@ const DialogContent = React.forwardRef<
         "fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] max-w-sm translate-x-[-50%] translate-y-[-50%] gap-0 overflow-y-auto overflow-x-hidden rounded-md border border-primary/20 bg-background p-0 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         className
       )}
+      onInteractOutside={(event) => {
+        if (isToastEvent(event)) event.preventDefault();
+        onInteractOutside?.(event);
+      }}
+      onPointerDownOutside={(event) => {
+        if (isToastEvent(event)) event.preventDefault();
+        onPointerDownOutside?.(event);
+      }}
       {...props}
     >
       {children}

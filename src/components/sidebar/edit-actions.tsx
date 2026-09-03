@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { SubmitButton } from "../form/submit-button";
 import { Button, ButtonProps } from "src/components/ui/button";
+import { useIsMobile } from "src/hooks/use-mobile";
 import { cn } from "src/utils";
 import { useSidebarFooter } from "./sidebar";
 
@@ -28,6 +29,8 @@ export const EditActions = (props: EditActionsProps) => {
   const { submit: submitProps, delete: deleteProps } = ButtonProps ?? {};
   const [deleting, setDeleting] = useState(false);
   const footer = useSidebarFooter();
+  const mobile = useIsMobile();
+  const size = mobile ? "default" : "sm";
 
   const handleDelete = useCallback(async () => {
     if (!onDelete) return;
@@ -46,7 +49,7 @@ export const EditActions = (props: EditActionsProps) => {
       {...divProps}
     >
       {state === EditState.View && (
-        <Button type="button" variant="outline" size="sm" onClick={() => onStateChanged?.(EditState.Edit)}>
+        <Button type="button" variant="outline" size={size} onClick={() => onStateChanged?.(EditState.Edit)}>
           Edit
         </Button>
       )}
@@ -56,7 +59,7 @@ export const EditActions = (props: EditActionsProps) => {
             <Button
               type="button"
               variant="outline"
-              size="sm"
+              size={size}
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               {...deleteProps}
               disabled={deleting || deleteProps?.disabled}
@@ -66,7 +69,7 @@ export const EditActions = (props: EditActionsProps) => {
               {deleteProps?.children ?? "Delete"}
             </Button>
           )}
-          <SubmitButton size="sm" disabled={!dirty} {...submitProps}>
+          <SubmitButton size={size} disabled={!dirty} {...submitProps}>
             {submitProps?.children ?? "Save"}
           </SubmitButton>
         </>

@@ -1,6 +1,5 @@
 import { syncAllTransactions } from "src/server/plaid";
 
-export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 const authorize = (request: Request) => {
