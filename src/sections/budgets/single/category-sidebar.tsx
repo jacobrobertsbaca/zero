@@ -1,5 +1,11 @@
 import { Category, CategoryType } from "src/types/category/types";
-import { categoryActual, categoryDirty, categoryNominal, categoryTitle, onCategoryNominal } from "src/types/category/methods";
+import {
+  categoryActual,
+  categoryDirty,
+  categoryNominal,
+  categoryTitle,
+  onCategoryNominal,
+} from "src/types/category/methods";
 import { MoneyText } from "src/components/money-text";
 import { EditActions, EditState } from "../../../components/sidebar/edit-actions";
 import { useCallback, useEffect, useState } from "react";
@@ -49,26 +55,31 @@ const CategoryEditView = () => {
       <MoneyField
         fullWidth
         label="Total"
+        placeholder="None"
         value={categoryNominal(form.values)}
-        onChange={(total) => {
-          if (!total) return;
-          form.setValues(onCategoryNominal(form.values, total));
-        }}
+        onChange={(total) => form.setValues(onCategoryNominal(form.values, total))}
       />
     </>
   );
 };
 
-const CategoryDetailsView = ({ category }: { category: Category }) => (
-  <>
-    <SidebarItem title="Type">{categoryTitle(category.type)}</SidebarItem>
-    <SidebarItem title="Amount">
-      <MoneyText amount={categoryActual(category)} />
-      &nbsp;of&nbsp;
-      <MoneyText amount={categoryNominal(category)} />
-    </SidebarItem>
-  </>
-);
+const CategoryDetailsView = ({ category }: { category: Category }) => {
+  const nominal = categoryNominal(category);
+  return (
+    <>
+      <SidebarItem title="Type">{categoryTitle(category.type)}</SidebarItem>
+      <SidebarItem title="Amount">
+        <MoneyText amount={categoryActual(category)} />
+        {nominal !== null && (
+          <>
+            &nbsp;of&nbsp;
+            <MoneyText amount={nominal} />
+          </>
+        )}
+      </SidebarItem>
+    </>
+  );
+};
 
 /* ================================================================================================================= *
  * Sidebar                                                                                                           *

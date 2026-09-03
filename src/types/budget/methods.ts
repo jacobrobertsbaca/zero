@@ -1,7 +1,7 @@
 import { produce } from "immer";
 import { categoryActual, categoryNominal, categorySort, categoryTitle } from "../category/methods";
 import { CategoryType } from "../category/types";
-import { moneySub, moneySum, moneyZero } from "../money/methods";
+import { moneySub, moneySum, moneySumNullable, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
 import {
   Budget,
@@ -17,9 +17,9 @@ import { asDate, asDateString } from "../utils/methods";
 
 const computeLeftovers = (
   summaries: Partial<Record<CategoryType, CategorySummary>>,
-  selector: (category: CategorySummary) => Money
+  selector: (category: CategorySummary) => Money | null
 ): Money => {
-  const nullSelector = (c?: CategorySummary) => (c ? selector(c) : moneyZero());
+  const nullSelector = (c?: CategorySummary) => (c ? selector(c) : null) ?? moneyZero();
   return moneySub(
     nullSelector(summaries.income),
     moneySum(nullSelector(summaries.investments), nullSelector(summaries.savings), nullSelector(summaries.spending))
@@ -38,19 +38,20 @@ export const budgetSummary = (budget: Budget): BudgetSummary => {
     else
       summaries[category.type] = produce(summary, (draft) => {
         draft.actual = moneySum(draft.actual, actual);
-        draft.nominal = moneySum(draft.nominal, nominal);
+        draft.nominal = moneySumNullable(draft.nominal, nominal);
       });
   }
 
   const summariesList = Object.values(summaries);
   summariesList.sort(categorySort((cs) => cs.type!));
 
+  const hasNominalTarget = summariesList.some((s) => s.nominal !== null);
   const leftovers = {
-    nominal: computeLeftovers(summaries, (c) => c.nominal),
+    nominal: hasNominalTarget ? computeLeftovers(summaries, (c) => c.nominal) : null,
     actual: computeLeftovers(summaries, (c) => c.actual),
   };
 
-  if (leftovers.actual.amount !== 0 || leftovers.nominal.amount !== 0) {
+  if (leftovers.actual.amount !== 0 || (leftovers.nominal !== null && leftovers.nominal.amount !== 0)) {
     summariesList.push({
       title: "Net",
       actual: leftovers.actual,

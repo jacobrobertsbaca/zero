@@ -95,13 +95,13 @@ const parsePeriod = (row: ReadPeriodRow): Period => ({
     end: row.end_date,
   },
   days: row.days,
-  nominal: { amount: row.nominal, currency: defaultCurrency },
+  nominal: row.nominal == null ? null : { amount: row.nominal, currency: defaultCurrency },
   actual: { amount: row.actual, currency: defaultCurrency },
   truncate: row.truncate,
 });
 
 const parseRecurrence = (row: ReadCategoryRow): Recurrence => {
-  const amount = { amount: row.rec_amount, currency: defaultCurrency };
+  const amount = row.rec_amount == null ? null : { amount: row.rec_amount, currency: defaultCurrency };
   switch (row.rec_type) {
     case RecurrenceType.None:
       return { type: row.rec_type, amount };
@@ -161,7 +161,7 @@ const formatPeriod = (owner: string, budget: string, category: string, period: P
   begin_date: period.dates.begin,
   end_date: period.dates.end,
   days: period.days,
-  nominal: period.nominal.amount,
+  nominal: period.nominal?.amount ?? null,
   actual: period.actual.amount,
   truncate: period.truncate,
 });
@@ -174,7 +174,7 @@ const formatCategory = (owner: string, budget: string, category: Category): Writ
   type: category.type,
   rec_type: category.recurrence.type,
   rec_day: (category.recurrence as any).day,
-  rec_amount: category.recurrence.amount.amount,
+  rec_amount: category.recurrence.amount?.amount ?? null,
   ro_loss: category.rollover.loss,
   ro_surplus: category.rollover.surplus,
 });

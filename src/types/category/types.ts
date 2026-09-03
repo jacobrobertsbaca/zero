@@ -29,19 +29,19 @@ export enum RolloverMode {
   Average = "average",
 
   /** Rollover this amount to the next period */
-  Next = "next"
+  Next = "next",
 }
 
-export type NoRecurrence = Immutable<{ type: RecurrenceType.None; amount: Money }>;
+export type NoRecurrence = Immutable<{ type: RecurrenceType.None; amount: Money | null }>;
 export type WeeklyRecurrence = Immutable<{
   type: RecurrenceType.Weekly;
   day: number;
-  amount: Money;
+  amount: Money | null;
 }>;
 export type MonthlyRecurrence = Immutable<{
   type: RecurrenceType.Monthly;
   day: number;
-  amount: Money;
+  amount: Money | null;
 }>;
 export type Recurrence = Immutable<NoRecurrence | WeeklyRecurrence | MonthlyRecurrence>;
 
@@ -57,7 +57,7 @@ export type Period = Immutable<{
    * The true number of days in this period if it had not been truncated.
    */
   days: number;
-  nominal: Money;
+  nominal: Money | null;
   actual: Money;
   truncate: TruncateMode;
 }>;
@@ -69,7 +69,7 @@ export type Category = Immutable<{
   recurrence: Recurrence;
   periods: Period[];
   rollover: {
-    loss: RolloverMode,
-    surplus: RolloverMode
-  }
+    loss: RolloverMode;
+    surplus: RolloverMode;
+  };
 }>;

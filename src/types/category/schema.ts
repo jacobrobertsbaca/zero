@@ -51,16 +51,16 @@ const courseRecurrenceCheck = (category: Category): boolean => {
  * ================================================================================================================= */
 
 const RecurrenceSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal(RecurrenceType.None), amount: MoneySchema }),
-  z.object({ type: z.literal(RecurrenceType.Weekly), amount: MoneySchema, day: z.number().min(0).max(6) }),
-  z.object({ type: z.literal(RecurrenceType.Monthly), amount: MoneySchema, day: z.number().min(1).max(31) }),
+  z.object({ type: z.literal(RecurrenceType.None), amount: MoneySchema.nullable() }),
+  z.object({ type: z.literal(RecurrenceType.Weekly), amount: MoneySchema.nullable(), day: z.number().min(0).max(6) }),
+  z.object({ type: z.literal(RecurrenceType.Monthly), amount: MoneySchema.nullable(), day: z.number().min(1).max(31) }),
 ]);
 
 const PeriodSchema = z
   .object({
     dates: DatesSchema,
     days: z.number().min(0),
-    nominal: MoneySchema,
+    nominal: MoneySchema.nullable(),
     actual: MoneySchema,
     truncate: z.nativeEnum(TruncateMode),
   })

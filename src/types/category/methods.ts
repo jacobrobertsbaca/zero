@@ -1,9 +1,18 @@
-import { Draft, produce } from "immer";
-import { isEqual, isEqualWith, reduce } from "lodash";
+import { produce } from "immer";
+import { isEqual, isEqualWith } from "lodash";
 import { Budget } from "../budget/types";
-import { moneyAllocate, moneyFactor, moneySub, moneySum, moneyZero } from "../money/methods";
+import { moneyAllocate, moneyFactor, moneySub, moneySum, moneySumNullable, moneyZero } from "../money/methods";
 import { Money } from "../money/types";
-import { datesClamp, datesContains, datesDays, asDate, asDateString, dateFormat, dateMin, dateMax } from "../utils/methods";
+import {
+  datesClamp,
+  datesContains,
+  datesDays,
+  asDate,
+  asDateString,
+  dateFormat,
+  dateMin,
+  dateMax,
+} from "../utils/methods";
 import { Dates, DateString } from "../utils/types";
 import { Category, CategoryType, Period, Recurrence, RecurrenceType, RolloverMode, TruncateMode } from "./types";
 
@@ -76,9 +85,10 @@ const getRangeResolver = (budget: Budget, recurrence: Recurrence): RangeResolver
 
 /**
  * Computes and returns the total nominal amount of a category.
+ * Returns `null` when the category has no target amount.
  */
-export const categoryNominal = (category: Category): Money => {
-  return moneySum(...category.periods.map((p) => p.nominal));
+export const categoryNominal = (category: Category): Money | null => {
+  return moneySumNullable(...category.periods.map((p) => p.nominal));
 };
 
 /**
@@ -90,9 +100,16 @@ export const categoryActual = (category: Category): Money => {
 
 /**
  * Called to set total nominal value of a category.
+ * Pass `null` to clear the target amount.
  */
-export const onCategoryNominal = (category: Category, total: Money): Category =>
+export const onCategoryNominal = (category: Category, total: Money | null): Category =>
   produce(category, (draft) => {
+    if (total === null) {
+      for (const period of draft.periods) period.nominal = null;
+      draft.recurrence.amount = null;
+      return;
+    }
+
     // Edge case: What if every period is omitted? Then sum of weights will be zero.
     // If so, we will change one of the 'Omit's to 'Keep' before continuing.
     if (draft.periods.every((p) => p.truncate === TruncateMode.Omit)) {
@@ -119,6 +136,7 @@ export const categoryRollover = (category: Category): Money[] => {
   let remaining = moneyZero();
   for (let i = 0; i < active; i++) {
     const period = category.periods[i];
+    if (period.nominal === null) continue;
     remaining = moneySum(remaining, moneySub(period.nominal, period.actual));
   }
 
@@ -131,7 +149,7 @@ export const categoryRollover = (category: Category): Money[] => {
         const weights = category.periods.map((p, i) => (i >= active ? periodMultiplier(p) : 0));
         return moneyAllocate(remaining, weights);
       case RolloverMode.Next:
-        return category.periods.map((_, i) => 
+        return category.periods.map((_, i) =>
           i == active && active != category.periods.length - 1 ? remaining : moneyZero()
         );
     }
@@ -194,9 +212,9 @@ export const categoryDefault = (budget?: Budget): Category => {
     id: "",
     name: "",
     type: CategoryType.Income,
-    recurrence: { type: RecurrenceType.None, amount: moneyZero() },
+    recurrence: { type: RecurrenceType.None, amount: null },
     periods: [],
-    rollover: { loss: RolloverMode.None, surplus: RolloverMode.None }
+    rollover: { loss: RolloverMode.None, surplus: RolloverMode.None },
   };
   if (!budget) return category;
   return onRecurrence(budget, category, category.recurrence);
@@ -222,7 +240,7 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
       draft.periods = resolveRanges(budget, resolver).map((dates) => ({
         dates: datesClamp(budget.dates, dates),
         days: datesDays(dates),
-        nominal: moneyZero(),
+        nominal: null,
         actual: moneyZero(),
         truncate: TruncateMode.Keep,
       }));
@@ -234,7 +252,7 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
           end: asDateString(draft.periods[0].dates.begin, -1),
         },
         days: 0,
-        nominal: moneyZero(),
+        nominal: null,
         actual: moneyZero(),
         truncate: TruncateMode.Omit,
       });
@@ -245,7 +263,7 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
           end: dateMax(),
         },
         days: 0,
-        nominal: moneyZero(),
+        nominal: null,
         actual: moneyZero(),
         truncate: TruncateMode.Omit,
       });
@@ -253,8 +271,10 @@ export const onRecurrence = (budget: Budget, category: Category, recurrence: Rec
 
     // Update period nominal amounts
     draft.recurrence = recurrence;
-    for (const period of draft.periods)
-      period.nominal = period.nominal = moneyFactor(draft.recurrence.amount, periodMultiplier(period));
+    for (const period of draft.periods) {
+      period.nominal =
+        draft.recurrence.amount === null ? null : moneyFactor(draft.recurrence.amount, periodMultiplier(period));
+    }
   });
 
 /* ================================================================================================================= *
@@ -276,7 +296,8 @@ const periodMultiplier = (period: Period): number => {
 export const onPeriodTruncate = (category: Category, period: Period, truncate: TruncateMode): Period => {
   return produce(period, (draft) => {
     draft.truncate = truncate;
-    draft.nominal = moneyFactor(category.recurrence.amount, periodMultiplier(draft));
+    draft.nominal =
+      category.recurrence.amount === null ? null : moneyFactor(category.recurrence.amount, periodMultiplier(draft));
   });
 };
 
@@ -289,4 +310,4 @@ export const periodDatesFormat = (period: Period): string => {
 
 export const periodCompare = (a: Period, b: Period): number => {
   return a.dates.begin.localeCompare(b.dates.begin);
-}
+};

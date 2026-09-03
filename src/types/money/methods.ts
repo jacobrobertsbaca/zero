@@ -18,6 +18,13 @@ export const moneySum = (...moneys: Money[]) => {
   return { amount: amount, currency: currency };
 };
 
+/** Sums non-null amounts and returns `null` when every input is nullish. */
+export const moneySumNullable = (...moneys: (Money | null | undefined)[]): Money | null => {
+  const defined = moneys.filter((m): m is Money => m != null);
+  if (defined.length === 0) return null;
+  return moneySum(...defined);
+};
+
 /**
  * Computes and returns a - b.
  */
@@ -71,7 +78,7 @@ export enum RoundingMode {
   /**
    * Round to the nearest dollar unless doing so would result in zero dollars for a non-zero input.
    */
-  RoundZero
+  RoundZero,
 }
 
 export type MoneyFormatOptions = {

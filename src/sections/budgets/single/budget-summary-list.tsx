@@ -22,8 +22,12 @@ export const BudgetSummaryList = ({ budget }: BudgetSummaryListProps) => {
             <span className="text-xs text-muted-foreground">{item.title}</span>
             <span className="text-sm">
               <MoneyText amount={item.actual} round={RoundingMode.RoundZero} />
-              &nbsp;of&nbsp;
-              <MoneyText amount={item.nominal} round={RoundingMode.RoundZero} />
+              {item.nominal !== null && (
+                <>
+                  &nbsp;of&nbsp;
+                  <MoneyText amount={item.nominal} round={RoundingMode.RoundZero} />
+                </>
+              )}
             </span>
           </div>
           {index < summary.length - 1 && (

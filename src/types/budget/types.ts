@@ -12,7 +12,7 @@ export type Budget = Immutable<{
 
 export type ActualNominal = Immutable<{
   actual: Money;
-  nominal: Money;
+  nominal: Money | null;
 }>;
 
 export type CategorySummary = Immutable<

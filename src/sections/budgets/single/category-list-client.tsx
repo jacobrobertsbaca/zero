@@ -49,17 +49,19 @@ export function CategoryCard({ category }: { category: Category }) {
   const onClick = useContext(CategoryClickContext);
   const actual = categoryActual(category);
   const nominal = categoryNominal(category);
-  const ratio = utilization(actual, nominal);
+  const hasTarget = nominal !== null;
+  const ratio = hasTarget ? utilization(actual, nominal) : 0;
   const pct = Math.min(100, ratio * 100);
-  const over = isOverBudget(actual, nominal);
+  const over = hasTarget && isOverBudget(actual, nominal);
 
   return (
     <button
       type="button"
       onClick={() => onClick(category)}
       className={cn(
-        "group flex h-full flex-col overflow-hidden rounded-md border border-b-0 border-input/70 bg-card text-left text-card-foreground shadow-sm",
-        "cursor-pointer transition-colors hover:bg-muted/40 focus-visible:bg-muted/40"
+        "group flex h-full flex-col overflow-hidden rounded-md border border-input/70 bg-card text-left text-card-foreground shadow-sm",
+        "cursor-pointer transition-colors hover:bg-muted/40 focus-visible:bg-muted/40",
+        hasTarget && "border-b-0"
       )}
     >
       <div className="flex flex-1 items-start justify-between gap-3 px-3.5 py-3.5">
@@ -73,22 +75,24 @@ export function CategoryCard({ category }: { category: Category }) {
               <MoneyText amount={actual} round={RoundingMode.RoundZero} />
             </span>
           </span>
-          <RemainingLabel actual={actual} nominal={nominal} />
+          {hasTarget && <RemainingLabel actual={actual} nominal={nominal} />}
         </div>
       </div>
-      <div
-        className="mt-auto h-[3px] w-full bg-success/15"
-        role="progressbar"
-        aria-valuenow={Math.round(pct)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`${category.name} utilization`}
-      >
+      {hasTarget && (
         <div
-          className={cn("progress-enter h-full origin-left rounded-sm", over ? "bg-destructive/80" : "bg-success/80")}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+          className="mt-auto h-[3px] w-full bg-success/15"
+          role="progressbar"
+          aria-valuenow={Math.round(pct)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${category.name} utilization`}
+        >
+          <div
+            className={cn("progress-enter h-full origin-left rounded-sm", over ? "bg-destructive/80" : "bg-success/80")}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
     </button>
   );
 }
