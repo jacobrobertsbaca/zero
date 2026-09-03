@@ -742,4 +742,6 @@ export const syncTransactions = async (owner: string): Promise<void> => {
       )
     )
   );
+
+  revalidateTag(tags.plaid(owner), { expire: 0 });
 };

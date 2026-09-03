@@ -15,7 +15,7 @@ import { PageTitle } from "src/components/page-title";
 import { Button } from "src/components/ui/button";
 import { Collapsible, CollapsibleContent } from "src/components/ui/collapsible";
 import { useBudgets, useTransactionsSearch } from "src/hooks/use-api";
-import { syncTransactions } from "src/server/actions";
+import { markSyncCompleted } from "src/server/actions";
 import { useIsMobile } from "src/hooks/use-mobile";
 import { SearchModelOptions, useSearchModel } from "src/hooks/use-search";
 import {
@@ -82,25 +82,6 @@ const useTransactionsModel = ({ budgets }: { budgets: readonly Budget[] | undefi
 };
 
 /* ================================================================================================================= *
- * Sync                                                                                                              *
- * ================================================================================================================= */
-
-let syncedThisSession = false;
-function useSyncedTransactions() {
-  const [ready, setReady] = useState(syncedThisSession);
-
-  useEffect(() => {
-    if (syncedThisSession) return;
-    void syncTransactions().finally(() => {
-      syncedThisSession = true;
-      setReady(true);
-    });
-  }, []);
-
-  return ready;
-}
-
-/* ================================================================================================================= *
  * Page                                                                                                              *
  * ================================================================================================================= */
 
@@ -123,13 +104,11 @@ const getBudget = (row: Row<Transaction>, budgets: readonly Budget[] | undefined
 const getCategory = (row: Row<Transaction>, budget: Budget | undefined): Category | undefined =>
   budget?.categories.find((c) => c.id === row.original.category);
 
-export function TransactionsPage({ plaid }: { plaid: PlaidConnections }) {
-  const ready = useSyncedTransactions();
-  if (!ready) return <TransactionsTitle shimmer />;
-  return <TransactionsContent plaid={plaid} />;
-}
+export function TransactionsPage({ plaid, didSync }: { plaid: PlaidConnections; didSync: boolean }) {
+  useEffect(() => {
+    if (didSync) markSyncCompleted();
+  }, [didSync]);
 
-function TransactionsContent({ plaid }: { plaid: PlaidConnections }) {
   const { budgets, error: budgetsError } = useBudgets();
   const { search, sorting, filter, setSearch, setSort, setFilter, model } = useTransactionsModel({ budgets });
   const mobile = useIsMobile();
