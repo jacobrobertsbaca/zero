@@ -14,7 +14,7 @@ import { HttpError } from "src/server/errors";
 import { getSubscription } from "src/server/billing";
 import { tags } from "src/server/tags";
 import { CategoryType } from "src/types/category/types";
-import { defaultCurrency, moneyAbs, moneyFactor, moneyZero } from "src/types/money/methods";
+import { defaultCurrency, moneyFactor, moneyZero } from "src/types/money/methods";
 import { ExchangePlaidPublicTokenSchema } from "src/types/plaid/schema";
 import type {
   PlaidAccount,
@@ -679,7 +679,7 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
       const amount = (() => {
         if (existing?.sync?.details.overrides.amount) return existing.amount;
         const type = existing?.category ? categoryTypes.get(existing.category) : undefined;
-        if (!type) return moneyAbs(details.amount);
+        if (!type) return details.amount;
         if (type === CategoryType.Income) return moneyFactor(details.amount, -1);
         return details.amount;
       })();

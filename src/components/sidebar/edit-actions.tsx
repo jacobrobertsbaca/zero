@@ -46,7 +46,7 @@ export const EditActions = (props: EditActionsProps) => {
   const actions = (
     <div
       className={cn(
-        "flex items-center justify-end gap-2 border-t bg-background py-3 px-5  max-md:px-10 max-md:[&>button]:flex-1",
+        "flex items-center justify-end gap-2 border-t bg-background py-3 px-5 max-md:[&>button]:flex-1",
         className
       )}
       {...divProps}

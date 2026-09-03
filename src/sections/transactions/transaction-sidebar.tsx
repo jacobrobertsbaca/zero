@@ -14,7 +14,7 @@ import { Button } from "src/components/ui/button";
 import { deleteTransaction, putTransaction } from "src/server/actions";
 import { Budget } from "src/types/budget/types";
 import { CategoryType } from "src/types/category/types";
-import { moneyAbs, moneyFactor, moneyFormat } from "src/types/money/methods";
+import { moneyFactor, moneyFormat } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
 import { SyncStatus, Transaction } from "src/types/transaction/types";
 import { dateFormat } from "src/types/utils/methods";
@@ -101,7 +101,7 @@ export const TransactionSidebar = ({
       const category = budgets
         .find((budget) => budget.id === values.budget)
         ?.categories.find((item) => item.id === values.category);
-      if (!category) return moneyAbs(syncAmount);
+      if (!category) return syncAmount;
       if (category.type === CategoryType.Income) return moneyFactor(syncAmount, -1);
       return syncAmount;
     },
