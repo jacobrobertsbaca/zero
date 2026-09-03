@@ -7,6 +7,7 @@ import { cn } from "src/utils";
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
     center?: boolean;
+    className?: string;
   }
 }
 
@@ -27,11 +28,11 @@ export const TransactionList = ({ table, setSidebarTrx }: TransactionListProps) 
             {group.headers.map((header) => (
               <th
                 key={header.id}
-                style={{ width: `${(header.getSize() / table.getTotalSize()) * 100}%` }}
                 className={cn(
                   "group px-2 py-2 align-middle font-medium",
                   header.column.getCanSort() && "cursor-pointer",
-                  header.column.columnDef.meta?.center && "text-center"
+                  header.column.columnDef.meta?.center && "text-center",
+                  header.column.columnDef.meta?.className
                 )}
                 onClick={header.column.getToggleSortingHandler()}
               >
@@ -72,7 +73,8 @@ export const TransactionList = ({ table, setSidebarTrx }: TransactionListProps) 
             }}
             className={cn(
               "cursor-pointer rounded-md border-b last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/40",
-              row.original.sync?.status === SyncStatus.Pending && "bg-primary/5 hover:bg-primary/10 focus-visible:bg-primary/10"
+              row.original.sync?.status === SyncStatus.Pending &&
+                "bg-primary/5 hover:bg-primary/10 focus-visible:bg-primary/10"
             )}
           >
             {row.getVisibleCells().map((cell) => (
@@ -80,7 +82,8 @@ export const TransactionList = ({ table, setSidebarTrx }: TransactionListProps) 
                 key={cell.id}
                 className={cn(
                   "max-w-0 truncate px-1 py-2 align-middle",
-                  cell.column.columnDef.meta?.center && "text-center"
+                  cell.column.columnDef.meta?.center && "text-center",
+                  cell.column.columnDef.meta?.className
                 )}
               >
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}

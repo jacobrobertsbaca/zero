@@ -15,7 +15,6 @@ import { PageTitle } from "src/components/page-title";
 import { Button } from "src/components/ui/button";
 import { Collapsible, CollapsibleContent } from "src/components/ui/collapsible";
 import { useBudgets, usePlaidConnections, useTransactionsSearch } from "src/hooks/use-api";
-import { useIsMobile } from "src/hooks/use-mobile";
 import { SearchModelOptions, useSearchModel } from "src/hooks/use-search";
 import {
   TransactionFilterChips,
@@ -106,7 +105,6 @@ export function TransactionsPage({ initialTransactions }: { initialTransactions?
   const { budgets, error: budgetsError } = useBudgets();
   const { plaid } = usePlaidConnections();
   const { search, sorting, filter, setSearch, setSort, setFilter, model } = useTransactionsModel({ budgets });
-  const mobile = useIsMobile();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTrx, setSidebarTrx] = useState<Transaction>(emptyTransaction);
@@ -148,22 +146,21 @@ export function TransactionsPage({ initialTransactions }: { initialTransactions?
             </button>
           ),
         enableSorting: false,
-        maxSize: mobile ? 10 : 5,
-        meta: { center: true },
+        meta: { center: true, className: "w-[10%] md:w-[5%]" },
       },
       {
         id: "date",
         accessorKey: "date",
         header: "Date",
         cell: ({ getValue }) => dateFormatShort(getValue<string>()),
-        maxSize: mobile ? 30 : 12.5,
+        meta: { className: "w-[30%] md:w-[12.5%]" },
       },
       {
         id: "amount",
         accessorKey: "amount",
         header: "Amount",
         cell: ({ getValue }) => moneyFormat(getValue<Money>(), { keepZero: true }),
-        maxSize: mobile ? 30 : 12.5,
+        meta: { className: "w-[30%] md:w-[12.5%]" },
       },
       {
         id: "name",
@@ -188,28 +185,24 @@ export function TransactionsPage({ initialTransactions }: { initialTransactions?
             </div>
           );
         },
-        maxSize: mobile ? 30 : 35,
+        meta: { className: "w-[30%] md:w-[35%]" },
       },
-      ...(!mobile
-        ? ([
-            {
-              id: "budgetName",
-              accessorKey: "budget",
-              header: "Budget",
-              cell: ({ row }) => getBudget(row, budgets)?.name,
-              maxSize: 17.5,
-            },
-            {
-              id: "categoryName",
-              accessorKey: "category",
-              header: "Category",
-              cell: ({ row }) => getCategory(row, getBudget(row, budgets))?.name,
-              maxSize: 17.5,
-            },
-          ] as ColumnDef<Transaction>[])
-        : []),
+      {
+        id: "budgetName",
+        accessorKey: "budget",
+        header: "Budget",
+        cell: ({ row }) => getBudget(row, budgets)?.name,
+        meta: { className: "hidden md:table-cell md:w-[17.5%]" },
+      },
+      {
+        id: "categoryName",
+        accessorKey: "category",
+        header: "Category",
+        cell: ({ row }) => getCategory(row, getBudget(row, budgets))?.name,
+        meta: { className: "hidden md:table-cell md:w-[17.5%]" },
+      },
     ];
-  }, [mobile, budgets, starTransaction, plaid]);
+  }, [budgets, starTransaction, plaid]);
 
   const data = useMemo(() => transactions?.flatMap((page) => page.transactions) ?? [], [transactions]);
   const table = useReactTable({
