@@ -35,7 +35,7 @@ import { Category } from "src/types/category/types";
 import { moneyFormat, moneyZero } from "src/types/money/methods";
 import { Money } from "src/types/money/types";
 import { SyncStatus, Transaction, TransactionPage, TransactionQuery } from "src/types/transaction/types";
-import { asDateString, dateFormatShort } from "src/types/utils/methods";
+import { asDateString, dateFormatShort, datesContains } from "src/types/utils/methods";
 import { Separator } from "src/components/ui/separator";
 import { cn } from "@/utils";
 
@@ -286,7 +286,12 @@ export function TransactionsPage({ initialTransactions }: { initialTransactions?
             setSidebarTrx={(trx) => {
               setSidebarTrx({
                 ...trx,
-                ...(budgets && !trx.budget ? { budget: budgets[0]?.id ?? null } : {}),
+                ...(budgets && !trx.budget
+                  ? {
+                      budget:
+                        budgets.find((b) => datesContains(b.dates, trx.date))?.id ?? budgets[0]?.id ?? null,
+                    }
+                  : {}),
               });
               setSidebarOpen(true);
             }}
