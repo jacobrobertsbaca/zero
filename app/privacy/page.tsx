@@ -113,8 +113,8 @@ const sections = [
     title: "Changes to this policy",
     body: (
       <p>
-        We may update this Privacy Policy from time to time. When we do, we will revise the date above. Continued use of{" "}
-        <Brand /> after changes take effect constitutes acceptance of the updated policy.
+        We may update this Privacy Policy from time to time. Continued use of <Brand /> after changes take effect
+        constitutes acceptance of the updated policy.
       </p>
     ),
   },
