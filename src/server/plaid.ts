@@ -637,19 +637,6 @@ const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
   }));
 };
 
-const revalidateSyncedBudgets = (budgetIds: Iterable<string>) => {
-  let touchedTransactions = false;
-  for (const budgetId of budgetIds) {
-    touchedTransactions = true;
-    revalidatePath(`/budgets/${budgetId}`);
-    updateTag(tags.budget(budgetId));
-  }
-  if (touchedTransactions) {
-    revalidatePath("/budgets");
-    revalidatePath("/transactions");
-  }
-};
-
 const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
   const { upserted, removed, cursor } = await fetchPlaidUpdates(item.accessToken, item.transactionsCursor);
   const universe = await getTransactionsBySyncIds(
@@ -665,8 +652,6 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
     const rows = await wrap(supabase.from("categories").select("id, type").eq("owner", owner).in("id", categoryIds));
     for (const row of rows) categoryTypes.set(row.id, row.type as CategoryType);
   }
-
-  const touchedBudgets = new Set<string>();
 
   await Promise.all([
     ...upserted.flatMap((txn) => {
@@ -684,12 +669,9 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
         return details.amount;
       })();
 
-      const budget = existing?.budget ?? null;
-      if (budget) touchedBudgets.add(budget);
-
       return putTransaction(owner, {
         id: existing?.id ?? "",
-        budget,
+        budget: existing?.budget ?? null,
         category: existing?.category ?? null,
         date: (txn.authorized_date || txn.date).replaceAll("-", ""),
         amount,
@@ -702,12 +684,13 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
           status: existing?.sync?.status ?? SyncStatus.Pending,
           details,
         },
+      }).then(() => {
+        if (existing?.budget) revalidateTag(tags.budget(existing.budget), { expire: 0 });
       });
     }),
     ...removed.flatMap((txn) => {
       const existing = universe.get(txn.transaction_id);
       if (!existing) return [];
-      if (existing.budget) touchedBudgets.add(existing.budget);
 
       if (existing.sync?.status === SyncStatus.Pending) return deleteTransaction(owner, existing.id);
       if (!existing.sync) return;
@@ -724,18 +707,18 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
             datetime: now,
           },
         },
+      }).then(() => {
+        if (existing.budget) revalidateTag(tags.budget(existing.budget), { expire: 0 });
       });
     }),
   ]);
 
   const { error } = await supabase
     .from("plaid_items")
-    .update({ transactions_cursor: cursor ?? null, updated_at: new Date().toISOString() })
+    .update({ transactions_cursor: cursor, updated_at: new Date().toISOString() })
     .eq("id", item.id)
     .eq("owner", owner);
   if (error) throw new HttpError(error.code, error.message);
-
-  revalidateSyncedBudgets(touchedBudgets);
 };
 
 /**
