@@ -695,7 +695,6 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
       if (existing.sync?.status === SyncStatus.Pending) return deleteTransaction(owner, existing.id);
       if (!existing.sync) return;
 
-      const now = new Date().toISOString();
       return putTransaction(owner, {
         ...existing,
         amount: existing.sync.details.overrides.amount ? existing.amount : moneyZero(),
@@ -704,7 +703,6 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
           details: {
             ...existing.sync.details,
             status: "removed",
-            datetime: now,
           },
         },
       }).then(() => {
