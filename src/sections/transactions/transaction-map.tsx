@@ -11,7 +11,7 @@ type TransactionLocationMapProps = {
 
 export const TransactionLocationMap = ({ lat, lng }: TransactionLocationMapProps) => {
   return (
-    <div className="transaction-map relative h-40 w-full border-t border-border">
+    <div className="relative h-40 w-full border-t border-border">
       <MapContainer
         center={[lat, lng]}
         zoom={15}
