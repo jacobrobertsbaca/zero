@@ -31,6 +31,7 @@ export type PlaidSyncAccount = Immutable<{
 
 export type PlaidSyncItem = Immutable<{
   id: string;
+  owner: string;
   accessToken: string;
   institutionName: string;
   transactionsCursor: string | null;

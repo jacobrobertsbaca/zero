@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
-import { isPlaidConfigured, plaid } from "src/server/plaid";
+import { isPlaidConfigured, plaid, syncTransactions } from "src/server/plaid";
 import { tags } from "src/server/tags";
 import type { PlaidItemStatus } from "src/types/plaid/types";
 import { supabase } from "src/utils/supabase/server";
@@ -58,19 +58,23 @@ export async function POST(request: Request) {
     return new Response("Invalid JSON body.", { status: 400 });
   }
 
-  const status = getItemStatus(event);
-  if (!status) return new Response("OK.", { status: 200 });
-
   try {
-    const { data } = await supabase
-      .from("plaid_items")
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq("item_id", event.item_id)
-      .neq("status", "inactive")
-      .select("owner")
-      .maybeSingle()
-      .throwOnError();
-    if (data?.owner) revalidateTag(tags.plaid(data.owner), { expire: 0 });
+    if (event.webhook_type === "TRANSACTIONS" && event.webhook_code === "SYNC_UPDATES_AVAILABLE" && event.item_id) {
+      await syncTransactions(event.item_id);
+    }
+
+    const status = getItemStatus(event);
+    if (status) {
+      const { data } = await supabase
+        .from("plaid_items")
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq("item_id", event.item_id)
+        .neq("status", "inactive")
+        .select("owner")
+        .maybeSingle()
+        .throwOnError();
+      if (data?.owner) revalidateTag(tags.plaid(data.owner), { expire: 0 });
+    }
   } catch (error) {
     console.error("Plaid webhook handler failed:", error);
     return new Response("Webhook handler failed.", { status: 500 });

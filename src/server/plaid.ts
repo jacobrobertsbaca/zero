@@ -420,6 +420,7 @@ export const exchangePublicToken = async (
     });
     if (!accounts.length) throw new HttpError("no_accounts", "No accounts were found for this institution.");
 
+    await syncTransactions(itemId);
     revalidateTag(tags.plaid(owner), { expire: 0 });
     return mapConnection(item, accounts);
   }
@@ -448,6 +449,7 @@ export const exchangePublicToken = async (
   const accounts = await syncPlaidAccountsForItem(owner, item);
   if (!accounts.length) throw new HttpError("no_accounts", "No accounts were found for this institution.");
 
+  await syncTransactions(itemId);
   revalidateTag(tags.plaid(owner), { expire: 0 });
 
   return mapConnection(item, accounts);
@@ -474,6 +476,8 @@ export const syncPlaidItemAccounts = async (owner: string, connectionId: string)
     access_token: item.access_token,
     institution_id: item.institution_id,
   });
+
+  await syncTransactions(item.item_id);
 
   const { data: updated, error: updateError } = await supabase
     .from("plaid_items")
@@ -619,28 +623,42 @@ const fetchPlaidUpdates = async (accessToken: string, cursor?: string | null) =>
   };
 };
 
-const getPlaidSyncItems = async (owner: string): Promise<PlaidSyncItem[]> => {
+const getPlaidSyncItem = async (itemId: string): Promise<PlaidSyncItem | null> => {
   const { data, error } = await supabase
     .from("plaid_items")
-    .select("id, access_token, institution_name, transactions_cursor, plaid_accounts ( id, account_id )")
-    .eq("owner", owner)
+    .select("id, owner, access_token, institution_name, transactions_cursor, plaid_accounts ( id, account_id )")
+    .eq("item_id", itemId)
     .neq("status", "inactive")
-    .not("access_token", "is", null);
+    .not("access_token", "is", null)
+    .maybeSingle();
   if (error) throw new HttpError(error.code, error.message);
+  if (!data?.access_token) return null;
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    accessToken: row.access_token,
-    institutionName: row.institution_name,
-    transactionsCursor: row.transactions_cursor,
-    accounts: row.plaid_accounts.map((account) => ({ id: account.id, accountId: account.account_id })),
-  }));
+  return {
+    id: data.id,
+    owner: data.owner,
+    accessToken: data.access_token,
+    institutionName: data.institution_name,
+    transactionsCursor: data.transactions_cursor,
+    accounts: data.plaid_accounts.map((account) => ({ id: account.id, accountId: account.account_id })),
+  };
 };
 
-const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
+/**
+ * Syncs Plaid transactions for all active accounts associated with the Plaid item ID {@link itemId}.
+ */
+export const syncTransactions = async (itemId: string): Promise<void> => {
+  if (!isPlaidConfigured()) return;
+
+  const item = await getPlaidSyncItem(itemId);
+  if (!item) return;
+
+  const subscription = await getSubscription(item.owner);
+  if (!subscription.active) return;
+
   const { upserted, removed, cursor } = await fetchPlaidUpdates(item.accessToken, item.transactionsCursor);
   const universe = await getTransactionsBySyncIds(
-    owner,
+    item.owner,
     removed
       .map((txn) => txn.transaction_id)
       .concat(upserted.map((txn) => txn.pending_transaction_id ?? txn.transaction_id))
@@ -649,7 +667,9 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
   const categoryIds = [...new Set([...universe.values()].map((t) => t.category).filter(Boolean) as string[])];
   const categoryTypes = new Map<string, CategoryType>();
   if (categoryIds.length > 0) {
-    const rows = await wrap(supabase.from("categories").select("id, type").eq("owner", owner).in("id", categoryIds));
+    const rows = await wrap(
+      supabase.from("categories").select("id, type").eq("owner", item.owner).in("id", categoryIds)
+    );
     for (const row of rows) categoryTypes.set(row.id, row.type as CategoryType);
   }
 
@@ -669,7 +689,7 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
         return details.amount;
       })();
 
-      return putTransaction(owner, {
+      return putTransaction(item.owner, {
         id: existing?.id ?? "",
         budget: existing?.budget ?? null,
         category: existing?.category ?? null,
@@ -692,10 +712,10 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
       const existing = universe.get(txn.transaction_id);
       if (!existing) return [];
 
-      if (existing.sync?.status === SyncStatus.Pending) return deleteTransaction(owner, existing.id);
+      if (existing.sync?.status === SyncStatus.Pending) return deleteTransaction(item.owner, existing.id);
       if (!existing.sync) return;
 
-      return putTransaction(owner, {
+      return putTransaction(item.owner, {
         ...existing,
         amount: existing.sync.details.overrides.amount ? existing.amount : moneyZero(),
         sync: {
@@ -715,45 +735,6 @@ const syncTransactionsForItem = async (owner: string, item: PlaidSyncItem) => {
     .from("plaid_items")
     .update({ transactions_cursor: cursor, updated_at: new Date().toISOString() })
     .eq("id", item.id)
-    .eq("owner", owner);
+    .eq("owner", item.owner);
   if (error) throw new HttpError(error.code, error.message);
-};
-
-/**
- * Syncs Plaid transactions for all active connections belonging to {@link owner}.
- */
-const syncTransactions = async (owner: string): Promise<void> => {
-  if (!isPlaidConfigured()) return;
-
-  const subscription = await getSubscription(owner);
-  if (!subscription.active) return;
-
-  const items = await getPlaidSyncItems(owner);
-  if (!items.length) return;
-
-  await Promise.all(
-    items.map((item) =>
-      syncTransactionsForItem(owner, item).catch((err) =>
-        console.error(`Transaction sync failed for item ${item.id}:`, err)
-      )
-    )
-  );
-};
-
-export const syncAllTransactions = async (): Promise<void> => {
-  if (!isPlaidConfigured()) return;
-
-  const { data, error } = await supabase
-    .from("plaid_items")
-    .select("owner")
-    .neq("status", "inactive")
-    .not("access_token", "is", null);
-  if (error) throw new HttpError(error.code, error.message);
-
-  const owners = [...new Set((data ?? []).map((row) => row.owner))];
-  await Promise.all(
-    owners.map((owner) =>
-      syncTransactions(owner).catch((err) => console.error(`Transaction sync failed for user ${owner}:`, err))
-    )
-  );
 };
