@@ -693,7 +693,7 @@ export const syncTransactions = async (itemId: string): Promise<void> => {
         id: existing?.id ?? "",
         budget: existing?.budget ?? null,
         category: existing?.category ?? null,
-        date: (txn.authorized_date || txn.date).replaceAll("-", ""),
+        date: existing?.date ?? (txn.authorized_date || txn.date).replaceAll("-", ""),
         amount,
         name: existing?.name ?? details.name,
         lastModified: existing?.lastModified ?? "",
