@@ -176,7 +176,6 @@ export const TransactionSidebar = ({
             sync
               ? {
                   ...values,
-                  name: sync.overrides.name ? values.name : sync.name,
                   amount: sync.overrides.amount ? values.amount : inferAmount(values),
                 }
               : values
@@ -220,13 +219,7 @@ export const TransactionSidebar = ({
                 if (details) form.setFieldValue("sync.details.overrides.amount", value ? true : undefined);
               }}
             />
-            <TextField
-              label="Name"
-              name="name"
-              placeholder="Optional"
-              max={120}
-              autoComplete="off"
-            />
+            <TextField label="Name" name="name" placeholder="Optional" max={120} autoComplete="off" />
             <NoteField label="Note" name="note" placeholder="Optional" />
 
             {details ? <TransactionSyncDetails details={details} fallbackDate={form.values.date} /> : null}
