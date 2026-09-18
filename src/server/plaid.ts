@@ -618,7 +618,7 @@ const fetchPlaidUpdates = async (accessToken: string, cursor?: string | null) =>
 
   return {
     upserted: [...upserts.values()],
-    removed: removed.filter((txn) => pendingIds.has(txn.transaction_id)),
+    removed: removed.filter((txn) => !pendingIds.has(txn.transaction_id)),
     cursor: nextCursor,
   };
 };
