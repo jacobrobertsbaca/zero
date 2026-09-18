@@ -722,6 +722,7 @@ export const syncTransactions = async (itemId: string): Promise<void> => {
           ...existing.sync,
           details: {
             ...existing.sync.details,
+            amount: moneyZero(),
             status: "removed",
           },
         },
